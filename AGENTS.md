@@ -102,12 +102,14 @@ Next: <the suggested next step>
   task names before planning it.
 - Stack: Python, Streamlit and Plotly (interface), pandas, pytest and Hypothesis; dashboard path A
   (`docs/architecture.md`). Versions pinned in `app/requirements.txt`.
-- Python environment: any Python 3.11 or later in `app/.venv` (A's laptop: Anaconda Python 3.14.6). The tests run
-  on Python 3.11 and 3.14, Linux and Windows, on every pull request.
+- Python environment: Python 3.11 to 3.14 in `app/.venv` (A's laptop: Anaconda Python 3.14.6). The tests run on
+  Python 3.11 and 3.14, Linux and Windows, on every pull request; newer Pythons are untested.
 - Install: `cd app`, then `python3 -m venv .venv` and `.venv/bin/python -m pip install -r requirements.txt`
-  (Windows: `py -3 -m venv .venv` and `.venv\Scripts\python -m pip install -r requirements.txt`); the student
-  creates `app/.env` with `cp .env.example .env`.
-- Run: `cd app` then `.venv/bin/python -m streamlit run main.py`, open http://localhost:8501.
+  (Windows: `py -0p` to list the installed versions, then e.g. `py -3.13 -m venv .venv` and
+  `.venv\Scripts\python -m pip install -r requirements.txt`); the student creates `app/.env` with
+  `cp .env.example .env` (Windows: `copy .env.example .env`).
+- Run: `cd app` then `.venv/bin/python -m streamlit run main.py` (Windows: `.venv\Scripts\python -m streamlit run
+  main.py`), open http://localhost:8501.
 - Test: `cd app` then `.venv/bin/python -m pytest` (Windows: `.venv\Scripts\python -m pytest`).
 - Browser check: not installed; Streamlit's `AppTest` checks the app without a browser (`app/tests/app/`).
 

@@ -77,6 +77,7 @@ export. The tier 1 scorecard and the sources page are never cut. Everything on `
 |---|---|---|---|---|
 | 2026-11-18 | S0.1 | Public repo `BossToGo/filing-scorecard` created; starter 0.3.0 and `SPEC.md` v2 committed to `main` (149180c); `Greg3334444` and `florian-spitzer` invited with write access | Commit linked to A's GitHub account; SPEC structure checked (21 sections, 24 checks, 25 slices); starter scanned for secrets: none | Two members not yet known; invitations expire after 7 days |
 | 2026-11-18 | S0.2 | Product interview run from `SPEC.md`, asking only §16; four documents drafted on branch `a/S0-product-docs` | SPEC Appendix A recomputed by an independent script: all values agree within rounding | Q1–Q8 below |
+| 2026-11-18 | S0.3 review | Three read-only reviewer agents (code, tests, security): no blocker, about 20 findings. Fixed: `CompanyData` picklable for Streamlit's cache; numpy numbers accepted; reported facts need tag, form, accession and a filed unit (no "USD m"); a check with a missing input cannot pass or fail; network guard switched on for the whole session, also records swallowed attempts; layering test reads full module names, relative and dynamic imports, and covers the interface; workflow runs on `main` never cancelled, `setup-python@v6`, no stored token, bash on Windows; `.gitignore` patterns inside `app/`; `CODEOWNERS` lines for the guardrail files; Python range stated as 3.11 to 3.14 | pytest: 100 passed; planted bypasses caught (guard switched off: 8 failed; a swallowed network error fails the test) | Skipped, with reason: pinning actions to commit hashes and a hashed lock file (more complexity for the team than the risk of a student repository with no secrets); subprocess network calls (no code uses them) |
 | 2026-11-18 | S0.3 | Walking skeleton on branch `a/S0-skeleton`: shared data shapes with built-in rules, network guard for tests, layering test, `settings.yaml` with SPEC starting values, first page, CI on Linux and Windows, pull request template, `CODEOWNERS`, `docs/team.md`, team rules in `AGENTS.md` | Tests written first and seen failing (7 failed, 1 error); then pytest: 51 passed locally (Python 3.14.6, macOS); environment rebuilt from `requirements.txt` alone: 51 passed, `pip check` clean | CI result on GitHub: see the pull request |
 | 2026-11-18 | S0 | Member guides in `docs/members/` (A to E) and a shared seven-step session routine; onboarding in `docs/team.md` fixed after the code review (no CODEOWNERS edit by new members, conflict and no-`gh` instructions, no-reply e-mail) | Scripted check against plan, acceptance and architecture: no gaps after two fixes | Names of B to E still [to confirm] |
 
@@ -110,3 +111,14 @@ fixed by a pull request to `SPEC.md`.
 - **Q7. Team letters and names.** A is Igor. Members B to E and their GitHub accounts: [to confirm at the group
   meeting]; `Greg3334444` and `florian-spitzer` invited. Product name (§16.7): [to confirm].
 - **Q8. Overlap with the session 5 demo** (§16.3): [to confirm with the instructor].
+- **Q9. "Not assessed" (SPEC §2) has no status of its own in SPEC §11.** Decided by A for now: such a check has the
+  status `insufficient_data` with an explanation ("not assessed: needs an industry benchmark", tier 1), which the
+  display rule of §3 already counts as not assessed ("4 of 5 assessed, 1 with insufficient data"). Documented in
+  `app/src/contracts.py`. The group can change it by a pull request to SPEC §11 before S5 and S7.
+- **Q10. Repository settings for S0.4 (Igor to approve each).** Protect `main`: pull request required, 1 approval,
+  dismiss stale approvals, approval of the most recent push, required check `test` (from GitHub Actions), no
+  bypassing; "require review from code owners" once member D, A's backup, is co-owner of the guardrail files
+  (A cannot approve his own pull requests). Also: secret scanning with push protection (free on public
+  repositories) and approval before workflows run for outside contributors. Igor's commits so far show his
+  personal e-mail address (public repository, history never rewritten); he may switch to his GitHub noreply
+  address for future commits.

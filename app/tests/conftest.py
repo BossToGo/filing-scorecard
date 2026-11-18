@@ -1,51 +1,37 @@
 """Shared test setup. Owner: A.
 
-Tests never use the network (SPEC rule 14.10): every test runs with outside connections and name lookups
-blocked, so a test that tries to download something fails at once with a clear message. Use the saved files in
-`app/evidence/` or `app/tests/fixtures/` instead. Connections to this computer (127.0.0.1) still work, because
-Python's own machinery needs them.
+Tests never use the network (SPEC rule 14.10). The guard in `tests/network_guard.py` is switched on before any
+test file is imported, so it also covers module-level code and module or session fixtures. A test that tries to
+reach the network fails, even if its code catches the error. Use the saved files in `app/evidence/` or
+`app/tests/fixtures/` instead.
 """
-
-import socket
 
 import pytest
 
-_LOCAL_HOSTS = {"127.0.0.1", "::1", "localhost", None}
-_MESSAGE = (
-    "Tests must not use the network (SPEC rule 14.10). Tried to reach {!r}. "
-    "Use saved files from app/evidence/ or app/tests/fixtures/ instead."
-)
+from tests import network_guard
 
 
-def _host(address):
-    return address[0] if isinstance(address, tuple) else address
+def pytest_configure(config):
+    network_guard.install()
+
+
+def pytest_unconfigure(config):
+    network_guard.uninstall()
 
 
 @pytest.fixture(autouse=True)
-def _no_network(monkeypatch):
-    real_connect = socket.socket.connect
-    real_connect_ex = socket.socket.connect_ex
-    real_getaddrinfo = socket.getaddrinfo
-    unix = getattr(socket, "AF_UNIX", None)
+def _fail_if_the_test_tried_the_network():
+    before = len(network_guard.ATTEMPTS)
+    yield
+    tried = network_guard.ATTEMPTS[before:]
+    if tried:
+        pytest.fail(f"This test tried to reach the network ({sorted(set(map(str, tried)))}); SPEC rule 14.10.")
 
-    def allowed(sock, address):
-        return (unix is not None and sock.family == unix) or _host(address) in _LOCAL_HOSTS
 
-    def connect(sock, address):
-        if not allowed(sock, address):
-            raise RuntimeError(_MESSAGE.format(_host(address)))
-        return real_connect(sock, address)
-
-    def connect_ex(sock, address):
-        if not allowed(sock, address):
-            raise RuntimeError(_MESSAGE.format(_host(address)))
-        return real_connect_ex(sock, address)
-
-    def getaddrinfo(host, *args, **kwargs):
-        if host not in _LOCAL_HOSTS:
-            raise RuntimeError(_MESSAGE.format(host))
-        return real_getaddrinfo(host, *args, **kwargs)
-
-    monkeypatch.setattr(socket.socket, "connect", connect)
-    monkeypatch.setattr(socket.socket, "connect_ex", connect_ex)
-    monkeypatch.setattr(socket, "getaddrinfo", getaddrinfo)
+def pytest_sessionfinish(session, exitstatus):
+    # Attempts outside a test (at import, in module or session fixtures) also fail the run.
+    if network_guard.ATTEMPTS and session.exitstatus == 0:
+        reporter = session.config.pluginmanager.get_plugin("terminalreporter")
+        if reporter:
+            reporter.write_line(f"Network attempts outside tests: {network_guard.ATTEMPTS} (SPEC rule 14.10)", red=True)
+        session.exitstatus = 1
