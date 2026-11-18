@@ -50,14 +50,14 @@ Status values: `todo`, `in progress`, `done (<date>, commit <short hash>)`, `blo
 | S8 | Cost of capital, forecast, terminal value, reverse calculation, sensitivity; starts Thu 19 on the synthetic company, with C's Excel model | C | S0c | Matches C's separate Excel model and Appendix A; property tests pass | CALC-W*, CALC-F*, E12–E14 | todo |
 | S9 | Valuation checks V1–V6; switch on P4, P5, D2 | C with B | S8, S4 | Appendix A values reproduced | AC8, AC9, CALC-V*, CALC-S | todo |
 | S10b | Interface: share price input, valuation detail, industry with route and number of firms, override dropdown | D | S8, S4 | App test finds the fair value of the synthetic company | AC9, AC10 | todo |
-| S13 | Excel export | D | S10 | Export reopened by a test; figures equal the screen | AC11 | todo |
+| S13 | Excel export | E | S10 | Export reopened by a test; figures equal the screen | AC11 | todo |
 | S16b | Texts for the valuation checks and the industry explanations | E | S10b | Reviewed by C | – | todo |
 
 ### Tier 3: release v0.3 "Five forces" (feature freeze Thu 26 November, 20:00)
 
 | # | Slice | Owner | Depends on | Done when (evidence) | Acceptance | Status |
 |---|---|---|---|---|---|---|
-| S12 | Five forces panel (§9) | D with B | S4 | Indicator tests; override survives recalculation | AC12 | todo |
+| S12 | Five forces panel (§9) | B (indicators, `app/src/forces.py`) with D (panel) | S4 | Indicator tests; override survives recalculation | AC12 | todo |
 | S17 | End-to-end app test: demo ticker, a known score, a known figure, a known fair value | D | S14 | Passes twice in a row in the workflow | AC1, V1 | todo |
 
 ### After the freeze: fixes only (Fri 27 November – Tue 1 December)
@@ -66,7 +66,7 @@ Status values: `todo`, `in progress`, `done (<date>, commit <short hash>)`, `blo
 |---|---|---|---|---|---|
 | S18 | Break-it round: independent read-only review of each area; a deliberate break of every formula | Each owner; reviewer from another area | v0.2 | `docs/testing.md` lists each break and the test that caught it; every finding is a failing test or a written dismissal | todo |
 | S19 | README and fresh-clone test on one Windows and one Mac laptop, by a member who did not write the README | E writes, two members test | v0.3 | Works from the README alone on both | todo |
-| S20 | Business plan (Markdown → PDF), slides, recorded fallback demo, question bank | E leads, all contribute (from Sat 21) | – | Files on `main` before the deadline | todo |
+| S20 | Business plan (Markdown → PDF), slides, recorded fallback demo, question bank | E leads and edits; each member writes one section (SPEC §17) | – | Files on `main` before the deadline | todo |
 
 Cut list if a release slips by more than a day (§2): watchlist → five forces panel → sensitivity table → Excel
 export. The tier 1 scorecard and the sources page are never cut. Everything on `main` by Tue 1 December, 12:00.
@@ -80,6 +80,7 @@ export. The tier 1 scorecard and the sources page are never cut. Everything on `
 | 2026-11-18 | S0.3 review | Three read-only reviewer agents (code, tests, security): no blocker, about 20 findings. Fixed: `CompanyData` picklable for Streamlit's cache; numpy numbers accepted; reported facts need tag, form, accession and a filed unit (no "USD m"); a check with a missing input cannot pass or fail; network guard switched on for the whole session, also records swallowed attempts; layering test reads full module names, relative and dynamic imports, and covers the interface; workflow runs on `main` never cancelled, `setup-python@v6`, no stored token, bash on Windows; `.gitignore` patterns inside `app/`; `CODEOWNERS` lines for the guardrail files; Python range stated as 3.11 to 3.14 | pytest: 100 passed; planted bypasses caught (guard switched off: 8 failed; a swallowed network error fails the test) | Skipped, with reason: pinning actions to commit hashes and a hashed lock file (more complexity for the team than the risk of a student repository with no secrets); subprocess network calls (no code uses them) |
 | 2026-11-18 | S0.3 | Walking skeleton on branch `a/S0-skeleton`: shared data shapes with built-in rules, network guard for tests, layering test, `settings.yaml` with SPEC starting values, first page, CI on Linux and Windows, pull request template, `CODEOWNERS`, `docs/team.md`, team rules in `AGENTS.md` | Tests written first and seen failing (7 failed, 1 error); then pytest: 51 passed locally (Python 3.14.6, macOS); environment rebuilt from `requirements.txt` alone: 51 passed, `pip check` clean | CI result on GitHub: see the pull request |
 | 2026-11-18 | S0 | Member guides in `docs/members/` (A to E) and a shared seven-step session routine; onboarding in `docs/team.md` fixed after the code review (no CODEOWNERS edit by new members, conflict and no-`gh` instructions, no-reply e-mail) | Scripted check against plan, acceptance and architecture: no gaps after two fixes | Names of B to E still [to confirm] |
+| 2026-11-18 | S0 | Names and final roles: B Greg, C Flo, D Simon, E Emma; Excel export (S13) moved from D to E, five forces indicators from D to B, one business plan section per member; guides, owner table and `CODEOWNERS` updated (SPEC v2.2 in PR #3) | Script: names, usernames and owners agree across SPEC, guides, `CODEOWNERS`, plan; 100 tests pass | Group approves PR #3 |
 
 ## Known problems and open questions
 
@@ -108,8 +109,9 @@ fixed by a pull request to `SPEC.md`.
   capital, terminal value = operating profit after tax × (1 + gT) ÷ cost of capital, so ±1 point of gT moves the
   synthetic fair value only from USD 21.50 to 21.86, against 18.81 to 25.32 for ±1 point of cost of capital. Not a
   bug: session 5 slide 33 says the same. Prepare the explanation for questions. Owner: C.
-- **Q7. Team letters and names.** A is Igor. Members B to E and their GitHub accounts: [to confirm at the group
-  meeting]; `Greg3334444` and `florian-spitzer` invited. Product name (§16.7): [to confirm].
+- **Q7. Team letters and names.** Decided 2026-11-18: A Igor (`BossToGo`), B Greg (`Greg3334444`), C Flo
+  (`florian-spitzer`), D Simon (`Simonarmengaud`), E Emma (`EmmaRiggi`); all invited. Product name (§16.7):
+  [to confirm].
 - **Q8. Overlap with the session 5 demo** (§16.3): [to confirm with the instructor].
 - **Q9. "Not assessed" (SPEC §2) has no status of its own in SPEC §11.** Decided by A for now: such a check has the
   status `insufficient_data` with an explanation ("not assessed: needs an industry benchmark", tier 1), which the

@@ -116,9 +116,9 @@ Known-answer examples: `docs/acceptance.md` (from SPEC Appendix A).
 
 ## Team and constraints
 
-- Team: five members, A to E, areas in §12. A is Igor (GitHub `BossToGo`). Invited 2026-11-18: `Greg3334444`,
-  `florian-spitzer` (letters [to confirm]). Two more members [to confirm]. Each member adds their own line to
-  `docs/team.md` in their first pull request (§12 rule 1).
+- Team: five members, areas in §12: A Igor (`BossToGo`), B Greg (`Greg3334444`), C Flo (`florian-spitzer`), D Simon
+  (`Simonarmengaud`), E Emma (`EmmaRiggi`). Each member adds their own line to `docs/team.md` in their first pull
+  request (§12 rule 1).
 - Experience: finance students; most build through an AI coding assistant (Claude Code or Cline).
 - Time: tier releases on Sun 22, Wed 25 and Thu 26 November (feature freeze 20:00); deadline Tue 1 December 2026,
   23:59, state of `main`; presentation Wed 2 December (§13.3).

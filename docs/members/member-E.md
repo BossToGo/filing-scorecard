@@ -1,10 +1,10 @@
-# Member E: [name] ([@github])
+# Member E: Emma (@EmmaRiggi)
 
-**You own:** `README.md` (root), `docs/business-plan/`, `docs/slides/`, `docs/qa-bank.md`, `app/ui/texts.yaml` (the
+**You own:** `app/src/export.py` (the Excel export, S13) and its tests, `README.md` (root), `docs/business-plan/`, `docs/slides/`, `docs/qa-bank.md`, `app/ui/texts.yaml` (the
 plain-language text of the 24 checks), and the coordination of `AI-USAGE.md` (everyone adds lines; you write its
 summary). You also review **every user-facing text**, coordinate the reconciliation (S15) and guard the scope (risk
-R11). **Reconciliation company:** Amazon (AMZN). Your work counts only if it is in the repository: commit it as
-Markdown through pull requests, like everyone else (SPEC §12).
+R11). **Reconciliation company:** Amazon (AMZN). Your work counts only if it is in the repository: commit it through
+pull requests, like everyone else (SPEC §12). The Excel export is your code feature: every member contributes code.
 
 ## Your tasks, in order
 
@@ -13,10 +13,11 @@ Markdown through pull requests, like everyone else (SPEC §12).
 | Wed 18 | Accept the invitation; your `docs/team.md` PR (steps in `docs/team.md`) | Merged |
 | Thu 19 | Book 3 to 5 **user interviews** (analysts, advisers, investment-club members); notes without names in `docs/business-plan/interviews.md` | Interviews booked |
 | Thu 19 | **Sign-off for S0c:** recalculate CALC-S (the four area scores) in `docs/acceptance.md` | Your sign-off comment on PR #5 (it unlocks `synthetic.expected_scores()` for the app tests) |
-| Sat 21 → | **Business plan** draft in `docs/business-plan/business-plan.md` (contents: SPEC §17); everyone contributes | Draft by Sun 22; final by Sun 29; PDF on `main` |
-| Sat 21–Sun 22 | S16a: texts for the 18 tier 1 checks in `app/ui/texts.yaml` (agree the key names with D) | Each check shows its text; reviewed by the check's owner |
+| Sat 21 → | **Business plan:** write problem and evidence, how roles and decisions change in a firm, SDG 9 and next steps; assemble everyone's sections from `docs/business-plan/sections/` into `docs/business-plan/business-plan.md` and the PDF (contents: SPEC §17) | Draft by Sun 22; final by Sun 29; PDF on `main` |
+| Sat 21–Sun 22 | S16a: texts for the 18 tier 1 checks in `app/ui/texts.yaml` (agree the key names with Simon, D), plus a test in `app/tests/unit/test_texts.py` that every check has a text | Each check shows its text; reviewed by the check's owner |
 | Sat 21–Sun 22 | S15: collect the five reconciliation files (A: KO, B: AAPL, C: NVDA, D: MCD, you: AMZN) | 30 figures match the app within USD 0.5 million |
 | Mon 23–Wed 25 | S16b: texts for the valuation checks and the industry explanations | Reviewed by C |
+| Mon 23–Wed 25 | **S13: Excel export, your code feature.** `app/src/export.py` writes the report, figures and sources into one Excel file with three sheets; a test reopens it and compares every figure. Branch `e/S13-excel-export`; Simon (D) adds the download button | AC11: export reopened by a test; figures equal the screen |
 | Fri 27–Sun 29 | **README** final; S19: two members who did not write it install the app from the README alone, one on Windows, one on Mac | Works on both |
 | Fri 27–Sun 29 | **Slides** in `docs/slides/` (SPEC §17: problem 1 min, live demo 3–4, how we built and checked it 1–2, transformation and SDG 9 2, next steps); **question bank** `docs/qa-bank.md` (five questions and answers per area, sent by each owner) | On `main` |
 | Fri 27–Sun 29 | S18, break-it round: review one code area read-only (A assigns it), with the break-it prompt in `docs/members/README.md` | Each finding is a failing test or a written dismissal in `docs/testing.md` |
@@ -42,6 +43,16 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
 > SPEC.md section 7. Write in app/ui/texts.yaml, for each tier 1 check, the rule in plain words for an analyst who
 > is not a programmer, with the unit and no number that the app computes. Use the key names agreed with D. Use the
 > branch e/S16a-check-texts from the latest main. Do not change files outside my folders.
+
+**Prompt for the Excel export (S13):**
+
+> /build-feature I am member E, working on slice S13 of SPEC.md. Read AGENTS.md, docs/members/member-E.md,
+> SPEC.md sections 3 (item 8), 5.1 and 11, docs/plan.md and AC11 in docs/acceptance.md. Use the branch
+> e/S13-excel-export from the latest main. Plan this slice only: a function in app/src/export.py that writes the
+> prepared report, figures and sources into one Excel file with three sheets, and a test that reopens the file and
+> compares every figure. It must not compute any number itself (SPEC §11). Name the files and the tests you will
+> write first, and wait for my go-ahead. I will give you the expected values. Do not change files outside my
+> folders.
 
 ## What the README must say (SPEC §17)
 

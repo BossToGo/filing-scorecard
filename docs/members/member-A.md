@@ -3,7 +3,7 @@
 **You own:** the repository and CI (`.github/`), the product documents (`docs/product.md`, `architecture.md`,
 `acceptance.md`, `plan.md`, `team.md`, `coverage.md`, `members/`), `app/src/contracts.py`, `app/src/data/`,
 `app/evidence/`, `app/data/universe.csv`, `app/scripts/coverage.py`, `app/tests/fixtures/`, the `data` section of
-`app/settings.yaml`, `app/README.md`, `app/requirements.txt`. **Backup:** D (first reviewer of your PRs, and you of
+`app/settings.yaml`, `app/README.md`, `app/requirements.txt`. **Backup:** D, Simon (first reviewer of your PRs, and you of
 theirs). **Reconciliation company:** Coca-Cola (KO).
 
 Claude Code runs your slices under the delegation recorded in `docs/architecture.md` (2026-11-18). The list
@@ -22,6 +22,7 @@ Claude Code runs your slices under the delegation recorded in `docs/architecture
 | Sat 21–Sun 22 | S14 with D: demo mode; release check and tag **v0.1** (Sun evening) | App runs with the network off |
 | Wed 25 | Release check and tag **v0.2** | – |
 | Thu 26, 20:00 | Feature freeze; release check and tag **v0.3** | – |
+| Sat 21–Sun 29 | **Business plan section:** data dependencies, failure modes and the controls built into the app, in `docs/business-plan/sections/A-data-and-controls.md` (Emma, E, assembles the plan; prompt in `docs/members/README.md`) | Draft by Sun 22; final by Sun 29 |
 | Fri 27–Sun 29 | S18, break-it round: a member from another area reviews your code read-only; you break each of your formulas once on purpose and record each break and the test that caught it in `docs/testing.md` | Every finding is a failing test or a written dismissal |
 
 **Release check (SPEC §13.1):** all tests green on GitHub; app started in demo mode with the network off; the
@@ -47,7 +48,7 @@ in `docs/plan.md`.
    dividends paid for the latest fiscal year, read by hand from the 10-K with page and accession number. Do not let
    the assistant read them for you: this is the independent check.
 5. **Decide** Q5 (debt tags) after S2; Q1 (missing versus nil) with B and C (`docs/plan.md`, open questions).
-6. **Approve** every teammate's first PR quickly, review at least two PRs a week, D's first.
+6. **Approve** every teammate's first PR quickly, review at least two PRs a week, Simon's (D) first.
 7. **Office hours, Fri 20:** present the coverage table and the KO reconciliation; record the go/no-go.
 8. **Your e-mail:** your commits so far show your personal e-mail in this public repository; history is never
    rewritten (rule 14.14). Decide whether to switch future commits to your GitHub no-reply address (steps in
@@ -58,7 +59,9 @@ in `docs/plan.md`.
 ## Today's group meeting: agenda
 
 1. Agree `SPEC.md` (approve PR #3, the `app/` layout) and decide Q2 (S4 and S8 start early).
-2. Assign letters B to E, names, GitHub usernames; who uses Claude Code or Cline (SPEC §16.6).
+2. Letters agreed: B Greg, C Flo, D Simon, E Emma. Approve SPEC v2.2 (PR #3): the Excel export goes to Emma, the
+   five forces indicators to Greg, one business plan section to each member. Ask who uses Claude Code or Cline
+   (SPEC §16.6).
 3. Confirm the reconciliation companies: A KO, B Apple, C Nvidia, D McDonald's, E Amazon.
 4. Everyone: accept the invitation, then their `docs/team.md` PR today (instructions in `docs/team.md`).
 5. Product name (SPEC §16.7); who asks the instructor about the overlap with the session 5 demo (§16.3).

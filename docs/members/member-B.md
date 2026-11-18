@@ -1,10 +1,11 @@
-# Member B: [name] ([@github])
+# Member B: Greg (@Greg3334444)
 
 **You own:** `app/src/benchmarks/`, `app/scripts/extract_benchmarks.py`, `app/scripts/requirements-scripts.txt`, the
 industry files in `app/data/` (`benchmarks_us_2026.csv`, `industry_lookup_us_2026.csv`, `sic_to_damodaran.csv`),
-`app/src/checks/past.py`, `app/src/checks/health.py`, `docs/benchmarks.md`, the `benchmarks`,
-`past_performance` and `financial_health` sections of `app/settings.yaml`, and your tests.
-**Backup:** C (you review C's PRs first, C reviews yours). **Reconciliation company:** Apple (AAPL).
+`app/src/checks/past.py`, `app/src/checks/health.py`, `app/src/forces.py` (five forces indicators and suggested
+ratings), `docs/benchmarks.md`, the `benchmarks`, `past_performance`, `financial_health` and `forces` sections of
+`app/settings.yaml`, and your tests.
+**Backup:** C, Flo (you review Flo's PRs first, Flo reviews yours). **Reconciliation company:** Apple (AAPL).
 
 ## Your slices, in order
 
@@ -17,7 +18,8 @@ industry files in `app/data/` (`benchmarks_us_2026.csv`, `industry_lookup_us_202
 | Sat 21–Sun 22 | S6: financial health checks H1–H6, branch `b/S6-health-checks` | Same |
 | Thu 19 → Wed 25 | S4: extraction script, benchmark CSV, industry lookup and fallback table, branch `b/S4-benchmarks` | Loader tests; three benchmark values and three company-to-group matches compared by hand with the source files |
 | Mon 23–Wed 25 | S9 with C: switch on P4 and P5 | SPEC Appendix A values reproduced |
-| Thu 26 | S12 with D: industry inputs for the five forces panel | D's indicator tests pass |
+| Thu 26 | S12: five forces indicators and suggested ratings in `app/src/forces.py` (SPEC §9), branch `b/S12-five-forces`; Simon (D) shows them on screen | Indicator tests pass; override survives recalculation |
+| Sat 21–Sun 29 | **Business plan section:** users, market and alternatives, in `docs/business-plan/sections/B-market.md` (Emma, E, assembles the plan; prompt in `docs/members/README.md`) | Draft by Sun 22; final by Sun 29 |
 | Fri 27–Sun 29 | S18, break-it round: a member from another area reviews your code read-only; you break each of your formulas once on purpose and record each break and the test that caught it in `docs/testing.md` | Every finding is a failing test or a written dismissal |
 
 **Slice prompt** (replace the slice, sections and branch):
@@ -29,7 +31,7 @@ industry files in `app/data/` (`benchmarks_us_2026.csv`, `industry_lookup_us_202
 > folders.
 
 Sections per slice: S5 → §5, §7 (past performance), §11; S6 → §5, §7 (financial health), §11; S4 → §4, §9.1, §11
-and `docs/benchmarks.md`.
+and `docs/benchmarks.md`; S12 → §9, §11.
 
 **How to sign off (S0c):** recalculate your rows on paper or in Excel, then post a review comment on
 [PR #5](https://github.com/BossToGo/filing-scorecard/pull/5): the rows, the date, how you calculated, and any
@@ -59,7 +61,7 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
 3. **Reconciliation (S15), Apple:** revenue, operating income, net income, total assets, operating cash flow,
    dividends paid, read by hand from the latest 10-K with page and accession number. Not by the assistant.
 4. **Decide** Q3 (H4 when equity is negative) and Q1 (missing versus nil, with C and A): see `docs/plan.md`.
-5. **Explain-back** on each PR; at least two reviews a week, C's first.
+5. **Explain-back** on each PR; at least two reviews a week, Flo's (C) first.
 6. **Before the presentation:** five likely questions and answers on your area to E (Sun 29); walk-through (Mon 30).
 
 ## If you are blocked

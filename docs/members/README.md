@@ -5,11 +5,11 @@ One page per member: what you own, what you do and when, and the exact prompts t
 
 | Member | Guide | Area in one line |
 |---|---|---|
-| A | [member-A.md](member-A.md) | Repository, CI, shared data shapes, SEC data layer, demo data, releases |
-| B | [member-B.md](member-B.md) | Industry benchmarks, past performance and financial health checks |
-| C | [member-C.md](member-C.md) | Dividend and valuation checks, valuation engine, Excel cross-check |
-| D | [member-D.md](member-D.md) | Interface, gates, demo mode with A, Excel export, five forces, app tests |
-| E | [member-E.md](member-E.md) | Business plan, slides, README, check texts, AI-usage report, question bank |
+| A, Igor (@BossToGo) | [member-A.md](member-A.md) | Repository, CI, shared data shapes, SEC data layer, demo data, releases |
+| B, Greg (@Greg3334444) | [member-B.md](member-B.md) | Industry benchmarks, past performance and financial health checks, five forces indicators |
+| C, Flo (@florian-spitzer) | [member-C.md](member-C.md) | Dividend and valuation checks, valuation engine, Excel cross-check |
+| D, Simon (@Simonarmengaud) | [member-D.md](member-D.md) | Interface, gates, demo mode with A, five forces panel, app tests |
+| E, Emma (@EmmaRiggi) | [member-E.md](member-E.md) | Excel export (code), business plan, slides, README, check texts, AI-usage report, question bank |
 
 ## Every work session, the same seven steps
 
@@ -30,6 +30,15 @@ One page per member: what you own, what you do and when, and the exact prompts t
 > Show me the diff. After my OK, commit under my git identity, push, and open the pull request with the template.
 > Leave the Explain-back for me. If git reports a conflict in docs/plan.md or AI-USAGE.md, keep both versions'
 > rows.
+
+**Business plan section (everyone writes one; the topic is in your guide):**
+
+> I am member [letter], writing my business plan section "[topic]" in
+> docs/business-plan/sections/[letter]-[topic].md. Read AGENTS.md, SPEC.md sections 1 and 17, docs/product.md and
+> my guide in docs/members/. Use only facts from these files and from sources I give you. Invent no figure,
+> statistic, source or quote (SPEC rule 14.17): write [source needed] where one is missing, and label every
+> estimate with how it was derived. Use the branch [letter]/S20-bp-[topic] from the latest main. Change no other
+> file.
 
 **Reviewing a teammate's pull request (at least two a week, from other areas):**
 

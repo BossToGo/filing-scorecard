@@ -37,7 +37,7 @@ filing-scorecard/
     │   ├── benchmarks/       benchmark loader, industry map (B)
     │   ├── checks/           past.py, health.py (B); dividend.py, valuation.py (C)
     │   ├── valuation/        cost of capital, forecast, terminal value, reverse DCF, sensitivity (C)
-    │   ├── forces.py  gates.py  export.py   (D)
+    │   ├── forces.py (B)  gates.py (D)  export.py (E)
     ├── scripts/              extract_benchmarks.py (B); coverage.py (A)
     ├── data/                 benchmarks_us_2026.csv, industry_lookup_us_2026.csv, sic_to_damodaran.csv (B);
     │                         universe.csv (A)
@@ -126,3 +126,4 @@ filing-scorecard/
 | 2026-11-18 | Valuation area kept despite overlap with the session 5 demo (§16.3) | [to confirm with the instructor] | – |
 | 2026-11-18 | **Delegation.** Igor delegates to Claude Code the routine decisions, commits and pushes on his own branches, and opening pull requests and issues for member A's work (S0, S0b, S0c, S1, S2, S3, S14, release checks). Not covered (`AGENTS.md` rule 1): scope changes, expected values, accepting a blocker or major risk, money, personal data, secrets. Merges need a teammate's approval; explain-back paragraphs are written by Igor | Speed for the foundation the others depend on | Igor |
 | 2026-11-18 | Scope and architecture agreed | Product interview run from SPEC; only §16 asked | Igor; group by reviewing this PR |
+| 2026-11-18 | Names and roles: A Igor, B Greg, C Flo, D Simon, E Emma. The Excel export (S13, `app/src/export.py`) moves from D to E; the five forces indicators (`app/src/forces.py`) move from D to B, D keeps the panel on screen; each member writes one business plan section | Every member contributes code (session 1, slide 10); D had the most slices | Igor; group by approving SPEC v2.2 (PR #3) |

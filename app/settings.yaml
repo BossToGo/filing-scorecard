@@ -111,4 +111,4 @@ gates:  # owner D (SPEC §10)
     value: 10
     reason: "Warn when the industry group has fewer than 10 firms (SPEC §10)"
 
-forces: {}  # owner D: thresholds for the low / medium / high ratings, set in slice S12 (SPEC §9)
+forces: {}  # owner B: thresholds for the low / medium / high ratings, set in slice S12 (SPEC §9)

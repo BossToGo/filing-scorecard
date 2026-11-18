@@ -1,8 +1,8 @@
-# Member C: [name] ([@github])
+# Member C: Flo (@florian-spitzer)
 
 **You own:** `app/src/checks/dividend.py`, `app/src/checks/valuation.py`, `app/src/valuation/`, the separate Excel
 cross-check model in `docs/crosscheck/`, the `dividend` and `valuation` sections of `app/settings.yaml`, and your
-tests. **Backup:** B (you review B's PRs first, B reviews yours). **Reconciliation company:** Nvidia (NVDA).
+tests. **Backup:** B, Greg (you review Greg's PRs first, Greg reviews yours). **Reconciliation company:** Nvidia (NVDA).
 
 ## Your slices, in order
 
@@ -14,6 +14,7 @@ tests. **Backup:** B (you review B's PRs first, B reviews yours). **Reconciliati
 | Thu 19 → Wed 25 | S8: cost of capital, forecast, terminal value, reverse DCF, sensitivity, branch `c/S8-valuation-engine` | Matches your Excel model and Appendix A; property tests pass |
 | Sat 21–Sun 22 | S7: dividend checks D1–D6 (D2 "not assessed" until S4 and a share price), branch `c/S7-dividend-checks` | Appendix A values reproduced; edge cases tested |
 | Mon 23–Wed 25 | S9 with B: valuation checks V1–V6; switch on D2, branch `c/S9-valuation-checks` | Appendix A values reproduced |
+| Sat 21–Sun 29 | **Business plan section:** business model, in `docs/business-plan/sections/C-business-model.md` (Emma, E, assembles the plan; prompt in `docs/members/README.md`) | Draft by Sun 22; final by Sun 29 |
 | Fri 27–Sun 29 | S18, break-it round: a member from another area reviews your code read-only; you break each of your formulas once on purpose and record each break and the test that caught it in `docs/testing.md` | Every finding is a failing test or a written dismissal |
 
 **Slice prompt** (replace the slice, sections and branch):
@@ -56,7 +57,7 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
    dividends paid, read by hand from the latest 10-K with page and accession number. Not by the assistant.
 4. **Decide** Q4 (reverse DCF for loss-making companies) and Q1 (missing versus nil, with B and A); prepare the
    answer to Q6 (why terminal growth barely moves the sensitivity table) for the presentation.
-5. **Explain-back** on each PR; at least two reviews a week, B's first.
+5. **Explain-back** on each PR; at least two reviews a week, Greg's (B) first.
 6. **Before the presentation:** five likely questions and answers on your area to E (Sun 29); walk-through (Mon 30).
 
 ## If you are blocked

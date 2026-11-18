@@ -1,9 +1,8 @@
-# Member D: [name] ([@github])
+# Member D: Simon (@Simonarmengaud)
 
-**You own:** `app/main.py`, `app/ui/` (except `texts.yaml`, which is E's), `app/src/forces.py`,
-`app/src/gates.py`, `app/src/export.py`, `app/tests/app/`, the `gates` and `forces` sections of
-`app/settings.yaml`. **Backup:** A (you review A's PRs first, A reviews yours; you run the release check if A
-cannot). **Reconciliation company:** McDonald's (MCD).
+**You own:** `app/main.py`, `app/ui/` (except `texts.yaml`, which is Emma's), including the five forces panel on
+screen, `app/src/gates.py`, `app/tests/app/`, the `gates` section of `app/settings.yaml`. **Backup:** A, Igor (you
+review Igor's PRs first, Igor reviews yours; you run the release check if Igor cannot). **Reconciliation company:** McDonald's (MCD).
 
 ## Your slices, in order
 
@@ -15,8 +14,9 @@ cannot). **Reconciliation company:** McDonald's (MCD).
 | Sat 21–Sun 22 | S11: gates (SPEC §10) and error messages, branch `d/S11-gates` | One test per stop and warn case |
 | Sat 21–Sun 22 | S14 with A: demo mode on the five saved companies | App runs with the network off |
 | Mon 23–Wed 25 | S10b: share price input, valuation detail, industry with route and number of firms, override dropdown | App test finds the fair value of the synthetic company |
-| Mon 23–Wed 25 | S13: Excel export (report, figures, sources) | Export reopened by a test; figures equal the screen |
-| Thu 26 | S12 with B: five forces panel (SPEC §9); S17: end-to-end app test | Override survives recalculation; S17 passes twice in a row on GitHub |
+| Mon 23–Wed 25 | "Download Excel" button that calls Emma's export (S13, `app/src/export.py`) | The button downloads the file Emma's test checks |
+| Thu 26 | S12 with B: the five forces panel on screen, showing Greg's indicators from `app/src/forces.py` (SPEC §9); S17: end-to-end app test | Override survives recalculation; S17 passes twice in a row on GitHub |
+| Sat 21–Sun 29 | **Business plan section:** the solution, with screenshots, in `docs/business-plan/sections/D-solution.md` (Emma, E, assembles the plan; prompt in `docs/members/README.md`) | Draft by Sun 22; final by Sun 29 |
 | Fri 27–Sun 29 | S18, break-it round: a member from another area reviews your code read-only; you break each of your formulas once on purpose and record each break and the test that caught it in `docs/testing.md` | Every finding is a failing test or a written dismissal |
 
 **Slice prompt** (replace the slice, sections and branch):
@@ -27,7 +27,7 @@ cannot). **Reconciliation company:** McDonald's (MCD).
 > skill for the screens. Plan this slice only, name the files you will touch and the tests you will write first,
 > and wait for my go-ahead. I will give you the expected values. Do not change files outside my folders.
 
-Sections per slice: S10 → §3, §5.1, §11; S11 → §10; S10b → §3, §8, §9.1; S13 → §3 item 8; S12 → §9; S17 → §15.
+Sections per slice: S10 → §3, §5.1, §11; S11 → §10; S10b → §3, §8, §9.1; S12 → §9; S17 → §15.
 
 **How to sign off (S0c):** recalculate your rows on paper or in Excel, then post a review comment on
 [PR #5](https://github.com/BossToGo/filing-scorecard/pull/5): the rows, the date, how you calculated, and any
@@ -57,9 +57,9 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
 2. **Look at the screens yourself** at laptop width before each PR (tests do not show what the page looks like).
 3. **Reconciliation (S15), McDonald's:** revenue, operating income, net income, total assets, operating cash flow,
    dividends paid, read by hand from the latest 10-K with page and accession number. Not by the assistant.
-4. **Demo safety (risk R8):** with E, record the fallback demo video on Mon 30; keep a second laptop with the
+4. **Demo safety (risk R8):** with Emma (E), record the fallback demo video on Mon 30; keep a second laptop with the
    repository cloned.
-5. **Explain-back** on each PR; at least two reviews a week, A's first.
+5. **Explain-back** on each PR; at least two reviews a week, Igor's (A) first.
 6. **Before the presentation:** five likely questions and answers on your area to E (Sun 29); walk-through (Mon 30).
 
 ## If you are blocked
