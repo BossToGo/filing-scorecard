@@ -11,7 +11,7 @@ review Igor's PRs first, Igor reviews yours; you run the release check if Igor c
 | Wed 18 | Accept the invitation; your `docs/team.md` PR (steps in `docs/team.md`) | Merged |
 | Thu 19 | **Sign-off for S0c:** recalculate AC3 and AC6 of `docs/acceptance.md` (the tier 1 scores of the synthetic company, and the cash override) | Your sign-off comment on PR #5 |
 | Thu 19 → Sun 22 | S10: input bar, header, score chart, expandable checks, sources page, overrides; start on the synthetic company, then on real data after A's S2. Branch `d/S10-interface` | `streamlit run` works; an app test opens the synthetic company and finds a known score |
-| Sat 21–Sun 22 | S11: gates (SPEC §10) and error messages, branch `d/S11-gates` | One test per stop and warn case |
+| Sat 21–Sun 22 | S11: gates (SPEC §10) and error messages, including E4 (SEC unreachable), branch `d/S11-gates` | One test per stop and warn case |
 | Sat 21–Sun 22 | S14 with A: demo mode on the five saved companies | App runs with the network off |
 | Mon 23–Wed 25 | S10b: share price input, valuation detail, industry with route and number of firms, override dropdown | App test finds the fair value of the synthetic company |
 | Mon 23–Wed 25 | "Download Excel" button that calls Emma's export (S13, `app/src/export.py`) | The button downloads the file Emma's test checks |
@@ -42,6 +42,15 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
 - **Thresholds:** `from src.settings import load_settings`, then `load_settings()["gates"]["stale_report_months"]` gives 15 (PR #7).
   Never hard-code a threshold; a misspelt name raises a `KeyError` naming the section.
 - Never import `src.data.sec_client`: only A's data layer talks to the SEC; your code receives `CompanyData`.
+- **Loading a company** (PR #8): `from src.data.company import load_company`, then
+  `load_company("MCD", demo=True)` gives `CompanyData` from the saved files, with no network (`DEMO_TICKERS`:
+  KO, AAPL, NVDA, MCD, AMZN). The latest fiscal year is `data.fiscal_years("revenue")[-1]`. Shares come from
+  `data.latest("shares")`, never `data.fact("shares", fy0)`, which is None by design (plan Q12). A `missing`
+  figure has value None and its reason in `.note`; a `derived` one has its formula and sources in `.note`.
+- **Warnings for your gates (S11):** `data.warnings` holds strings "CODE: message", with the codes RESTATED,
+  TAG_CONFLICT, NON_USD, FY_CHANGE, DERIVED, DEBT_CHECK, DEBT_INCOMPLETE, AVERAGE_SHARES, SIGN and NO_ANNUAL_DATA.
+  JPMorgan loads with its header only (SEC industry code 6021), so your gate refuses it by industry code.
+  Acceptance E4 is yours: `load_company` raises `SourceUnreachable`; show its message and suggest demo mode.
 - **SEC errors for your messages (S11)**, all subclasses of `SecError` in `src.data.sec_client` (PR #7);
   each message already says how to fix the problem: `SourceUnreachable` is temporary (the figure becomes
   missing, suggest demo mode); `MissingUserAgent` and `SecRefused` mean fix `app/.env` or wait;

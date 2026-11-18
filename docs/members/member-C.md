@@ -40,6 +40,13 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
 - **Thresholds:** `from src.settings import load_settings`, then `load_settings()["dividend"]["max_payout_ratio"]` gives 0.90 (PR #7).
   Never hard-code a threshold; a misspelt name raises a `KeyError` naming the section.
 - Never import `src.data.sec_client`: only A's data layer talks to the SEC; your code receives `CompanyData`.
+- **Loading a company** (PR #8): `from src.data.company import load_company`, then
+  `load_company("MCD", demo=True)` gives `CompanyData` from the saved files, with no network (`DEMO_TICKERS`:
+  KO, AAPL, NVDA, MCD, AMZN). The latest fiscal year is `data.fiscal_years("revenue")[-1]`. Shares come from
+  `data.latest("shares")`, never `data.fact("shares", fy0)`, which is None by design (plan Q12). A `missing`
+  figure has value None and its reason in `.note`; a `derived` one has its formula and sources in `.note`.
+- **Real cases for your edge-case tests:** Amazon's dividends paid are `missing` (no tag at all; Q1 decides what
+  D1 shows); McDonald's equity is negative (USD −1,791 million at FY2025), so V5 fails with "negative equity".
 - Use the line-item names in `LINE_ITEMS` and the units in `UNITS` from `app/src/contracts.py` (e.g.
   `net_income`; amounts stay in USD as filed, never millions).
 - "Not assessed" (D2 until S4 and a share price) is the status `insufficient_data` with the reason in the explanation
