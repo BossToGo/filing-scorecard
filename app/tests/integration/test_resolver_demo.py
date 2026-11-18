@@ -9,11 +9,12 @@ Known answers, each from a cited source:
   on the balance sheet.
 """
 
+import json
 from datetime import date
 
 import pytest
 
-from src.data.company import DEMO_TICKERS, load_company
+from src.data.company import DEMO_DIR, DEMO_TICKERS, load_company
 
 KO = load_company("KO", demo=True)
 
@@ -43,15 +44,25 @@ def test_coca_cola_2018_revenue_restatement_as_shown_in_session_5():
 
 def test_a_comparative_labelled_with_a_later_fiscal_year_lands_in_its_own_year():
     # SPEC §5.3.2: Coca-Cola's FY2022 cash flow also appears in later 10-Ks, labelled with their fiscal year.
+    # Expected value found here directly in the raw file, independently of the resolver: the latest-filed annual
+    # entry for the period 2022-01-01 to 2022-12-31.
+    raw = json.loads((DEMO_DIR / "KO" / "companyfacts.json").read_text(encoding="utf-8"))
+    entries = [e for e in raw["facts"]["us-gaap"]["NetCashProvidedByUsedInOperatingActivities"]["units"]["USD"]
+               if e.get("start") == "2022-01-01" and e["end"] == "2022-12-31"]
+    assert any(e["fy"] != 2022 for e in entries)  # the trap is really in the data
+    expected = max(entries, key=lambda e: e["filed"])
     fact = KO.fact("operating_cash_flow", date(2022, 12, 31))
-    assert fact.kind == "reported" and fact.period_end == date(2022, 12, 31)
+    assert (fact.value, fact.accession) == (expected["val"], expected["accn"])
 
 
-def test_mcdonalds_debt_does_not_count_commercial_paper_twice():
+@pytest.mark.parametrize("year, debt, current", [(2025, 39_973, 0), (2024, 38_424, 0), (2023, 39_345, 2_192)])
+def test_mcdonalds_debt_matches_its_balance_sheets(year, debt, current):
+    # McDonald's balance sheets, USD million. 10-K filed 2026-02-24 (0000063908-26-000035): long-term debt 39,973
+    # (2025) and 38,424 (2024), no current debt line. 10-K filed 2025-02-25 (0000063908-25-000012): short-term
+    # borrowings and current maturities 2,192 (2023), long-term debt 37,153 (2023): 37,153 + 2,192 = 39,345.
     mcd = load_company("MCD", demo=True)
-    debt = mcd.fact("financial_debt", date(2025, 12, 31))
-    assert millions(debt) == 39_973  # LongTermDebtNoncurrent = LongTermDebt on the balance sheet
-    assert "inside" in mcd.fact("current_financial_debt", date(2025, 12, 31)).note
+    assert millions(mcd.fact("financial_debt", date(year, 12, 31))) == debt
+    assert millions(mcd.fact("current_financial_debt", date(year, 12, 31))) == current
 
 
 def test_mcdonalds_depreciation_is_the_cash_flow_statement_total():
@@ -95,7 +106,7 @@ def test_every_demo_company_resolves_five_fiscal_years(ticker):
     assert len(years) == 5
     for metric in ("revenue", "net_income", "total_assets", "operating_cash_flow"):
         assert data.fact(metric, years[-1]).kind == "reported", metric
-    assert data.fiscal_years("shares"), "a share count"
+    assert data.latest("shares").kind == "reported", "a cover-page share count"
 
 
 def test_jpmorgan_loads_with_its_industry_code_so_it_can_be_refused():

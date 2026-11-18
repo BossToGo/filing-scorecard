@@ -6,25 +6,26 @@
 Turns the SEC's company facts into `CompanyData`: for each line item of `tag_map.yaml` and each of the latest
 `fiscal_years` fiscal years (settings.yaml), one `Fact` with its source. Pure: no network. The rules of SPEC §5.3:
 1. only Form 10-K and 10-K/A; a flow covers 350 to 380 days (53-week years kept; nine months never read as a year);
-2. the fiscal year comes from the period end date, never from the `fy` label;
+2. the fiscal year comes from the period end date, never from the `fy` label; after a change of fiscal year end,
+   a 12-month period overlapping a later fiscal year is left out (FY_CHANGE);
 3. balances are taken at the fiscal year end date itself;
-4. a period filed several times: the latest filing is used, the original is kept in the note, a difference above
-   1% is a warning;
+4. a period filed several times: the latest filing is used (an amendment wins on the same day), the original of
+   the same period is kept in the note, a difference above 1% is a warning;
 5. only US dollars: a figure filed only in another currency is missing and flagged;
 6. nothing is added up from segments: no company-wide figure means `missing`;
-7. tags are tried in order for every fiscal year; two tags that disagree for one period are flagged.
-Amounts stay in USD exactly as filed. Missing figures are never zero and say why.
+7. tags are tried in order for every fiscal year; any other tag's different value is noted, above 1% flagged.
+Amounts stay in USD exactly as filed. Missing figures are never zero and say why; a derived figure with a missing
+input stays missing.
 
 Warnings in `CompanyData.warnings` start with a code, so the gates (slice S11) can act on them:
-RESTATED, TAG_CONFLICT, NON_USD, DERIVED, AVERAGE_SHARES, SIGN, NO_ANNUAL_DATA.
+RESTATED, TAG_CONFLICT, NON_USD, FY_CHANGE, DERIVED, DEBT_CHECK, DEBT_INCOMPLETE, AVERAGE_SHARES, SIGN,
+NO_ANNUAL_DATA.
 
-Shares are stored at their own date (the cover page of the latest annual report, a few weeks after the fiscal
-year end): use `data.fiscal_years("shares")[-1]` to find them.
+Shares are stored at their own date (the cover page of the latest annual report): use `data.latest("shares")`.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import date, datetime
 from functools import lru_cache
 from pathlib import Path
@@ -53,11 +54,13 @@ def _money(value: float) -> str:
     return f"{value:,.0f}"
 
 
-@dataclass(frozen=True)
-class _Pick:
-    tag: str
-    latest: dict
-    original: dict
+def _source(fact: Fact) -> str:
+    return f"{fact.tag} {_money(fact.value)} ({fact.accession})"
+
+
+def _order(e: dict) -> tuple:
+    """Filing order: later filing date first; on the same day an amendment after the original; then accession."""
+    return e["filed"], e.get("form") == "10-K/A", e["accn"]
 
 
 class _Resolver:
@@ -66,6 +69,7 @@ class _Resolver:
         self.us_gaap, self.dei = facts.get("us-gaap", {}), facts.get("dei", {})
         self.ticker, self.submissions, self.retrieved = ticker, submissions, retrieved
         self.settings, self.map = settings, tag_map
+        self.overrides = tag_map.get("overrides", {}).get(ticker, {})
         self.forms = set(settings["annual_forms"])
         self.years = years or settings["fiscal_years"]
         self.items: dict[str, dict[date, Fact]] = {}
@@ -92,37 +96,21 @@ class _Resolver:
             groups.setdefault(end, []).append(e)
         return groups
 
-    @staticmethod
-    def _pick(tag: str, entries: list[dict]) -> _Pick:
-        order = sorted(entries, key=lambda e: (e["filed"], e["accn"]))
-        return _Pick(tag, latest=order[-1], original=order[0])
-
-    def _other_currencies(self, tags: list[str], fy_end: date, kind: str) -> list[str]:
+    def _other_currencies(self, tags: list[str], kind: str, fy_end: date | None = None) -> list[str]:
         found = set()
         for tag in tags:
             for unit in self.us_gaap.get(tag, {}).get("units", {}):
-                if unit != "USD" and fy_end in self._annual(tag, kind, unit):
+                if unit != "USD" and (groups := self._annual(tag, kind, unit)) and (fy_end is None or fy_end in groups):
                     found.add(unit)
         return sorted(found)
 
-    # --- facts --------------------------------------------------------------------------------------------------
+    def spec(self, metric: str) -> dict:
+        """The line item's entry in tag_map.yaml, with a company override of its tag order if there is one."""
+        spec = self.map["line_items"][metric]
+        override = self.overrides.get(metric)
+        return {**spec, "tags": override["tags"], "override": override["reason"]} if override else spec
 
-    def _fact(self, metric, pick: _Pick, fy_end, kind, unit="USD", tag_label=None, note="") -> Fact:
-        e = pick.latest
-        return Fact(
-            metric=metric,
-            value=e["val"],
-            unit=unit,
-            period_start=date.fromisoformat(e["start"]) if kind == "flow" else None,
-            period_end=fy_end,
-            kind="reported",
-            tag=tag_label or pick.tag,
-            form=e["form"],
-            accession=e["accn"],
-            filed=date.fromisoformat(e["filed"]),
-            retrieved=self.retrieved,
-            note=note,
-        )
+    # --- facts --------------------------------------------------------------------------------------------------
 
     def _missing(self, metric, fy_end, reason, unit="USD") -> Fact:
         return Fact(metric, None, unit, None, fy_end, "missing", None, None, None, None, self.retrieved, reason)
@@ -130,82 +118,107 @@ class _Resolver:
     def _derived(self, metric, value, fy_end, formula, unit="USD") -> Fact:
         return Fact(metric, value, unit, None, fy_end, "derived", None, None, None, None, self.retrieved, formula)
 
-    def spec(self, metric: str) -> dict:
-        """The line item's entry in tag_map.yaml, with a company override of its tag order if there is one."""
-        spec = self.map["line_items"][metric]
-        override = self.map.get("overrides", {}).get(self.ticker, {}).get(metric)
-        return {**spec, "tags": override["tags"], "override": override["reason"]} if override else spec
-
-    def reported(self, metric: str, spec: dict, fy_end: date) -> Fact | None:
+    def reported(self, metric: str, spec: dict, fy_end: date, unit: str = "USD") -> Fact | None:
         """The first tag with an annual value for this fiscal year (rule 7), or None."""
-        kind, tags = spec["kind"], spec["tags"]
-        picks = [self._pick(tag, groups[fy_end]) for tag in tags
-                 if fy_end in (groups := self._annual(tag, kind))]
-        if not picks:
+        kind = spec["kind"]
+        candidates = []
+        for tag in spec["tags"]:
+            entries = self._annual(tag, kind, unit).get(fy_end)
+            if entries:
+                latest = max(entries, key=_order)
+                original = min((e for e in entries if e.get("start") == latest.get("start")), key=_order)
+                candidates.append((tag, latest, original))
+        if not candidates:
             return None
-        first, notes = picks[0], []
+        tag, latest, original = candidates[0]
+        value, notes = latest["val"], []
         if spec.get("override"):
             notes.append(f"company-specific tag order: {spec['override']}")
-        value = first.latest["val"]
-        if first.original is not first.latest and first.original["val"] != value:
-            original = first.original
+        if original is not latest and original["val"] != value:
             notes.append(f"restated: first filed {_money(original['val'])} ({original['accn']}, {original['filed']}), "
-                         f"latest {_money(value)} ({first.latest['accn']}, {first.latest['filed']})")
+                         f"latest {_money(value)} ({latest['accn']}, {latest['filed']})")
             if _relative_difference(value, original["val"]) > self.settings["restatement_warning"]:
                 self.warnings.append(f"RESTATED: {metric} {fy_end}: first filed {_money(original['val'])}, "
                                      f"now {_money(value)}; both on the sources page")
-        for other in picks[1:]:
-            other_value = other.latest["val"]
-            if _relative_difference(value, other_value) > self.settings["tag_conflict_warning"]:
-                notes.append(f"also filed under {other.tag}: {_money(other_value)}")
-                if not spec.get("override"):  # an override documents a known difference; no second warning
-                    self.warnings.append(f"TAG_CONFLICT: {metric} {fy_end}: {first.tag} {_money(value)} used, "
-                                         f"{other.tag} gives {_money(other_value)}")
+        for other_tag, other, _ in candidates[1:]:
+            if other["val"] != value:
+                notes.append(f"also filed under {other_tag}: {_money(other['val'])}")
+                if (_relative_difference(value, other["val"]) > self.settings["tag_conflict_warning"]
+                        and not spec.get("override")):  # an override documents a known difference
+                    self.warnings.append(f"TAG_CONFLICT: {metric} {fy_end}: {tag} {_money(value)} used, "
+                                         f"{other_tag} gives {_money(other['val'])}")
         if spec.get("outflow") and value < 0:
             self.warnings.append(f"SIGN: {metric} {fy_end} is negative ({_money(value)}); a payment is filed as a "
                                  "positive amount, check the filing")
-        return self._fact(metric, first, fy_end, kind, note="; ".join(notes))
+        return Fact(
+            metric=metric,
+            value=value,
+            unit=unit,
+            period_start=date.fromisoformat(latest["start"]) if kind == "flow" else None,
+            period_end=fy_end,
+            kind="reported",
+            tag=tag,
+            form=latest["form"],
+            accession=latest["accn"],
+            filed=date.fromisoformat(latest["filed"]),
+            retrieved=self.retrieved,
+            note="; ".join(notes),
+        )
 
-    def reported_or_missing(self, metric: str, spec: dict, fy_end: date) -> Fact:
+    def reported_or_missing(self, metric: str, spec: dict, fy_end: date, why_not_derived: str = "") -> Fact:
         fact = self.reported(metric, spec, fy_end)
         if fact is not None:
             return fact
-        currencies = self._other_currencies(spec["tags"], fy_end, spec["kind"])
+        currencies = self._other_currencies(spec["tags"], spec["kind"], fy_end)
         if currencies:
             self.warnings.append(f"NON_USD: {metric} {fy_end} is filed in {', '.join(currencies)}, not US dollars")
             return self._missing(metric, fy_end, f"filed in {', '.join(currencies)}, not US dollars (SPEC §5.3.5)")
-        return self._missing(metric, fy_end, f"no annual 10-K value under {', '.join(spec['tags'])} for the fiscal "
-                                             f"year ending {fy_end}")
+        reason = f"no annual 10-K value under {', '.join(spec['tags'])} for the fiscal year ending {fy_end}"
+        return self._missing(metric, fy_end, reason + (f"; {why_not_derived}" if why_not_derived else ""))
 
     # --- fiscal years -----------------------------------------------------------------------------------------
 
     def fiscal_year_ends(self) -> list[date]:
+        tags = [tag for metric in FISCAL_YEAR_ITEMS for tag in self.spec(metric)["tags"]]
         ends: set[date] = set()
-        for metric in FISCAL_YEAR_ITEMS:
-            for tag in self.map["line_items"][metric]["tags"]:
-                ends.update(self._annual(tag, "flow"))
-        return sorted(ends)[-self.years:]
+        for tag in tags:
+            ends.update(self._annual(tag, "flow"))
+        if not ends:
+            currencies = self._other_currencies(tags, "flow")
+            if currencies:
+                self.warnings.append(f"NON_USD: the company files its annual figures in {', '.join(currencies)}, not "
+                                     "US dollars, so it is not supported (SPEC §5.3.5)")
+            else:
+                self.warnings.append("NO_ANNUAL_DATA: no annual 10-K figures found")
+            return []
+        kept: list[date] = []
+        for end in sorted(ends, reverse=True):
+            if kept and (kept[-1] - end).days < self.settings["flow_period_min_days"]:
+                self.warnings.append(f"FY_CHANGE: the 12-month period ending {end} overlaps the fiscal year ending "
+                                     f"{kept[-1]}: the company changed its fiscal year end, so that period is left out")
+                continue
+            kept.append(end)
+            if len(kept) == self.years:
+                break
+        return sorted(kept)
 
     # --- the whole company ------------------------------------------------------------------------------------
 
     def run(self) -> CompanyData:
         fy_ends = self.fiscal_year_ends()
-        if not fy_ends:
-            self.warnings.append("NO_ANNUAL_DATA: no annual 10-K figures found")
-        line_items = self.map["line_items"]
         derived_used: dict[str, list[date]] = {}
         for fy_end in fy_ends:
-            for metric in line_items:
+            for metric in self.map["line_items"]:
                 spec = self.spec(metric)
                 if spec.get("bridge"):
                     continue
-                fact = self.reported(metric, spec, fy_end)
+                fact, why_not = self.reported(metric, spec, fy_end), ""
                 if fact is None:
-                    fact = self.derive(metric, fy_end)
-                    if fact is not None and fact.kind == "derived" and metric in ("gross_profit", "total_liabilities"):
+                    fact, why_not = self.derive(metric, fy_end)
+                    if fact is not None and metric in ("gross_profit", "total_liabilities"):
                         derived_used.setdefault(metric, []).append(fy_end)
                 if fact is None:
-                    fact = self.reported_or_missing(metric, spec, fy_end)
+                    fact = self.reported_or_missing(metric, spec, fy_end, why_not)
                 self.items.setdefault(metric, {})[fy_end] = fact
             debt, current = self.debt(fy_end)
             self.items.setdefault("financial_debt", {})[fy_end] = debt
@@ -217,95 +230,108 @@ class _Resolver:
             self.shares(fy_ends[-1])
         return self.company_data()
 
-    def derive(self, metric: str, fy_end: date) -> Fact | None:
-        """SPEC §6 derivations, used only when the line item is not reported. None if not derivable."""
+    def derive(self, metric: str, fy_end: date) -> tuple[Fact | None, str]:
+        """SPEC §6 derivations, used only when the line item is not reported: (fact, "") or (None, why not)."""
 
         def value(name):
             fact = self.items.get(name, {}).get(fy_end)
             return None if fact is None or fact.value is None else fact.value
 
+        def not_derivable(*names):
+            missing = [n for n in names if value(n) is None]
+            return None, f"not derivable: {' and '.join(missing)} missing"
+
         if metric == "gross_profit":
             revenue, cost = value("revenue"), value("cost_of_revenue")
-            if revenue is not None and cost is not None:
-                return self._derived(metric, revenue - cost, fy_end, "revenue − cost_of_revenue")
+            if revenue is None or cost is None:
+                return not_derivable("revenue", "cost_of_revenue")
+            return self._derived(metric, revenue - cost, fy_end, "revenue − cost_of_revenue"), ""
         if metric == "total_equity":
             equity = value("equity")
-            if equity is not None:
-                minority = self.reported("minority_interest", self.map["line_items"]["minority_interest"], fy_end)
-                if minority is not None:
-                    return self._derived(metric, equity + minority.value, fy_end,
-                                         "equity + minority_interest (MinorityInterest)")
-                return self._derived(metric, equity, fy_end,
-                                     "equity; no non-controlling interests reported, so none are added")
+            if equity is None:
+                return not_derivable("equity")
+            minority = self.reported("minority_interest", self.spec("minority_interest"), fy_end)
+            if minority is not None:
+                return self._derived(metric, equity + minority.value, fy_end,
+                                     f"equity + minority_interest ({_source(minority)})"), ""
+            return self._derived(metric, equity, fy_end,
+                                 "equity; no non-controlling interests reported, so none are added"), ""
         if metric == "total_liabilities":
             assets, total_equity = value("total_assets"), value("total_equity")
-            if assets is not None and total_equity is not None:
-                return self._derived(metric, assets - total_equity, fy_end, "total_assets − total_equity")
-        return None
+            if assets is None or total_equity is None:
+                return not_derivable("total_assets", "total_equity")
+            return self._derived(metric, assets - total_equity, fy_end, "total_assets − total_equity"), ""
+        return None, ""
 
     def debt(self, fy_end: date) -> tuple[Fact, Fact]:
-        """Financial debt and its current part (SPEC §6; plan Q5). Operating leases excluded."""
-        parts = self.map["debt"]
+        """Financial debt and its current part (SPEC §6; plan Q5; rules in tag_map.yaml). Operating leases out."""
+        parts, override = self.map["debt"], self.overrides.get("debt", {})
+        inside = override.get("short_term_inside_long_term_debt", False)
 
-        def first(tags):
-            for tag in tags:
-                groups = self._annual(tag, "instant")
-                if fy_end in groups:
-                    return tag, self._pick(tag, groups[fy_end]).latest["val"]
-            return None, None
+        def part(label, tags):
+            return self.reported(f"financial_debt ({label})", {"kind": "instant", "tags": tags}, fy_end)
 
-        nc_tag, noncurrent = first(parts["long_term_noncurrent"])
-        cur_tag, current = first(parts["long_term_current"])
-        total_tag, total = first(parts["long_term_total"])
-        st_tag, short_total = first(parts["short_term_total"])
-        short_parts = [(tag, v) for tag in parts["short_term_parts"] for t, v in [first([tag])] if v is not None]
-        if all(v is None for v in (noncurrent, current, total, short_total)) and not short_parts:
-            reason = "no debt tag in the annual report (" + ", ".join(
-                [*parts["long_term_noncurrent"], *parts["long_term_total"], *parts["short_term_total"]]) + ")"
-            return self._missing("financial_debt", fy_end, reason), self._missing("current_financial_debt", fy_end,
-                                                                                  reason)
-        if noncurrent is not None and total is not None and \
-                _relative_difference(total, noncurrent) <= self.settings["debt_inside_tolerance"]:
-            note = (f"{nc_tag} {_money(noncurrent)} equals {total_tag} {_money(total)}: current maturities and "
-                    "short-term borrowings are classified inside long-term debt, so nothing more is added")
-            return (self._derived("financial_debt", noncurrent, fy_end, note),
-                    self._derived("current_financial_debt", 0, fy_end,
-                                  "0: current maturities and short-term borrowings are classified inside long-term debt"))
-        terms, current_terms = [], []
-        if noncurrent is not None:
-            long_term = noncurrent + (current or 0)
-            terms.append(f"{nc_tag} {_money(noncurrent)}")
-            if current is not None:
-                terms.append(f"{cur_tag} {_money(current)}")
-                current_terms.append((f"{cur_tag} {_money(current)}", current))
-            else:
-                terms.append("no current portion reported")
-        elif total is not None:
-            long_term = total
-            terms.append(f"{total_tag} {_money(total)}")
-            if current is not None:
-                current_terms.append((f"{cur_tag} {_money(current)}", current))
+        noncurrent = part("non-current", parts["long_term_noncurrent"])
+        current = part("current maturities", parts["long_term_current"])
+        total = part("total long-term", parts["long_term_total"])
+        short_total = part("short-term borrowings", parts["short_term_total"])
+        short_parts = [f for tag in parts["short_term_parts"] if (f := part(tag, [tag])) is not None]
+
+        notes = [f"company-specific: {override['reason']}"] if inside else []
+        if total is not None:
+            long_term = total.value
+            notes.append(_source(total))
+            if noncurrent is not None and current is not None and not inside:
+                parts_sum = noncurrent.value + current.value
+                if _relative_difference(total.value, parts_sum) > self.settings["debt_check_warning"]:
+                    self.warnings.append(f"DEBT_CHECK: {fy_end}: total long-term debt {_money(total.value)} differs "
+                                         f"from non-current + current {_money(parts_sum)}; check the 10-K")
+        elif noncurrent is not None and current is not None:
+            long_term = noncurrent.value + current.value
+            notes += [_source(noncurrent), _source(current)]
+        elif noncurrent is not None:
+            long_term = noncurrent.value
+            notes += [_source(noncurrent), "no current portion reported"]
+            self.warnings.append(f"DEBT_INCOMPLETE: {fy_end}: no current portion of long-term debt reported; debt "
+                                 "may be understated")
         else:
-            long_term = current or 0
-            if current is not None:
-                terms.append(f"{cur_tag} {_money(current)}")
-                current_terms.append((f"{cur_tag} {_money(current)}", current))
-        if short_total is not None:
-            short_term = short_total
-            terms.append(f"{st_tag} {_money(short_total)}")
-            current_terms.append((f"{st_tag} {_money(short_total)}", short_total))
+            long_term = None
+
+        if inside and total is not None and noncurrent is not None:
+            maturities, maturities_note = total.value - noncurrent.value, \
+                f"current debt on the balance sheet = {total.tag} − {noncurrent.tag}"
+        elif current is not None:
+            maturities, maturities_note = current.value, _source(current)
+        elif total is not None and noncurrent is not None:
+            maturities, maturities_note = total.value - noncurrent.value, f"{total.tag} − {noncurrent.tag}"
         else:
-            short_term = sum(v for _, v in short_parts)
-            for tag, v in short_parts:
-                terms.append(f"{tag} {_money(v)}")
-                current_terms.append((f"{tag} {_money(v)}", v))
-        debt = self._derived("financial_debt", long_term + short_term, fy_end, " + ".join(terms))
-        current_value = sum(v for _, v in current_terms)
-        current_note = " + ".join(t for t, _ in current_terms) or "no current debt reported"
-        return debt, self._derived("current_financial_debt", current_value, fy_end, current_note)
+            maturities, maturities_note = None, ""
+
+        if inside:
+            short_term, short_notes = 0, ["short-term borrowings classified inside long-term debt"]
+        elif short_total is not None:
+            short_term, short_notes = short_total.value, [_source(short_total)]
+        elif short_parts:
+            short_term, short_notes = sum(f.value for f in short_parts), [_source(f) for f in short_parts]
+        else:
+            short_term, short_notes = 0, ["no short-term borrowings reported"]
+
+        if long_term is None:
+            found = [_source(f) for f in [short_total, *short_parts, current] if f is not None]
+            reason = ("no long-term debt tag (" + ", ".join([*parts["long_term_total"], *parts["long_term_noncurrent"]])
+                      + ")" + (f"; found only {', '.join(found)}, which alone would understate debt" if found else ""))
+            return (self._missing("financial_debt", fy_end, reason),
+                    self._missing("current_financial_debt", fy_end, reason))
+        debt = self._derived("financial_debt", long_term + short_term, fy_end, " + ".join(notes + short_notes))
+        if maturities is None:
+            return debt, self._missing("current_financial_debt", fy_end,
+                                       "current maturities of long-term debt not reported")
+        return debt, self._derived("current_financial_debt", maturities + short_term, fy_end,
+                                   " + ".join([maturities_note, *short_notes]))
 
     def bridge_items(self, fy0: date) -> None:
-        for metric, spec in self.map["line_items"].items():
+        for metric in self.map["line_items"]:
+            spec = self.spec(metric)
             if not spec.get("bridge"):
                 continue
             fact = self.reported(metric, spec, fy0) or Fact(
@@ -317,18 +343,18 @@ class _Resolver:
         tags = self.map["shares"]
         cover = [e for entries in self._annual(tags["cover_tag"], "instant", "shares", "dei").values() for e in entries]
         if cover:
-            pick = self._pick(tags["cover_tag"], cover)
-            when = date.fromisoformat(pick.latest["end"])
-            self.items["shares"] = {when: self._fact("shares", pick, when, "instant", unit="shares",
-                                                     tag_label=f"dei:{tags['cover_tag']}",
-                                                     note="cover page of the latest annual report")}
+            latest = max(cover, key=_order)
+            when = date.fromisoformat(latest["end"])
+            self.items["shares"] = {when: Fact(
+                "shares", latest["val"], "shares", None, when, "reported", f"dei:{tags['cover_tag']}", latest["form"],
+                latest["accn"], date.fromisoformat(latest["filed"]), self.retrieved,
+                "cover page of the latest annual report")}
             return
-        average = self._annual(tags["average_tag"], "flow", "shares")
-        if fy0 in average:
-            pick = self._pick(tags["average_tag"], average[fy0])
+        average = self.reported("shares", {"kind": "flow", "tags": [tags["average_tag"]]}, fy0, unit="shares")
+        if average is not None:
             self.items["shares"] = {fy0: self._derived(
-                "shares", pick.latest["val"], fy0, f"diluted weighted average of the fiscal year "
-                f"({tags['average_tag']}, {pick.latest['accn']}), not a period-end count", unit="shares")}
+                "shares", average.value, fy0, f"diluted weighted average of the fiscal year ({_source(average)}), "
+                "not a period-end count", unit="shares")}
             self.warnings.append("AVERAGE_SHARES: the share count is the diluted average of the fiscal year, not a "
                                  "period-end figure")
             return

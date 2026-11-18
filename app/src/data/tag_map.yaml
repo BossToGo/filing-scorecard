@@ -88,10 +88,15 @@ line_items:
     tags: [EquityMethodInvestments]
 
 # Financial debt (SPEC §6), built by the resolver from these parts; operating leases are excluded.
+# 1. Long-term debt including current maturities: the reported total if there is one (it avoids counting a
+#    current part twice when a company classifies it inside long-term debt, as McDonald's does), else
+#    non-current + current. A total that differs from its parts by more than 1% is flagged (DEBT_CHECK).
+# 2. Short-term borrowings: ShortTermBorrowings if reported (commercial paper assumed inside it), else commercial
+#    paper + other short-term borrowings; none reported means none. Not added when a cited company override says
+#    they are classified inside long-term debt.
+# 3. No long-term debt tag at all: debt is missing (short-term borrowings alone would understate it).
 # Coca-Cola's long-term debt tags changed in 2024 to the ...CapitalLeaseObligations names (identical values in
-# 2023, S0b). McDonald's classifies its commercial paper and current maturities inside long-term debt (10-K filed
-# 2026-02-24, Debt Financing note): when the total long-term debt equals the non-current part, nothing more is
-# added, so nothing is counted twice (plan Q5).
+# 2023, S0b); those include finance leases, the others do not (plan Q5).
 debt:
   long_term_noncurrent: [LongTermDebtNoncurrent, LongTermDebtAndCapitalLeaseObligations]
   long_term_current: [LongTermDebtCurrent, LongTermDebtAndCapitalLeaseObligationsCurrent]
@@ -109,6 +114,14 @@ overrides:
         McDonald's files its cash flow statement total (2,199 million in 2025) under DepreciationAndAmortization and
         only the part inside SG&A (457 million) under DepreciationDepletionAndAmortization; 10-K filed 2026-02-24,
         accession 0000063908-26-000035
+    debt:
+      short_term_inside_long_term_debt: true
+      reason: >-
+        McDonald's classifies its commercial paper and current maturities inside long-term debt when it intends and
+        is able to refinance them ("$798 million of short-term borrowings and $725 million of current maturities
+        ... were classified as Long-term debt"; 10-K filed 2026-02-24, accession 0000063908-26-000035); current debt
+        on its balance sheet is long-term debt minus its non-current part (2,192 million at 2023-12-31, 10-K filed
+        2025-02-25, accession 0000063908-25-000012)
 
 # Shares (SPEC §6): the cover-page count of the latest annual report, else the diluted weighted average of the
 # latest fiscal year (derived, with a warning).
