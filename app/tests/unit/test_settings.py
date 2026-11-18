@@ -30,9 +30,31 @@ def test_every_setting_has_a_value_and_a_reason():
     assert not problems, "\n".join(problems)
 
 
+RATES = {  # every setting that is a rate or a share: a decimal strictly between 0 and 1
+    "data": ["restatement_warning"],
+    "financial_health": ["max_net_debt_to_equity", "min_operating_cash_flow_to_debt"],
+    "dividend": ["max_dividend_cut", "max_payout_ratio"],
+    "valuation": [
+        "equity_risk_premium",
+        "tax_rate",
+        "cost_of_debt_max_spread",
+        "cost_of_debt_default_spread",
+        "terminal_growth_cap",
+        "sensitivity_range",
+        "sensitivity_step",
+        "well_below_fair_value",
+    ],
+    "gates": ["balance_sheet_tolerance", "terminal_value_share_warning"],
+}
+
+
 def test_rates_are_decimals_not_percentages():
     # SPEC §5.4: percent against decimal is a planted mistake. 40% is written 0.40.
-    for name in ("max_net_debt_to_equity", "min_operating_cash_flow_to_debt"):
-        assert 0 < load()["financial_health"][name]["value"] < 1
-    for name in ("equity_risk_premium", "tax_rate", "terminal_growth_cap"):
-        assert 0 < load()["valuation"][name]["value"] < 1
+    settings = load()
+    for section, names in RATES.items():
+        for name in names:
+            assert 0 < settings[section][name]["value"] < 1, f"{section}.{name} must be a decimal, e.g. 0.40 for 40%"
+    valuation = settings["valuation"]
+    assert -1 < valuation["reverse_dcf_min_growth"]["value"] < 0 < valuation["reverse_dcf_max_growth"]["value"] < 1
+    risk_free = valuation["risk_free_rate"]["value"]
+    assert risk_free is None or 0 <= risk_free < 0.2, "risk_free_rate is a decimal, e.g. 0.042 for 4.2%"

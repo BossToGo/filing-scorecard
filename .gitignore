@@ -4,9 +4,9 @@
 !.env.example
 *.pem
 *.key
-.claude/settings.local.json
+**/.claude/settings.local.json
 CLAUDE.local.md
-.streamlit/secrets.toml
+**/.streamlit/secrets.toml
 
 # Local data
 .cache/
@@ -28,6 +28,7 @@ __pycache__/
 .venv/
 venv/
 .pytest_cache/
+.hypothesis/
 .coverage
 htmlcov/
 

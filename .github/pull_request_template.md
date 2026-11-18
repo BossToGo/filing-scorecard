@@ -14,6 +14,9 @@
 
 **Explain-back:** <!-- three sentences in YOUR OWN words on how the code works. Not written by the AI (SPEC §12 rule 4). -->
 
+**Exceptions (rule 14.6):** <!-- "none", or each failing test or expected value you changed, and the written reason the group agreed to -->
+
+
 ### Checklist (SPEC §12, §14)
 
 - [ ] Only files in my own folders (`docs/architecture.md`, "Folder layout and owners"), or the owner agreed

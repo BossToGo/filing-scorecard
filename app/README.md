@@ -1,8 +1,8 @@
 # Running the app
 
-Everything below runs inside the `app/` folder. You need Python 3.11 or later (check with `python3 --version`,
-on Windows `py -0p`). The project's own environment lives in `app/.venv` and never changes your Anaconda or
-system Python.
+Everything below runs inside the `app/` folder. You need Python 3.11 to 3.14 (check with `python3 --version`,
+on Windows `py -0p`); newer versions are not tested. The project's own environment lives in `app/.venv` and never
+changes your Anaconda or system Python.
 
 ## Install (once)
 
@@ -19,7 +19,8 @@ Windows (PowerShell):
 
 ```powershell
 cd app
-py -3 -m venv .venv
+py -0p                     # lists your Pythons; use one from 3.11 to 3.14 in the next line
+py -3.13 -m venv .venv
 .venv\Scripts\python -m pip install -r requirements.txt
 copy .env.example .env
 ```

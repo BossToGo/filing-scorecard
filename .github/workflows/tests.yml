@@ -13,10 +13,13 @@ permissions:
 
 concurrency:
   group: tests-${{ github.ref }}
-  cancel-in-progress: true
+  # A newer push to the same pull request replaces the older run; runs on main always finish, so every merged
+  # commit gets its own result (the release check tags a green commit, SPEC §13.1).
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 defaults:
   run:
+    shell: bash
     working-directory: app
 
 jobs:
@@ -31,7 +34,9 @@ jobs:
         python: ["3.11", "3.14"]
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
           cache: pip
@@ -45,9 +50,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: All test jobs passed
+        env:
+          RESULT: ${{ needs.pytest.result }}
+        working-directory: .
         run: |
-          if [ "${{ needs.pytest.result }}" != "success" ]; then
-            echo "At least one test job failed or was cancelled: open it above to see which test."
+          if [ "$RESULT" != "success" ]; then
+            echo "At least one test job did not pass ($RESULT): open it above to see which test."
             exit 1
           fi
-        working-directory: .
