@@ -39,6 +39,14 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
 - **Real data:** the saved SEC files in `app/evidence/demo/<TICKER>/companyfacts.json` (PR #6: KO, AAPL, NVDA,
   MCD, AMZN; JPM must be refused). Read `app/evidence/demo/README.md` first: what the files contain and the
   traits already confirmed. Never download anything in your code or tests.
+- **Thresholds:** `from src.settings import load_settings`, then `load_settings()["gates"]["stale_report_months"]` gives 15 (PR #7).
+  Never hard-code a threshold; a misspelt name raises a `KeyError` naming the section.
+- Never import `src.data.sec_client`: only A's data layer talks to the SEC; your code receives `CompanyData`.
+- **SEC errors for your messages (S11)**, all subclasses of `SecError` in `src.data.sec_client` (PR #7);
+  each message already says how to fix the problem: `SourceUnreachable` is temporary (the figure becomes
+  missing, suggest demo mode); `MissingUserAgent` and `SecRefused` mean fix `app/.env` or wait;
+  `UnknownTicker`, `NotFound` and `InvalidCik` mean the company does not exist. The interface reaches the
+  data layer through A's S2 and S14, never `SecClient` directly.
 - AC3 and AC6 values for your app tests come from `synthetic.expected_tier1()` and
   `synthetic.expected_override()` in `app/tests/fixtures/synthetic.py`, once your sign-off is recorded.
 - Figures arrive in USD with a unit from `UNITS` (`app/src/contracts.py`); show amounts in USD m through one

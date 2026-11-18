@@ -43,6 +43,9 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
 - **Real data:** the saved SEC files in `app/evidence/demo/<TICKER>/companyfacts.json` (PR #6: KO, AAPL, NVDA,
   MCD, AMZN; JPM must be refused). Read `app/evidence/demo/README.md` first: what the files contain and the
   traits already confirmed. Never download anything in your code or tests.
+- **Thresholds:** `from src.settings import load_settings`, then `load_settings()["financial_health"]["max_net_debt_to_equity"]` gives 0.40 (PR #7).
+  Never hard-code a threshold; a misspelt name raises a `KeyError` naming the section.
+- Never import `src.data.sec_client`: only A's data layer talks to the SEC; your code receives `CompanyData`.
 - Use the line-item names in `LINE_ITEMS` and the units in `UNITS` from `app/src/contracts.py` (e.g.
   `net_income`; amounts stay in USD as filed, never millions).
 - "Not assessed" (P4 and P5 until S4) is the status `insufficient_data` with the reason in the explanation
