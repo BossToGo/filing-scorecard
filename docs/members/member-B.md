@@ -40,6 +40,9 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
 
 ## Rules for your area
 
+- **Real data:** the saved SEC files in `app/evidence/demo/<TICKER>/companyfacts.json` (PR #6: KO, AAPL, NVDA,
+  MCD, AMZN; JPM must be refused). Read `app/evidence/demo/README.md` first: what the files contain and the
+  traits already confirmed. Never download anything in your code or tests.
 - Use the line-item names in `LINE_ITEMS` and the units in `UNITS` from `app/src/contracts.py` (e.g.
   `net_income`; amounts stay in USD as filed, never millions).
 - "Not assessed" (P4 and P5 until S4) is the status `insufficient_data` with the reason in the explanation
@@ -60,7 +63,7 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
    yourself (S4).
 3. **Reconciliation (S15), Apple:** revenue, operating income, net income, total assets, operating cash flow,
    dividends paid, read by hand from the latest 10-K with page and accession number. Not by the assistant.
-4. **Decide** Q3 (H4 when equity is negative) and Q1 (missing versus nil, with C and A): see `docs/plan.md`.
+4. **Decide** Q3 (H4 when equity is negative) and Q1 (missing versus nil, with Flo and Igor; Amazon has no dividend tag at all (confirmed in the saved SEC files)): see `docs/plan.md`.
 5. **Explain-back** on each PR; at least two reviews a week, Flo's (C) first.
 6. **Before the presentation:** five likely questions and answers on your area to E (Sun 29); walk-through (Mon 30).
 

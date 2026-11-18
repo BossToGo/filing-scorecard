@@ -34,6 +34,9 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
 
 ## Rules for your area
 
+- **Real data:** the saved SEC files in `app/evidence/demo/<TICKER>/companyfacts.json` (PR #6: KO, AAPL, NVDA,
+  MCD, AMZN; JPM must be refused). Read `app/evidence/demo/README.md` first: what the files contain and the
+  traits already confirmed. Never download anything in your code or tests.
 - Use the line-item names in `LINE_ITEMS` and the units in `UNITS` from `app/src/contracts.py` (e.g.
   `net_income`; amounts stay in USD as filed, never millions).
 - "Not assessed" (D2 until S4 and a share price) is the status `insufficient_data` with the reason in the explanation
@@ -55,7 +58,7 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
 2. **FRED terms of use:** read them before S8 and note the result in `docs/architecture.md` (ask A to merge it).
 3. **Reconciliation (S15), Nvidia:** revenue, operating income, net income, total assets, operating cash flow,
    dividends paid, read by hand from the latest 10-K with page and accession number. Not by the assistant.
-4. **Decide** Q4 (reverse DCF for loss-making companies) and Q1 (missing versus nil, with B and A); prepare the
+4. **Decide** Q4 (reverse DCF for loss-making companies) and Q1 (missing versus nil, with Greg and Igor, before S7: Amazon has no dividend tag at all (confirmed in the saved SEC files), so Q1 decides whether its D1 shows "no dividend paid" or "insufficient data"); prepare the
    answer to Q6 (why terminal growth barely moves the sensitivity table) for the presentation.
 5. **Explain-back** on each PR; at least two reviews a week, Greg's (B) first.
 6. **Before the presentation:** five likely questions and answers on your area to E (Sun 29); walk-through (Mon 30).

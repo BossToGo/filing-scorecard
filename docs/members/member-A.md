@@ -47,7 +47,7 @@ in `docs/plan.md`.
 4. **Reconciliation (S15), Coca-Cola:** revenue, operating income, net income, total assets, operating cash flow,
    dividends paid for the latest fiscal year, read by hand from the 10-K with page and accession number. Do not let
    the assistant read them for you: this is the independent check.
-5. **Decide** Q5 (debt tags) after S2; Q1 (missing versus nil) with B and C (`docs/plan.md`, open questions).
+5. **Decide** Q5 (debt tags) after S2; Q1 (missing versus nil) with Greg and Flo (Amazon has no dividend tag at all (confirmed in the saved SEC files); `docs/plan.md`, open questions).
 6. **Approve** every teammate's first PR quickly, review at least two PRs a week, Simon's (D) first.
 7. **Office hours, Fri 20:** present the coverage table and the KO reconciliation; record the go/no-go.
 8. **Your e-mail:** your commits so far show your personal e-mail in this public repository; history is never

@@ -36,6 +36,9 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
 
 ## Rules for your area
 
+- **Real data:** the saved SEC files in `app/evidence/demo/<TICKER>/companyfacts.json` (PR #6: KO, AAPL, NVDA,
+  MCD, AMZN; JPM must be refused). Read `app/evidence/demo/README.md` first: what the files contain and the
+  traits already confirmed. Never download anything in your code or tests.
 - AC3 and AC6 values for your app tests come from `synthetic.expected_tier1()` and
   `synthetic.expected_override()` in `app/tests/fixtures/synthetic.py`, once your sign-off is recorded.
 - Figures arrive in USD with a unit from `UNITS` (`app/src/contracts.py`); show amounts in USD m through one
