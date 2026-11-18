@@ -144,6 +144,7 @@ class _Resolver:
             if other["val"] != value:
                 notes.append(f"also filed under {other_tag}: {_money(other['val'])}")
                 if (_relative_difference(value, other["val"]) > self.settings["tag_conflict_warning"]
+                        and spec.get("same_definition", True)  # fallbacks of another definition: noted only
                         and not spec.get("override")):  # an override documents a known difference
                     self.warnings.append(f"TAG_CONFLICT: {metric} {fy_end}: {tag} {_money(value)} used, "
                                          f"{other_tag} gives {_money(other['val'])}")
@@ -215,7 +216,7 @@ class _Resolver:
                 fact, why_not = self.reported(metric, spec, fy_end), ""
                 if fact is None:
                     fact, why_not = self.derive(metric, fy_end)
-                    if fact is not None and metric in ("gross_profit", "total_liabilities"):
+                    if fact is not None and metric in ("gross_profit", "total_liabilities", "equity"):
                         derived_used.setdefault(metric, []).append(fy_end)
                 if fact is None:
                     fact = self.reported_or_missing(metric, spec, fy_end, why_not)
@@ -246,6 +247,16 @@ class _Resolver:
             if revenue is None or cost is None:
                 return not_derivable("revenue", "cost_of_revenue")
             return self._derived(metric, revenue - cost, fy_end, "revenue − cost_of_revenue"), ""
+        if metric == "equity":
+            total = self.reported("total_equity", self.spec("total_equity"), fy_end)
+            if total is None:
+                return None, "not derivable: no total equity reported either"
+            minority = self.reported("minority_interest", self.spec("minority_interest"), fy_end)
+            if minority is not None:
+                return self._derived(metric, total.value - minority.value, fy_end,
+                                     f"total_equity ({_source(total)}) − minority_interest ({_source(minority)})"), ""
+            return self._derived(metric, total.value, fy_end, f"total_equity ({_source(total)}); it includes any "
+                                 "non-controlling interests, none reported separately"), ""
         if metric == "total_equity":
             equity = value("equity")
             if equity is None:
@@ -268,8 +279,9 @@ class _Resolver:
         parts, override = self.map["debt"], self.overrides.get("debt", {})
         inside = override.get("short_term_inside_long_term_debt", False)
 
-        def part(label, tags):
-            return self.reported(f"financial_debt ({label})", {"kind": "instant", "tags": tags}, fy_end)
+        def part(label, tags):  # the fallbacks differ by finance leases: noted, not warned (plan Q5)
+            return self.reported(f"financial_debt ({label})",
+                                 {"kind": "instant", "tags": tags, "same_definition": False}, fy_end)
 
         noncurrent = part("non-current", parts["long_term_noncurrent"])
         current = part("current maturities", parts["long_term_current"])

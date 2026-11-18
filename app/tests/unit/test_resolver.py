@@ -240,11 +240,13 @@ def test_fallback_tags_are_tried_for_each_fiscal_year():
 
 def test_two_tags_with_different_values_are_flagged_and_the_first_in_the_list_is_used():
     # The smaller value sits under the first tag: the order decides, not the size.
-    data = run({"Revenues": revenue_years()[:-1] + [flow(1250 * M, 2025)],
-                "RevenueFromContractWithCustomerExcludingAssessedTax": [flow(1300 * M, 2025)]})
-    fact = data.fact("revenue", fy(2025))
-    assert fact.value == 1250 * M and fact.tag == "Revenues"
-    assert "1,300,000,000" in fact.note
+    # Changed in S3 (rule 14.6, reason written in the S3 pull request): this used revenue tags, which S3 showed to
+    # differ legitimately (they are now noted, not warned); depreciation tags should agree, so the rule is tested there.
+    data = run({"DepreciationDepletionAndAmortization": [flow(60 * M, 2025)],
+                "DepreciationAndAmortization": [flow(65 * M, 2025)]})
+    fact = data.fact("depreciation_amortization", fy(2025))
+    assert fact.value == 60 * M and fact.tag == "DepreciationDepletionAndAmortization"
+    assert "65,000,000" in fact.note
     assert "TAG_CONFLICT" in codes(data)
 
 
@@ -269,6 +271,46 @@ def test_a_company_override_changes_the_tag_order_and_explains_why():
     assert fact.value == 2199 * M and fact.tag == "RevenueFromContractWithCustomerExcludingAssessedTax"
     assert "income statement total" in fact.note and "457,000,000" in fact.note
     assert "TAG_CONFLICT" not in codes(data)  # a known, explained difference is recorded, not raised again
+
+
+def test_fallback_tags_with_a_different_definition_are_noted_but_not_warned():
+    # ProfitLoss includes the non-controlling interests' share of profit: a different figure, not an error (S3).
+    data = run({"NetIncomeLoss": [flow(140 * M, 2025)], "ProfitLoss": [flow(150 * M, 2025)]})
+    fact = data.fact("net_income", fy(2025))
+    assert fact.value == 140 * M and "150,000,000" in fact.note
+    assert "TAG_CONFLICT" not in codes(data)
+
+
+def test_tags_that_should_agree_still_raise_a_conflict():
+    # Depreciation: both tags mean the cash flow total; a gap points to an error (the McDonald's case).
+    data = run({"DepreciationDepletionAndAmortization": [flow(457 * M, 2025)],
+                "DepreciationAndAmortization": [flow(2199 * M, 2025)]})
+    assert "TAG_CONFLICT" in codes(data)
+
+
+def test_equity_is_derived_from_total_equity_minus_minority_interest_when_not_reported():
+    # S3: nine large companies report only total equity including non-controlling interests.
+    data = run({"StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest": [instant(850 * M, 2025)],
+                "MinorityInterest": [instant(30 * M, 2025)]})
+    fact = data.fact("equity", fy(2025))
+    assert fact.kind == "derived" and fact.value == (850 - 30) * M
+
+
+def test_equity_from_total_equity_without_minority_interest_says_so():
+    data = run({"StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest": [instant(850 * M, 2025)]})
+    fact = data.fact("equity", fy(2025))
+    assert fact.value == 850 * M and "non-controlling" in fact.note
+
+
+def test_cash_including_restricted_cash_is_a_noted_fallback():
+    data = run({"CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents": [instant(125 * M, 2025)]})
+    fact = data.fact("cash", fy(2025))
+    assert fact.value == 125 * M and fact.tag == "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents"
+
+
+def test_interest_and_debt_expense_is_a_fallback():
+    fact = run({"InterestAndDebtExpense": [flow(26 * M, 2025)]}).fact("interest_expense", fy(2025))
+    assert fact.value == 26 * M
 
 
 def test_the_tag_map_has_no_per_share_line_items():
