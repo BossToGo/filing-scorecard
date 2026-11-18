@@ -24,7 +24,7 @@ Every member works only in their own folders (§12). A change in someone else's 
 filing-scorecard/
 ├── SPEC.md  AGENTS.md  CLAUDE.md  README.md (E)  AI-USAGE.md (E coordinates, everyone appends)
 ├── .github/                  workflows/tests.yml, pull_request_template.md, CODEOWNERS (A)
-├── docs/                     product, architecture, acceptance, plan (A); team.md (everyone, own line);
+├── docs/                     product, architecture, acceptance, plan, members/ (A); team.md (everyone, own line);
 │                             coverage.md (A); benchmarks.md (B); testing.md (all); crosscheck/ (C);
 │                             business-plan/, slides/, qa-bank.md (E)
 └── app/

@@ -1,0 +1,59 @@
+# Member B: [name] ([@github])
+
+**You own:** `app/src/benchmarks/`, `app/scripts/extract_benchmarks.py`, `app/scripts/requirements-scripts.txt`, the
+industry files in `app/data/` (`benchmarks_us_2026.csv`, `industry_lookup_us_2026.csv`, `sic_to_damodaran.csv`),
+`app/src/checks/past.py`, `app/src/checks/health.py`, `docs/benchmarks.md`, the `benchmarks`,
+`past_performance` and `financial_health` sections of `app/settings.yaml`, and your tests.
+**Backup:** C (you review C's PRs first, C reviews yours). **Reconciliation company:** Apple (AAPL).
+
+## Your slices, in order
+
+| When | Slice | Done when (SPEC §13.2) |
+|---|---|---|
+| Wed 18 | Accept the invitation; your `docs/team.md` PR (steps in `docs/team.md`) | Merged |
+| Thu 19 | **Day-one task (30 min, no code):** open Damodaran's `indname.xls`; write its sheet and column names in `docs/benchmarks.md`; say whether it has a ticker column (in which format, e.g. `NasdaqGS:AAPL`) and SEC industry codes (SPEC §9.1) | `docs/benchmarks.md` merged |
+| Thu 19 | **Sign-off for S0c:** recalculate rows CALC-P1 to CALC-P6 and CALC-H1 to CALC-H6 of `docs/acceptance.md` by hand or in Excel | Your sign-off comment on A's S0c PR |
+| Sat 21–Sun 22 | S5: past performance checks P1–P6 (P4, P5 "not assessed" until S4), branch `b/S5-past-checks` | SPEC Appendix A values reproduced; edge cases tested |
+| Sat 21–Sun 22 | S6: financial health checks H1–H6, branch `b/S6-health-checks` | Same |
+| Thu 19 → Wed 25 | S4: extraction script, benchmark CSV, industry lookup and fallback table, branch `b/S4-benchmarks` | Loader tests; three benchmark values and three company-to-group matches compared by hand with the source files |
+| Mon 23–Wed 25 | S9 with C: switch on P4 and P5 | SPEC Appendix A values reproduced |
+| Thu 26 | S12 with D: industry inputs for the five forces panel | D's indicator tests pass |
+| Fri 27–Sun 29 | S18, break-it round: a member from another area reviews your code read-only; you break each of your formulas once on purpose and record each break and the test that caught it in `docs/testing.md` | Every finding is a failing test or a written dismissal |
+
+**Slice prompt** (replace the slice, sections and branch):
+
+> /build-feature I am member B, working on slice [S5] of SPEC.md. Read AGENTS.md, docs/members/member-B.md,
+> SPEC.md sections [5, 7 and 11], docs/plan.md and the [CALC-P] rows of docs/acceptance.md. Use the branch
+> [b/S5-past-checks] from the latest main. Plan this slice only, name the files you will touch and the tests you
+> will write first, and wait for my go-ahead. I will give you the expected values. Do not change files outside my
+> folders.
+
+Sections per slice: S5 → §5, §7 (past performance), §11; S6 → §5, §7 (financial health), §11; S4 → §4, §9.1, §11
+and `docs/benchmarks.md`.
+
+## Rules for your area
+
+- Checks are pure functions: `CompanyData` (plus benchmarks and settings) in, `CheckResult` out (SPEC §11). Use
+  the shapes in `app/src/contracts.py`; if you need a change there, ask A.
+- A missing input gives "insufficient data", never a guess. Equity ≤ 0 fails P4 and H3 with the note "negative
+  equity" (SPEC §7).
+- The app reads only your CSV files, never Damodaran's `.xls` (SPEC §4). The full `indname.xls` is never committed.
+- For each benchmark, write the column you chose and why in the `benchmarks` section of `app/settings.yaml`.
+
+## Only you
+
+1. **Expected values:** your own hand working for every check (Appendix A rows first, then edge cases).
+2. **Benchmark check:** compare three benchmark values and three company-to-group matches with the source files
+   yourself (S4).
+3. **Reconciliation (S15), Apple:** revenue, operating income, net income, total assets, operating cash flow,
+   dividends paid, read by hand from the latest 10-K with page and accession number. Not by the assistant.
+4. **Decide** Q3 (H4 when equity is negative) and Q1 (missing versus nil, with C and A): see `docs/plan.md`.
+5. **Explain-back** on each PR; at least two reviews a week, C's first.
+6. **Before the presentation:** five likely questions and answers on your area to E (Sun 29); walk-through (Mon 30).
+
+## If you are blocked
+
+- No data layer yet? Work on the synthetic company fixture (`app/tests/fixtures/`, from S0c). Your checks need
+  nothing else.
+- Damodaran's file differs from the SPEC: write what it really contains in `docs/benchmarks.md` and follow the
+  fallback in SPEC §9.1 (risk R3).

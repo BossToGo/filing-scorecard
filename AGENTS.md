@@ -118,7 +118,7 @@ This is a team project: five members, A to E, listed in `docs/team.md`. Each mem
 
 1. **First ask** which member (A to E) the student is and which slice of `docs/plan.md` they are working on. If
    their line is missing from `docs/team.md`, their first task is the pull request that adds it (instructions in
-   `docs/team.md`).
+   `docs/team.md`). Then read their guide, `docs/members/member-<letter>.md`, and follow it.
 2. **Work only on that slice and only in that member's folders.** A change needed in another member's folder or
    in `app/src/contracts.py` is described for its owner (a GitHub issue or a message), never made directly.
 3. **Branch** `<member>/<slice-id>-<short-name>` (e.g. `b/S5-past-checks`), started from the latest `main`; at
