@@ -2,7 +2,7 @@
 
 **Course:** Programming and AI for Corporate Finance (FIN_8546), EDHEC, final group project
 **Deadline:** Tuesday 1 December 2026, 23:59, state of `main`. Presentation Wednesday 2 December 2026 (8 minutes + 4 minutes of questions).
-**Status of this file:** version 2.1 of 18 November 2026 (version 2, risk-reduced: release tiers, risk register, industry lookup, no browser dependency; 2.1: folder layout under `app/`, §11 and §12). To be agreed by the whole group in one meeting, then changed only by pull request.
+**Status of this file:** version 2.1 of 18 November 2026 (version 2, risk-reduced: release tiers, risk register, industry lookup, no browser dependency; 2.1: folder layout under `app/`, §11 and §12; 2.2: names and final roles, §12, §13.2, §17). To be agreed by the whole group in one meeting, then changed only by pull request.
 
 **The one principle of this version:** `main` always holds a working, demo-ready app. We build in three tiers. Each tier ends with a tagged release that runs offline and passes all tests. If time runs out, we present the last release and cut the rest; nothing half-finished is ever merged.
 
@@ -403,19 +403,19 @@ class CheckResult:
 
 ## 12. Team, areas and working rules
 
-Fill in the names. If the group has four members, the work of E is shared out; if six, D is split into interface and five forces plus export.
+Names agreed on 18 November 2026. If the group has four members, the work of E is shared out; if six, D is split into interface and five forces plus export.
 
 | Member | Area (folders they own) | Also |
 |---|---|---|
-| **A — ……… (Igor, proposed)** | Repository setup, continuous integration, `src/contracts.py`, `src/data/`, `evidence/`, coverage report, demo snapshot | Reconciliation company 1 |
-| **B — ………** | `src/benchmarks/`, `scripts/extract_benchmarks.py`, the industry files in `data/`, `src/checks/past.py`, `src/checks/health.py` | Reconciliation company 2 |
-| **C — ………** | `src/checks/dividend.py`, `src/checks/valuation.py`, `src/valuation/`, the separate Excel cross-check model in `docs/crosscheck/` | Reconciliation company 3 |
-| **D — ………** | `app/main.py`, `app/ui/` (except `texts.yaml`), `src/forces.py`, `src/export.py`, `src/gates.py`, `tests/app/` | Reconciliation company 4 |
-| **E — ………** | `docs/business-plan/`, `docs/slides/`, `README.md`, `AI-USAGE.md` (coordination), `app/ui/texts.yaml` (the plain-language text of all 24 checks), `docs/qa-bank.md` | Reconciliation company 5; user interviews |
+| **A — Igor (@BossToGo)** | Repository setup, continuous integration, `src/contracts.py`, `src/data/`, `evidence/`, coverage report, demo snapshot | Reconciliation company 1 |
+| **B — Greg (@Greg3334444)** | `src/benchmarks/`, `scripts/extract_benchmarks.py`, the industry files in `data/`, `src/checks/past.py`, `src/checks/health.py`, `src/forces.py` (five forces indicators and suggested ratings) | Reconciliation company 2 |
+| **C — Flo (@florian-spitzer)** | `src/checks/dividend.py`, `src/checks/valuation.py`, `src/valuation/`, the separate Excel cross-check model in `docs/crosscheck/` | Reconciliation company 3 |
+| **D — Simon (@Simonarmengaud)** | `app/main.py`, `app/ui/` (except `texts.yaml`; including the five forces panel on screen), `src/gates.py`, `tests/app/` | Reconciliation company 4 |
+| **E — Emma (@EmmaRiggi)** | `src/export.py` (Excel export), `docs/business-plan/`, `docs/slides/`, `README.md`, `AI-USAGE.md` (coordination), `app/ui/texts.yaml` (the plain-language text of all 24 checks), `docs/qa-bank.md` | Reconciliation company 5; user interviews |
 
 **Backup pairs.** A and D back each other up (data and interface), B and C back each other up (checks and valuation). The backup is the first reviewer of the partner's pull requests, so they already know the code if they have to take a slice over. E reviews every user-facing text. If a member stops contributing, the cut list in section 2 applies before anyone works nights, and the instructor is told early (handout section 6).
 
-**Why E also commits product content.** Individual contribution (15 marks) is read only from the repository history. The business plan is written as Markdown in the repository and exported to PDF, and E owns the texts the app displays, so E's work is visible as commits and pull requests.
+**Why E also commits product content.** Individual contribution (15 marks) is read only from the repository history. The business plan is written as Markdown in the repository and exported to PDF, and E owns the texts the app displays, so E's work is visible as commits and pull requests. E also builds the Excel export (S13), so, like every member, E contributes to the code (session 1: "every member contributes to the code").
 
 **Working rules (handout section 6, session 1 slides 68 to 73)**
 
@@ -474,14 +474,14 @@ Fill in the names. If the group has four members, the work of E is shared out; i
 | S8 | Cost of capital, forecast, terminal value, reverse calculation, sensitivity | C (starts Thursday 19 on the synthetic company, with the Excel model) | S0c | Matches C's separate Excel model and Appendix A; property tests pass |
 | S9 | Valuation checks V1 to V6; switch on P4, P5, D2 | C with B | S8, S4 | Appendix A values reproduced |
 | S10b | Interface: share price input, valuation detail, industry shown with route and number of firms, override dropdown | D | S8, S4 | App test finds the fair value of the synthetic company |
-| S13 | Excel export | D | S10 | Export reopened by a test; figures equal the screen |
+| S13 | Excel export | E | S10 | Export reopened by a test; figures equal the screen |
 | S16b | Texts for the valuation checks and the industry explanations | E | S10b | Reviewed by C |
 
 **Tier 3 — release v0.3 "Five forces" (by the feature freeze, Thursday 26 November, 20:00)**
 
 | ID | Slice | Owner | Depends on | Done when (evidence) |
 |---|---|---|---|---|
-| S12 | Five forces panel (section 9) | D with B | S4 | Indicator tests; override survives recalculation |
+| S12 | Five forces panel (section 9) | B (indicators and ratings, `src/forces.py`) with D (panel on screen) | S4 | Indicator tests; override survives recalculation |
 | S17 | End-to-end app test: type a demo ticker, check a known score, a known figure and a known fair value | D | S14 | Passes twice in a row in the workflow |
 
 **After the freeze (fixes only)**
@@ -490,7 +490,7 @@ Fill in the names. If the group has four members, the work of E is shared out; i
 |---|---|---|---|---|
 | S18 | Break-it round: an independent read-only review of each area, and a deliberate break of every formula | Each owner; reviewer from another area | v0.2 | `docs/testing.md` lists each break and the test that caught it; every finding is a failing test or a written dismissal |
 | S19 | README and fresh-clone test on one Windows and one Mac laptop by a member who did not write the README | E writes, two members test | v0.3 | Works from the README alone on both |
-| S20 | Business plan (Markdown → PDF), slides, recorded fallback demo, question bank | E leads, all contribute (started Saturday 21) | — | Files on `main` before the deadline |
+| S20 | Business plan (Markdown → PDF), slides, recorded fallback demo, question bank | E leads and edits; each member writes one business plan section (§17) (started Saturday 21) | — | Files on `main` before the deadline |
 
 **Proposed demo companies (traits to be confirmed in S3, not assumed):** Coca-Cola (the course's running example; session 5 gives figures to check against), Apple (a 53-week fiscal year), Nvidia (a share split, to test rule 5.3.8), McDonald's (negative equity expected), Amazon (no dividend expected). JPMorgan is the test that an unsupported company is refused. If a company turns out to lack the trait, swap it for one that has it.
 
@@ -597,7 +597,7 @@ Every bug found becomes a test that stays (the ratchet). The test workflow runs 
 
 - **`README.md`:** what it does, for whom, install and run in a few commands, data and interfaces used, assumptions (currency, units, fiscal-year convention, tax rate, equity risk premium), known limitations, which data is saved or synthetic.
 - **`AI-USAGE.md`** at the root: tools and what for; the workflow (this spec, plan first, tests first, review agents); at least one concrete case where the AI was wrong and how it was caught; what was verified by people and how. First entry: this specification was drafted with Claude from the project handout and the session slides, then reviewed and edited by the group.
-- **Business plan** (`docs/business-plan/`, 8 to 12 pages plus appendices, PDF on `main`): problem and evidence; solution with screenshots; users, market, alternatives; how roles, controls and decisions change in a firm that adopts it; stakeholders, data dependencies, failure modes and the controls built into the app (sections 5 and 10); a modest contribution to Sustainable Development Goal 9 (access to analysis built on public data); business model and next steps. Every figure with source, currency and unit; estimates labelled and derived.
+- **Business plan** (`docs/business-plan/`, 8 to 12 pages plus appendices, PDF on `main`): problem and evidence; solution with screenshots; users, market, alternatives; how roles, controls and decisions change in a firm that adopts it; stakeholders, data dependencies, failure modes and the controls built into the app (sections 5 and 10); a modest contribution to Sustainable Development Goal 9 (access to analysis built on public data); business model and next steps. Every figure with source, currency and unit; estimates labelled and derived. **Sections by member:** A, data dependencies, failure modes and the controls built into the app; B, users, market and alternatives; C, business model; D, the solution with screenshots; E, problem and evidence, how roles, controls and decisions change in a firm, Sustainable Development Goal 9, next steps, and the final edit and PDF.
 - **Slides** (`docs/slides/`) on `main` before the deadline: problem (1 minute), live demo (3 to 4), how we built and checked it including AI use (1 to 2), transformation and Sustainable Development Goal 9 (2), next steps. Recorded fallback demo ready.
 
 ---
