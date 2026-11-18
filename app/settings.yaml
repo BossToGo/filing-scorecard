@@ -23,6 +23,15 @@ data:  # owner A (SPEC §4, §5.3)
   restatement_warning:
     value: 0.01
     reason: "Show both values with a warning when a restatement differs by more than 1% (SPEC §5.3.4)"
+  tag_conflict_warning:
+    value: 0.01
+    reason: "Flag a figure when two fallback tags differ by more than 1% for the same period (SPEC §5.3.7)"
+  debt_inside_tolerance:
+    value: 0.005
+    reason: "Total long-term debt within 0.5% of the non-current part means short-term items are classified inside it (plan Q5)"
+  fiscal_years:
+    value: 5
+    reason: "FY0 to FY-4: five fiscal years give the four growth intervals of SPEC §7"
 
 benchmarks: {}  # owner B: one benchmark column per check, with the reason for the choice (SPEC §7, slice S4)
 
