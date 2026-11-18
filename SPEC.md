@@ -2,7 +2,7 @@
 
 **Course:** Programming and AI for Corporate Finance (FIN_8546), EDHEC, final group project
 **Deadline:** Tuesday 1 December 2026, 23:59, state of `main`. Presentation Wednesday 2 December 2026 (8 minutes + 4 minutes of questions).
-**Status of this file:** version 2 of 18 November 2026 (risk-reduced: release tiers, risk register, industry lookup, no browser dependency). To be agreed by the whole group in one meeting, then changed only by pull request.
+**Status of this file:** version 2.1 of 18 November 2026 (version 2, risk-reduced: release tiers, risk register, industry lookup, no browser dependency; 2.1: folder layout under `app/`, §11 and §12). To be agreed by the whole group in one meeting, then changed only by pull request.
 
 **The one principle of this version:** `main` always holds a working, demo-ready app. We build in three tiers. Each tier ends with a tagged release that runs offline and passes all tests. If time runs out, we present the last release and cut the rest; nothing half-finished is ever merged.
 
@@ -334,34 +334,43 @@ Chosen to keep risk low:
 - The end-to-end test uses Streamlit's built-in test tool (`streamlit.testing`), which runs the app without a browser, so the test workflow needs no browser installation. A Playwright browser script is optional and never required for a merge.
 - No database: data is cached as JSON files. No accounts, no deployment: the app runs locally from the README, and demo mode needs no network.
 
+**Folder layout (amended 18 November 2026).** The starter's `AGENTS.md`, which ranks above this file (§0),
+puts the application's code, tests, settings and dependency file in `app/`. Every path in this file that names
+code, tests, data, evidence, scripts or settings is therefore under `app/`: `src/data/` means `app/src/data/`,
+`tests/` means `app/tests/`, `settings.yaml` means `app/settings.yaml`, `requirements.txt` means
+`app/requirements.txt`. The Streamlit interface is `app/main.py` plus `app/ui/`. `docs/`, `.github/` and the
+files at the root stay where they are. Owners of every folder: `docs/architecture.md`.
+
 ```
 repo/
 ├── SPEC.md  AGENTS.md  CLAUDE.md  README.md  AI-USAGE.md
-├── settings.yaml            thresholds and assumptions, each with a reason
-├── .env.example             SEC_USER_AGENT, FRED_API_KEY (names only)
-├── .gitignore               .env, .cache/, local skill folders
-├── .github/workflows/tests.yml    pytest on every pull request
-├── app/                     Streamlit pages, texts.yaml (plain-language texts)
-├── src/
-│   ├── contracts.py         shared data shapes (below)
-│   ├── data/                SEC client, cache, tag_map.yaml, resolver, FRED
-│   ├── benchmarks/          benchmark loader, industry map
-│   ├── checks/              past.py, health.py, dividend.py, valuation.py
-│   ├── valuation/           cost of capital, forecast, reverse calculation
-│   ├── forces.py            five forces indicators
-│   ├── gates.py             stop / warn / record rules
-│   └── export.py            Excel export
-├── scripts/                 extract_benchmarks.py (one-off, needs xlrd), coverage.py
-├── data/                    benchmarks_us_2026.csv, industry_lookup_us_2026.csv,
-│                            sic_to_damodaran.csv, universe.csv (30 verified tickers)
-├── evidence/                saved source data, never edited
-│   └── demo/                trimmed company facts for the demo companies
-├── tests/
-│   ├── fixtures/            synthetic company (Appendix A), small sample files
-│   ├── reconciliation/      one YAML per company: figures read by hand from the 10-K
-│   ├── unit/  integration/  app/  (browser/ optional)
-└── docs/                    product.md, plan.md, coverage.md, testing.md,
-                             business-plan/, slides/, crosscheck/, qa-bank.md, team.md
+├── .gitignore               .env, .cache/, .venv/, local skill folders
+├── .github/                 workflows/tests.yml (pytest on every pull request), pull_request_template.md, CODEOWNERS
+├── docs/                    product.md, architecture.md, acceptance.md, plan.md, team.md, coverage.md,
+│                            benchmarks.md, testing.md, business-plan/, slides/, crosscheck/, qa-bank.md
+└── app/
+    ├── README.md  requirements.txt  .env.example (SEC_USER_AGENT, FRED_API_KEY: names only)
+    ├── settings.yaml        thresholds and assumptions, each with a reason, one section per owner
+    ├── main.py              Streamlit entry point
+    ├── ui/                  Streamlit pages and components, texts.yaml (plain-language texts)
+    ├── src/
+    │   ├── contracts.py     shared data shapes (below)
+    │   ├── data/            SEC client, cache, tag_map.yaml, resolver, FRED
+    │   ├── benchmarks/      benchmark loader, industry map
+    │   ├── checks/          past.py, health.py, dividend.py, valuation.py
+    │   ├── valuation/       cost of capital, forecast, reverse calculation
+    │   ├── forces.py        five forces indicators
+    │   ├── gates.py         stop / warn / record rules
+    │   └── export.py        Excel export
+    ├── scripts/             extract_benchmarks.py (one-off, needs xlrd), coverage.py
+    ├── data/                benchmarks_us_2026.csv, industry_lookup_us_2026.csv,
+    │                        sic_to_damodaran.csv, universe.csv (30 verified tickers)
+    ├── evidence/            saved source data, never edited
+    │   └── demo/            trimmed company facts for the demo companies
+    └── tests/
+        ├── fixtures/        synthetic company (Appendix A), small sample files
+        ├── reconciliation/  one YAML per company: figures read by hand from the 10-K
+        └── unit/  integration/  app/  (browser/ optional)
 ```
 
 **Shared data shapes (`src/contracts.py`).** Agreed in the first meeting; a change needs the approval of every owner whose code uses it.
@@ -386,9 +395,9 @@ class CheckResult:
 
 `CompanyData` holds the header fields and, per line item, a mapping from fiscal-year end date to `Fact`. Checks are pure functions: `CompanyData` (plus benchmarks and settings) in, `CheckResult` out. No check touches the network or the interface.
 
-**Layering rule.** `app/` calls `src/`; `src/checks` and `src/valuation` never import from `app/` or call the network. This is what lets five people work in parallel and lets every calculation be tested without a browser.
+**Layering rule.** The interface (`app/main.py`, `app/ui/`) calls `app/src/`; `app/src/checks` and `app/src/valuation` never import from the interface or call the network. This is what lets five people work in parallel and lets every calculation be tested without a browser.
 
-**Run commands (README).** `pip install -r requirements.txt` → copy `.env.example` to `.env` and fill in the SEC name and e-mail → `streamlit run app/main.py`. Demo mode needs no key and no network.
+**Run commands (`app/README.md`).** `cd app` → `pip install -r requirements.txt` inside the project environment `app/.venv` → copy `.env.example` to `.env` and fill in the SEC name and e-mail → `streamlit run main.py`. Demo mode needs no key and no network.
 
 ---
 
@@ -401,8 +410,8 @@ Fill in the names. If the group has four members, the work of E is shared out; i
 | **A — ……… (Igor, proposed)** | Repository setup, continuous integration, `src/contracts.py`, `src/data/`, `evidence/`, coverage report, demo snapshot | Reconciliation company 1 |
 | **B — ………** | `src/benchmarks/`, `scripts/extract_benchmarks.py`, the industry files in `data/`, `src/checks/past.py`, `src/checks/health.py` | Reconciliation company 2 |
 | **C — ………** | `src/checks/dividend.py`, `src/checks/valuation.py`, `src/valuation/`, the separate Excel cross-check model in `docs/crosscheck/` | Reconciliation company 3 |
-| **D — ………** | `app/`, `src/forces.py`, `src/export.py`, `src/gates.py`, `tests/app/` | Reconciliation company 4 |
-| **E — ………** | `docs/business-plan/`, `docs/slides/`, `README.md`, `AI-USAGE.md` (coordination), `app/texts.yaml` (the plain-language text of all 24 checks), `docs/qa-bank.md` | Reconciliation company 5; user interviews |
+| **D — ………** | `app/main.py`, `app/ui/` (except `texts.yaml`), `src/forces.py`, `src/export.py`, `src/gates.py`, `tests/app/` | Reconciliation company 4 |
+| **E — ………** | `docs/business-plan/`, `docs/slides/`, `README.md`, `AI-USAGE.md` (coordination), `app/ui/texts.yaml` (the plain-language text of all 24 checks), `docs/qa-bank.md` | Reconciliation company 5; user interviews |
 
 **Backup pairs.** A and D back each other up (data and interface), B and C back each other up (checks and valuation). The backup is the first reviewer of the partner's pull requests, so they already know the code if they have to take a slice over. E reviews every user-facing text. If a member stops contributing, the cut list in section 2 applies before anyone works nights, and the instructor is told early (handout section 6).
 
