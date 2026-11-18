@@ -87,7 +87,7 @@ that shares no code with the app. All agree within the rounding shown (discounte
 | E1 | Unknown ticker | Message: ticker not found, check the spelling; no crash | open |
 | E2 | Bank, insurer or REIT (SEC code 6000–6799), e.g. JPM | Stop: "not supported" and why (§10) | open |
 | E3 | Not in US dollars, no 10-K data, or fewer than three fiscal years | Stop with the reason (§10) | open |
-| E4 | SEC unreachable | Three retries with a growing pause, then the input is `missing`; message suggests demo mode | open |
+| E4 | SEC unreachable | Three retries with a growing pause, then the input is `missing`; message suggests demo mode | partly passing (test: test_after_three_retries_the_source_is_unreachable_and_the_message_says_what_to_do); turning it into `missing`: slice S2 |
 | E5 | A required figure is missing | `missing` with reason; checks that need it show "insufficient data"; never 0, never guessed (§5.2) | open |
 | E6 | Two fallback tags give different values for the same period | Figure flagged on the sources page, not chosen silently (§5.3.7) | open |
 | E7 | Restated figure differs from the original by more than 1% | Latest filed value used; both shown with a warning (§5.3.4) | open |
