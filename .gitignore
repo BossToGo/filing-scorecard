@@ -9,6 +9,7 @@ CLAUDE.local.md
 .streamlit/secrets.toml
 
 # Local data
+.cache/
 *.db
 *.sqlite
 *.sqlite3

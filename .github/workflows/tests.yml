@@ -1,0 +1,53 @@
+# Runs the tests on every pull request and on every change to main (session 5 slides 3-4).
+# Branch protection requires the check named "test", which passes only if every combination below passed.
+# Owner: A.
+name: tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: app
+
+jobs:
+  pytest:
+    name: pytest (${{ matrix.os }}, Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.11", "3.14"]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: app/requirements.txt
+      - run: python -m pip install -r requirements.txt
+      - run: python -m pytest
+
+  test:
+    if: always()
+    needs: pytest
+    runs-on: ubuntu-latest
+    steps:
+      - name: All test jobs passed
+        run: |
+          if [ "${{ needs.pytest.result }}" != "success" ]; then
+            echo "At least one test job failed or was cancelled: open it above to see which test."
+            exit 1
+          fi
+        working-directory: .

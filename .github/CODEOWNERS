@@ -1,0 +1,37 @@
+# Who is asked to review what (SPEC §12). GitHub requests a review from the owner of the files a pull request
+# touches. The last matching line wins. Members B to E: add your GitHub username to your lines in your first
+# pull request (the one that adds your line to docs/team.md).
+
+# Default and member A: repository setup, CI, shared shapes, data layer, evidence, coverage, product documents
+*                                   @BossToGo
+
+# Member B (benchmarks, industry files, past performance and health checks)
+# /app/src/benchmarks/              @<B>
+# /app/scripts/extract_benchmarks.py @<B>
+# /app/src/checks/past.py           @<B>
+# /app/src/checks/health.py         @<B>
+# /docs/benchmarks.md               @<B>
+
+# Member C (dividend and valuation checks, valuation engine, Excel cross-check)
+# /app/src/checks/dividend.py       @<C>
+# /app/src/checks/valuation.py      @<C>
+# /app/src/valuation/               @<C>
+# /docs/crosscheck/                 @<C>
+
+# Member D (interface, five forces, gates, export, app tests)
+# /app/main.py                      @<D>
+# /app/ui/                          @<D>
+# /app/src/forces.py                @<D>
+# /app/src/gates.py                 @<D>
+# /app/src/export.py                @<D>
+# /app/tests/app/                   @<D>
+
+# Member E (business plan, slides, README, plain-language texts, question bank)
+# /README.md                        @<E>
+# /app/ui/texts.yaml                @<E>
+# /docs/business-plan/              @<E>
+# /docs/slides/                     @<E>
+# /docs/qa-bank.md                  @<E>
+
+# Shared data shapes: every owner whose code uses them reviews a change (SPEC §11)
+/app/src/contracts.py               @BossToGo
