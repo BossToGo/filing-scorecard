@@ -30,14 +30,14 @@ Status values: `todo`, `in progress`, `done (<date>, commit <short hash>)`, `blo
 
 | # | Slice | Owner | Depends on | Done when (evidence) | Acceptance | Status |
 |---|---|---|---|---|---|---|
-| S1 | SEC client and cache: ticker lookup, submissions, company facts, declared User-Agent, ≤ 5 requests per second, three retries | A | S0 | Tests run without network on saved files; a real download works from A's laptop | E4 | in progress: client done, reviewed and tested; pull request open |
+| S1 | SEC client and cache: ticker lookup, submissions, company facts, declared User-Agent, ≤ 5 requests per second, three retries | A | S0 | Tests run without network on saved files; a real download works from A's laptop | E4 (client part) | in progress: client done, reviewed and tested; pull request open |
 | S2 | Line-item resolver with sources (§5, §6) | A | S1, S0b | Tests for every rule in §5.3 and every planted mistake in §5.4 | E5–E8, PE1–PE6 | in progress: resolver done, reviewed and tested; pull request open |
 | S3 | Coverage report over about 100 non-financial companies from at least 8 industries → `docs/coverage.md`; the 30 companies of the verified universe → `app/data/universe.csv` | A | S2 | Table exists; go/no-go decided at office hours Fri 20 (§13.4) | E16 | todo |
 | S5 | Past performance checks P1–P6 (P4, P5 "not assessed" until S4) | B | S0c | Appendix A values reproduced; edge cases tested | AC3, CALC-P* | todo |
 | S6 | Financial health checks H1–H6 | B | S0c | Same | AC3, AC6, CALC-H*, E9, E12 | todo |
 | S7 | Dividend checks D1–D6 (D2 "not assessed" until S4 and a share price) | C | S0c | Same | AC3, CALC-D*, E10, E11 | todo |
 | S10 | Interface: input bar, header, score chart, expandable checks, sources page, overrides | D | S0c, then S2 | `streamlit run` works; app test opens the synthetic company and finds a known score | AC1, AC3–AC6, V1, V3, V4 | todo |
-| S11 | Gates (§10) and error messages | D | S2 | One test per stop and warn case | AC2, E1–E3, E15, V2 | todo |
+| S11 | Gates (§10) and error messages | D | S2 | One test per stop and warn case | AC2, E1–E4, E15, V2 | todo |
 | S14 | Demo mode on the five saved companies | A with D | S2, S10 | App runs with the network switched off | AC7 | todo |
 | S15 | Reconciliation: six figures (revenue, operating income, net income, total assets, operating cash flow, dividends paid) per member for one demo company, read from the 10-K with page and accession number | All, coordinated by E | S2 | 30 figures match the resolver within USD 0.5 million | – | todo |
 | S16a | Plain-language texts for the 18 tier 1 checks | E | S10 | Each check shows its text; reviewed by the check's owner | AC4 | todo |
