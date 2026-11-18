@@ -26,8 +26,18 @@ tests. **Backup:** B (you review B's PRs first, B reviews yours). **Reconciliati
 
 Sections per slice: S7 → §5, §7 (dividend), §11; S8 → §8, §11, §15 (property tests); S9 → §7 (valuation), §8.4.
 
+**How to sign off (S0c):** recalculate your rows on paper or in Excel, then post a review comment on A's S0c
+pull request: the rows, the date, how you calculated, and any difference. A records it in
+`app/tests/fixtures/synthetic_co.yaml`; until then the fixture refuses your rows.
+
 ## Rules for your area
 
+- Use the line-item names in `LINE_ITEMS` and the units in `UNITS` from `app/src/contracts.py` (e.g.
+  `net_income`; amounts stay in USD as filed, never millions).
+- "Not assessed" (D2 until S4 and a share price) is the status `insufficient_data` with the reason in the explanation
+  (decision Q9 in `docs/plan.md`).
+- Appendix A values for your tests come from `synthetic.expected_check("D3")` in
+  `app/tests/fixtures/synthetic.py`. It refuses a row until your sign-off is recorded (rule 14.5).
 - Valuation and checks are pure functions: no network, no interface (SPEC §11). The risk-free rate comes in as an
   input (FRED or `settings.yaml`); downloading it is A's data layer.
 - Property tests with Hypothesis (SPEC §15): the cost of capital lies between the after-tax cost of debt and the

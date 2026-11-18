@@ -31,8 +31,18 @@ industry files in `app/data/` (`benchmarks_us_2026.csv`, `industry_lookup_us_202
 Sections per slice: S5 → §5, §7 (past performance), §11; S6 → §5, §7 (financial health), §11; S4 → §4, §9.1, §11
 and `docs/benchmarks.md`.
 
+**How to sign off (S0c):** recalculate your rows on paper or in Excel, then post a review comment on A's S0c
+pull request: the rows, the date, how you calculated, and any difference. A records it in
+`app/tests/fixtures/synthetic_co.yaml`; until then the fixture refuses your rows.
+
 ## Rules for your area
 
+- Use the line-item names in `LINE_ITEMS` and the units in `UNITS` from `app/src/contracts.py` (e.g.
+  `net_income`; amounts stay in USD as filed, never millions).
+- "Not assessed" (P4 and P5 until S4) is the status `insufficient_data` with the reason in the explanation
+  (decision Q9 in `docs/plan.md`).
+- Appendix A values for your tests come from `synthetic.expected_check("P3")` in
+  `app/tests/fixtures/synthetic.py`. It refuses a row until your sign-off is recorded (rule 14.5).
 - Checks are pure functions: `CompanyData` (plus benchmarks and settings) in, `CheckResult` out (SPEC §11). Use
   the shapes in `app/src/contracts.py`; if you need a change there, ask A.
 - A missing input gives "insufficient data", never a guess. Equity ≤ 0 fails P4 and H3 with the note "negative

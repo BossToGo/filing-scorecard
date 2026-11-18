@@ -23,6 +23,10 @@ Markdown through pull requests, like everyone else (SPEC §12).
 | Mon 30 | Two timed rehearsals; record the fallback demo with D | Recording saved |
 | Tue 1 Dec | Handout section 11 checklist; `AI-USAGE.md` summary complete; everything on `main` by 12:00 | Done |
 
+**How to sign off (S0c):** recalculate your rows on paper or in Excel, then post a review comment on A's S0c
+pull request: the rows, the date, how you calculated, and any difference. A records it in
+`app/tests/fixtures/synthetic_co.yaml`; until then the fixture refuses your rows.
+
 **Prompt for writing** (replace the task and file):
 
 > I am member E, working on [the business plan section "problem and evidence"] in [docs/business-plan/business-plan.md].

@@ -19,9 +19,10 @@ This first pull request proves that your commits are linked to your GitHub accou
    git config --global user.name
    git config --global user.email
    ```
-   The repository is public, so this e-mail is visible in its history. To keep your private address out of it,
-   use the no-reply address GitHub shows on that page (like `12345678+username@users.noreply.github.com`): it
-   still links your commits to your account.
+   The repository is public and its history is never rewritten, so this e-mail stays visible. To keep your
+   private address out: on that GitHub page tick "Keep my email addresses private", set git to the no-reply
+   address shown there (`git config --global user.email 12345678+username@users.noreply.github.com`), then
+   tick "Block command line pushes that expose my email". Your commits still count for your account.
 3. **Clone** the repository (do not fork it: commits on a fork do not count for the group repository):
    ```bash
    git clone https://github.com/BossToGo/filing-scorecard.git

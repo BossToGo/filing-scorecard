@@ -29,8 +29,15 @@ cannot). **Reconciliation company:** McDonald's (MCD).
 
 Sections per slice: S10 → §3, §5.1, §11; S11 → §10; S10b → §3, §8, §9.1; S13 → §3 item 8; S12 → §9; S17 → §15.
 
+**How to sign off (S0c):** recalculate your rows on paper or in Excel, then post a review comment on A's S0c
+pull request: the rows, the date, how you calculated, and any difference. A records it in
+`app/tests/fixtures/synthetic_co.yaml`; until then the fixture refuses your rows.
+
 ## Rules for your area
 
+- Figures arrive in USD with a unit from `UNITS` (`app/src/contracts.py`); show amounts in USD m through one
+  tested formatting function, never ad hoc in a page. A check with status `insufficient_data` shows its
+  explanation ("not assessed until …" or the missing input), never a score.
 - The interface **shows** numbers it receives from `app/src/`; it never computes, rounds or fills them in
   (SPEC §11). A missing figure shows "n/a" with the reason, never 0.
 - **Score chart:** horizontal bars, one per area, 0 to 6, passes filled, the other results told apart by pattern

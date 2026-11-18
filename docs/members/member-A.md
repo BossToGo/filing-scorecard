@@ -15,7 +15,7 @@ Claude Code runs your slices under the delegation recorded in `docs/architecture
 |---|---|---|
 | Wed 18 | S0: PRs #1 (docs), #2 (skeleton), #3 (SPEC v2.1) reviewed and merged; `main` protected; teammates' `docs/team.md` PRs merged; their usernames added to `.github/CODEOWNERS` | Five merged team PRs; a deliberately failing test turns the check red, then green |
 | Thu 19 | S0b: saved SEC files for the five demo companies in `app/evidence/demo/` | Files load in a test with the network off |
-| Thu 19 | S0c: synthetic company fixture `app/tests/fixtures/synthetic_co.yaml`; collect the sign-offs | Merged with five sign-offs in the PR |
+| Thu 19 | S0c: synthetic company fixture `app/tests/fixtures/synthetic_co.yaml`; record each owner's sign-off comment in it (B: P and H rows, C: D, V, W, F rows, D: AC3 and AC6, E: CALC-S) | Merged with five sign-offs in the PR |
 | Thu 19 | S1: SEC client and cache | Tests run without network on saved files; a real download works from your laptop |
 | Fri 20 | S2: line-item resolver with sources; also the reconciliation file format in `app/tests/reconciliation/README.md`, so B to E can fill in theirs | Tests for every rule in SPEC §5.3 and every planted mistake in §5.4 |
 | Fri 20 | S3: coverage report → `docs/coverage.md`, verified universe → `app/data/universe.csv` | Go/no-go decided at office hours, 16:00–18:00 (SPEC §13.4) |
@@ -49,7 +49,10 @@ in `docs/plan.md`.
 5. **Decide** Q5 (debt tags) after S2; Q1 (missing versus nil) with B and C (`docs/plan.md`, open questions).
 6. **Approve** every teammate's first PR quickly, review at least two PRs a week, D's first.
 7. **Office hours, Fri 20:** present the coverage table and the KO reconciliation; record the go/no-go.
-8. **Before the presentation:** send E five likely questions and answers on your area (Sun 29); walk the team
+8. **Your e-mail:** your commits so far show your personal e-mail in this public repository; history is never
+   rewritten (rule 14.14). Decide whether to switch future commits to your GitHub no-reply address (steps in
+   `docs/team.md`, step 2).
+9. **Before the presentation:** send E five likely questions and answers on your area (Sun 29); walk the team
    through your area (Mon 30).
 
 ## Today's group meeting: agenda
