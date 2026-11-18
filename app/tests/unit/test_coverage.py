@@ -17,7 +17,12 @@ from src.data.coverage import (
     choose_universe,
     coverage,
     decision,
+    depends_on_q1,
     industry,
+    longest_year,
+    pretax_at,
+    problem_type,
+    selection_problem,
     verification_problems,
 )
 
@@ -78,6 +83,10 @@ def test_coverage_over_all_five_years_counts_a_gap_in_any_year():
     companies = [company("A"), company("B", missing=[("interest_expense", YEARS[0])])]
     assert coverage(companies, ["interest_expense"], all_years=True) == {"interest_expense": 0.5}
     assert coverage(companies, ["interest_expense"]) == {"interest_expense": 1.0}
+
+
+def test_the_five_year_column_needs_five_years():
+    assert coverage([company(years=YEARS[2:])], ["revenue"], all_years=True, years=5) == {"revenue": 0.0}
 
 
 def test_a_derived_figure_counts_as_resolved():
@@ -174,6 +183,54 @@ def test_a_restatement_alone_is_not_a_problem():
 
 def test_an_annual_report_older_than_15_months_is_a_problem():
     assert any("older than 15 months" in p for p in check(company(filed=date(2025, 8, 1))))
+
+
+def test_a_company_verified_only_by_the_no_dividend_rule_is_marked():
+    # Plan Q1 is still open: the report must show which companies depend on it.
+    assert depends_on_q1(company(missing=["dividends_paid"])) is True
+    assert depends_on_q1(company()) is False
+
+
+@pytest.mark.parametrize("problem, kind", [
+    ("revenue missing for 2025-12-31", "revenue missing"),
+    ("revenue 2025-12-31 is not positive", "revenue not positive"),
+    ("resolver warning TAG_CONFLICT: net_income 2025-12-31: x", "resolver warning TAG_CONFLICT"),
+    ("only 3 fiscal years, 5 needed", "fewer than five fiscal years"),
+    ("latest annual report older than 15 months", "latest annual report older than 15 months"),
+    ("balance sheet does not balance in 2025-12-31: assets 1", "balance sheet does not balance"),
+])
+def test_problems_are_grouped_by_kind(problem, kind):
+    assert problem_type(problem) == kind
+    assert problem_type(problem_type(problem)) == kind  # grouping twice changes nothing
+
+
+@pytest.mark.parametrize("submissions, reason", [
+    ({"sic": "6021", "filings": {"recent": {"form": ["10-K"]}}}, "financial"),
+    ({"sic": "2834", "filings": {"recent": {"form": ["20-F", "6-K"]}}}, "20-F"),
+    ({"sic": "2911", "filings": {"recent": {"form": ["8-K"]}}}, "no Form 10-K"),
+    ({"sic": "2080", "filings": {"recent": {"form": ["10-Q", "10-K"]}}}, None),
+])
+def test_candidates_are_classified_by_the_selection_rule(submissions, reason):
+    found = selection_problem(submissions)
+    assert (found is None) if reason is None else (reason in found)
+
+
+def test_pre_tax_income_is_found_only_for_an_annual_10k_period():
+    tag = "IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest"
+    facts = {"facts": {"us-gaap": {tag: {"units": {"USD": [
+        {"start": "2025-01-01", "end": "2025-12-31", "val": 1, "form": "10-K"},
+        {"start": "2024-04-01", "end": "2024-12-31", "val": 1, "form": "10-K"}]}}}}}
+    assert pretax_at(facts, date(2025, 12, 31)) is True
+    assert pretax_at(facts, date(2024, 12, 31)) is False  # nine months only
+
+
+def test_the_longest_year_tells_a_53_week_year():
+    def year(start, end):
+        return Fact("revenue", 1.0, "USD", date.fromisoformat(start), date.fromisoformat(end), "reported", "Revenues",
+                    "10-K", "a", None, None)
+    data = CompanyData("T", "0000000001", "T", "2080", None, None, None, None, {"revenue": {
+        date(2023, 9, 30): year("2022-09-25", "2023-09-30"), date(2024, 9, 28): year("2023-10-01", "2024-09-28")}})
+    assert longest_year(data) == 370  # 2022-09-25 → 2023-09-30
 
 
 # --- industries and the choice of 30 ----------------------------------------------------------------------------

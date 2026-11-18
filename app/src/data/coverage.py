@@ -1,15 +1,18 @@
-"""Coverage report logic (SPEC §13.2 S3, §13.4). Owner: A. Pure functions over `CompanyData`; the downloads and
-the report files are in app/scripts/coverage.py.
+"""Coverage report logic (SPEC §13.2 S3, §13.4). Owner: A. Pure functions over SEC JSON and `CompanyData`; the
+downloads and the report files are in app/scripts/coverage.py.
 
-- `coverage`: the share of companies whose latest fiscal year (or every fiscal year) resolves for a line item;
+- `selection_problem`: why a company of the SEC list is not in the sample (None: it is);
+- `coverage`: the share of companies whose latest fiscal year (or every one of five) resolves for a line item;
 - `decision`: the go/no-go of SPEC §13.4 from the two groups of line items;
 - `verification_problems`: why a company is not in the verified universe (empty list: verified): every tier 1
   figure resolves in every fiscal year and passes the accounting checks;
-- `choose_universe`: the verified companies to demo, in list order, with at least `min_industries` industries.
+- `choose_universe`: the verified companies to demo, in list order, with at least `min_industries` industries;
+- helpers for the report: `problem_type`, `depends_on_q1`, `longest_year`, `pretax_at`.
 """
 
 from __future__ import annotations
 
+import re
 from collections import Counter
 from datetime import date
 
@@ -27,22 +30,38 @@ TIER1 = ("revenue", "operating_income", "net_income", "interest_expense", "total
 # Resolver warnings that put a tier 1 figure in doubt (src/data/resolver.py). A restatement alone does not; an
 # average share count matters only from tier 2 on; a TAG_CONFLICT counts only when it is about a tier 1 figure.
 BLOCKING = ("NON_USD", "FY_CHANGE", "DEBT_CHECK", "DEBT_INCOMPLETE", "SIGN", "NO_ANNUAL_DATA")
+PRETAX_TAGS = ("IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest",
+               "IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments")
 
 
 def _resolved(fact: Fact | None) -> bool:
     return fact is not None and fact.value is not None
 
 
-def coverage(companies: list[CompanyData], metrics, all_years: bool = False) -> dict[str, float]:
-    """Share of companies whose latest fiscal year (or, with all_years, every fiscal year) resolves."""
+def selection_problem(submissions: dict) -> str | None:
+    """Why a company of the SEC list is left out of the sample (SPEC §2), or None if it is kept."""
+    sic = int(submissions.get("sic") or 0)
+    if 6000 <= sic <= 6799:
+        return f"financial company, SEC industry code {sic} (SPEC §2)"
+    forms = Counter(submissions.get("filings", {}).get("recent", {}).get("form", []))
+    if not forms.get("10-K"):
+        foreign = next((f for f in ("20-F", "40-F") if forms.get(f)), None)
+        if foreign:
+            return f"files {foreign}, not Form 10-K (foreign company)"
+        return "no Form 10-K filed under this SEC number (e.g. a new holding company)"
+    return None
+
+
+def coverage(companies: list[CompanyData], metrics, all_years: bool = False, years: int = 5) -> dict[str, float]:
+    """Share of companies whose latest fiscal year (or, with all_years, each of `years` fiscal years) resolves."""
     rates = {}
     for metric in metrics:
         count = 0
         for data in companies:
-            years = data.fiscal_years(metric)
-            if not years:
+            found = data.fiscal_years(metric)
+            if not found or (all_years and len(found) < years):
                 continue
-            checked = years if all_years else years[-1:]
+            checked = found if all_years else found[-1:]
             count += all(_resolved(data.fact(metric, y)) for y in checked)
         rates[metric] = count / len(companies) if companies else 0.0
     return rates
@@ -79,7 +98,7 @@ def verification_problems(data: CompanyData, today: date, balance_tolerance: flo
     for metric in TIER1:
         gaps = [y for y in fiscal_years if not _resolved(data.fact(metric, y))]
         if metric == "dividends_paid" and fiscal_years and len(gaps) == len(fiscal_years):
-            continue  # no dividend in any year: "no dividend paid" (plan Q1), not a broken figure
+            continue  # no dividend in any year: "no dividend paid" if plan Q1 is accepted (see depends_on_q1)
         if gaps:
             problems.append(f"{metric} missing for {', '.join(map(str, gaps))}")
 
@@ -116,9 +135,46 @@ def verification_problems(data: CompanyData, today: date, balance_tolerance: flo
     return problems
 
 
+def depends_on_q1(data: CompanyData) -> bool:
+    """True if the company reports no dividend in any fiscal year: verified only if plan Q1 is accepted."""
+    years = data.fiscal_years("revenue")
+    return bool(years) and not any(_resolved(data.fact("dividends_paid", y)) for y in years)
+
+
+def problem_type(problem: str) -> str:
+    """The kind of a verification problem, for counting (applying it twice changes nothing)."""
+    if problem.startswith("resolver warning"):
+        return problem.split(":")[0]
+    if " missing for " in problem:
+        return problem.split(" missing for ")[0] + " missing"
+    if problem.startswith("only ") and "fiscal years" in problem:
+        return "fewer than five fiscal years"
+    if " is not positive" in problem:
+        return problem.split(" ")[0] + " not positive"
+    if problem.startswith("balance sheet does not balance"):
+        return "balance sheet does not balance"
+    return re.sub(r" in \d{4}-\d{2}-\d{2}.*$", "", problem)
+
+
 def industry(data: CompanyData) -> str:
     """The SEC major group: the first two digits of the industry code (SIC)."""
     return data.sic[:2] if data.sic else "unknown"
+
+
+def longest_year(data: CompanyData) -> int:
+    """Longest annual period among the revenue figures, as end − start in days: 364 for 52 weeks, 370 for 53."""
+    return max(((f.period_end - f.period_start).days for y in data.fiscal_years("revenue")
+                if (f := data.fact("revenue", y)) is not None and f.period_start), default=0)
+
+
+def pretax_at(companyfacts: dict, end: date) -> bool:
+    """True if pre-tax income is filed in a 10-K for the fiscal year ending `end` (for the report's what-if only)."""
+    for tag in PRETAX_TAGS:
+        for e in companyfacts.get("facts", {}).get("us-gaap", {}).get(tag, {}).get("units", {}).get("USD", []):
+            if e.get("form") in ("10-K", "10-K/A") and e["end"] == end.isoformat() and "start" in e and \
+                    350 <= (end - date.fromisoformat(e["start"])).days <= 380:
+                return True
+    return False
 
 
 def choose_universe(candidates: list[CompanyData], size: int, min_industries: int) -> list[CompanyData]:

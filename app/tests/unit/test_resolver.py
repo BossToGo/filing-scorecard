@@ -288,6 +288,30 @@ def test_tags_that_should_agree_still_raise_a_conflict():
     assert "TAG_CONFLICT" in codes(data)
 
 
+def test_interest_net_of_interest_income_is_caught_by_a_much_larger_later_tag():
+    # The Linde case (S3 review): InterestExpenseNonoperating holds net interest 255; InterestExpenseDebt gross 575.
+    data = run({"InterestExpenseNonoperating": [flow(255 * M, 2025)], "InterestExpenseDebt": [flow(575 * M, 2025)]})
+    assert data.fact("interest_expense", fy(2025)).value == 255 * M
+    assert any(w.startswith("TAG_CONFLICT: interest_expense") for w in data.warnings)
+
+
+def test_interest_on_debt_only_below_total_interest_is_not_a_conflict():
+    data = run({"InterestExpense": [flow(26 * M, 2025)], "InterestExpenseDebt": [flow(24 * M, 2025)]})
+    assert "TAG_CONFLICT" not in codes(data)
+
+
+def test_interest_and_debt_expense_only_fills_gaps_after_the_debt_interest_tag():
+    tags = load_tag_map()["line_items"]["interest_expense"]["tags"]
+    assert tags[-1] == "InterestAndDebtExpense"
+
+
+def test_a_tag_that_changes_between_years_is_noted_as_a_switch():
+    # The Chevron case: cash without restricted cash until 2024, with it in 2025.
+    data = run({"CashAndCashEquivalentsAtCarryingValue": [instant(100 * M, y) for y in range(2021, 2025)],
+                "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents": [instant(116 * M, 2025)]})
+    assert any(w.startswith("TAG_SWITCH: cash") for w in data.warnings)
+
+
 def test_equity_is_derived_from_total_equity_minus_minority_interest_when_not_reported():
     # S3: nine large companies report only total equity including non-controlling interests.
     data = run({"StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest": [instant(850 * M, 2025)],
@@ -296,10 +320,24 @@ def test_equity_is_derived_from_total_equity_minus_minority_interest_when_not_re
     assert fact.kind == "derived" and fact.value == (850 - 30) * M
 
 
-def test_equity_from_total_equity_without_minority_interest_says_so():
+def test_equity_from_total_equity_without_any_sign_of_minority_interest_says_so():
     data = run({"StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest": [instant(850 * M, 2025)]})
     fact = data.fact("equity", fy(2025))
     assert fact.value == 850 * M and "non-controlling" in fact.note
+
+
+def test_equity_stays_missing_when_minority_interest_exists_but_is_not_reported_that_year():
+    # The GE Vernova case (S3 review): minority interest reported for 2024 only, so 2025's total includes some.
+    data = run({"StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest": [instant(850 * M, 2025)],
+                "MinorityInterest": [instant(40 * M, 2024)]})
+    assert data.fact("equity", fy(2025)).kind == "missing"
+
+
+def test_equity_stays_missing_when_profit_shows_a_minority_share():
+    # ProfitLoss (all owners) differs from NetIncomeLoss (shareholders): non-controlling interests exist.
+    data = run({"StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest": [instant(850 * M, 2025)],
+                "NetIncomeLoss": [flow(140 * M, 2025)], "ProfitLoss": [flow(150 * M, 2025)]})
+    assert data.fact("equity", fy(2025)).kind == "missing"
 
 
 def test_cash_including_restricted_cash_is_a_noted_fallback():

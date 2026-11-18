@@ -18,8 +18,8 @@ Amounts stay in USD exactly as filed. Missing figures are never zero and say why
 input stays missing.
 
 Warnings in `CompanyData.warnings` start with a code, so the gates (slice S11) can act on them:
-RESTATED, TAG_CONFLICT, NON_USD, FY_CHANGE, DERIVED, DEBT_CHECK, DEBT_INCOMPLETE, AVERAGE_SHARES, SIGN,
-NO_ANNUAL_DATA.
+RESTATED, TAG_CONFLICT, TAG_SWITCH, NON_USD, FY_CHANGE, DERIVED, DEBT_CHECK, DEBT_INCOMPLETE, AVERAGE_SHARES,
+SIGN, NO_ANNUAL_DATA.
 
 Shares are stored at their own date (the cover page of the latest annual report): use `data.latest("shares")`.
 """
@@ -143,9 +143,11 @@ class _Resolver:
         for other_tag, other, _ in candidates[1:]:
             if other["val"] != value:
                 notes.append(f"also filed under {other_tag}: {_money(other['val'])}")
-                if (_relative_difference(value, other["val"]) > self.settings["tag_conflict_warning"]
-                        and spec.get("same_definition", True)  # fallbacks of another definition: noted only
-                        and not spec.get("override")):  # an override documents a known difference
+                differs = (_relative_difference(value, other["val"]) > self.settings["tag_conflict_warning"]
+                           and spec.get("same_definition", True))  # fallbacks of another definition: noted only
+                much_larger = ("later_larger_warning" in spec and value > 0
+                               and other["val"] > value * (1 + spec["later_larger_warning"]))
+                if (differs or much_larger) and not spec.get("override"):  # an override documents a difference
                     self.warnings.append(f"TAG_CONFLICT: {metric} {fy_end}: {tag} {_money(value)} used, "
                                          f"{other_tag} gives {_money(other['val'])}")
         if spec.get("outflow") and value < 0:
@@ -226,6 +228,7 @@ class _Resolver:
             self.items.setdefault("current_financial_debt", {})[fy_end] = current
         for metric, ends in derived_used.items():
             self.warnings.append(f"DERIVED: {metric} is calculated, not reported, for {', '.join(map(str, ends))}")
+        self.tag_switches()
         if fy_ends:
             self.bridge_items(fy_ends[-1])
             self.shares(fy_ends[-1])
@@ -255,6 +258,10 @@ class _Resolver:
             if minority is not None:
                 return self._derived(metric, total.value - minority.value, fy_end,
                                      f"total_equity ({_source(total)}) − minority_interest ({_source(minority)})"), ""
+            sign = self._minority_sign(fy_end)
+            if sign:
+                return None, f"not derivable: total equity includes non-controlling interests ({sign}) that are " \
+                             "not reported for this year"
             return self._derived(metric, total.value, fy_end, f"total_equity ({_source(total)}); it includes any "
                                  "non-controlling interests, none reported separately"), ""
         if metric == "total_equity":
@@ -273,6 +280,26 @@ class _Resolver:
                 return not_derivable("total_assets", "total_equity")
             return self._derived(metric, assets - total_equity, fy_end, "total_assets − total_equity"), ""
         return None, ""
+
+    def _minority_sign(self, fy_end: date) -> str:
+        """Why non-controlling interests seem to exist although none is reported at fy_end ("" if no sign)."""
+        for tag in self.map["line_items"]["minority_interest"]["tags"]:
+            other_years = [end for end in self._annual(tag, "instant") if end != fy_end]
+            if other_years:
+                return f"{tag} is reported for {max(other_years)}"
+        profit = self._annual("ProfitLoss", "flow").get(fy_end)
+        net = self._annual("NetIncomeLoss", "flow").get(fy_end)
+        if profit and net and max(profit, key=_order)["val"] != max(net, key=_order)["val"]:
+            return "ProfitLoss differs from NetIncomeLoss"
+        return ""
+
+    def tag_switches(self) -> None:
+        """Warn when a line item's tag changes within the window: the definition may change between years."""
+        for metric, by_year in self.items.items():
+            used = [(end, fact.tag) for end, fact in sorted(by_year.items()) if fact.kind == "reported"]
+            if len({tag for _, tag in used}) > 1:
+                parts = ", ".join(f"{tag} for {end}" for end, tag in used)
+                self.warnings.append(f"TAG_SWITCH: {metric}: {parts}; the definition may differ between years")
 
     def debt(self, fy_end: date) -> tuple[Fact, Fact]:
         """Financial debt and its current part (SPEC §6; plan Q5; rules in tag_map.yaml). Operating leases out."""

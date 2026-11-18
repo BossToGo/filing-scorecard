@@ -30,9 +30,12 @@ line_items:
   interest_expense:
     kind: flow
     # Apple reports no interest expense tag after FY2023 (S0b): its interest expense is then missing, not guessed.
-    same_definition: false  # InterestExpenseDebt covers interest on debt only
-    # InterestAndDebtExpense: 3 companies of the S3 sample report only this tag.
-    tags: [InterestExpense, InterestExpenseNonoperating, InterestAndDebtExpense, InterestExpenseDebt]
+    same_definition: false  # InterestExpenseDebt covers interest on debt only, so it may be a little smaller
+    # ... but a later tag more than 50% larger means the figure used is net of interest income or partial (Linde,
+    # S3 review): that is raised as a TAG_CONFLICT.
+    later_larger_warning: 0.5
+    # InterestAndDebtExpense fills gaps only, last (7 companies of the S3 sample report it; for some it is net).
+    tags: [InterestExpense, InterestExpenseNonoperating, InterestExpenseDebt, InterestAndDebtExpense]
   depreciation_amortization:
     kind: flow
     tags: [DepreciationDepletionAndAmortization, DepreciationAndAmortization, DepreciationAmortizationAndAccretionNet]
