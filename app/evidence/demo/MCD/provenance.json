@@ -1,0 +1,22 @@
+{
+ "ticker": "MCD",
+ "cik": "0000063908",
+ "files": [
+  {
+   "source": "https://data.sec.gov/submissions/CIK0000063908.json",
+   "retrieved": "2026-11-18T14:17:56+00:00",
+   "raw_bytes": 157398,
+   "raw_sha256": "886cdb7bfb3fc2a095e35e989df795c2651e00ea144470a5d1a99662985cf032",
+   "trimmed": "only Form 10-K and 10-K/A in filings.recent; older pages dropped",
+   "file": "submissions.json"
+  },
+  {
+   "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000063908.json",
+   "retrieved": "2026-11-18T14:17:56+00:00",
+   "raw_bytes": 3634145,
+   "raw_sha256": "426688e51562a0bf08a4ede782fbaa7ff97eed5c18477bcffab165b3d5743359",
+   "trimmed": "only Form 10-K and 10-K/A entries (dei: all forms)",
+   "file": "companyfacts.json"
+  }
+ ]
+}

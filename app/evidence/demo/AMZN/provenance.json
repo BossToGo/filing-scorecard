@@ -1,0 +1,22 @@
+{
+ "ticker": "AMZN",
+ "cik": "0001018724",
+ "files": [
+  {
+   "source": "https://data.sec.gov/submissions/CIK0001018724.json",
+   "retrieved": "2026-11-18T14:17:57+00:00",
+   "raw_bytes": 159784,
+   "raw_sha256": "4daee455bea63221d9044d26595d5bc64dbe71882ce046e7b434f4ffcc1d7175",
+   "trimmed": "only Form 10-K and 10-K/A in filings.recent; older pages dropped",
+   "file": "submissions.json"
+  },
+  {
+   "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001018724.json",
+   "retrieved": "2026-11-18T14:17:57+00:00",
+   "raw_bytes": 4554378,
+   "raw_sha256": "acddb7c0a6973a1fd08372de3b292298a34eae7f42a7eedc4bdebd3ac659c8fd",
+   "trimmed": "only Form 10-K and 10-K/A entries (dei: all forms)",
+   "file": "companyfacts.json"
+  }
+ ]
+}
