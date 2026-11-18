@@ -10,7 +10,7 @@ tests. **Backup:** B (you review B's PRs first, B reviews yours). **Reconciliati
 |---|---|---|
 | Wed 18 | Accept the invitation; your `docs/team.md` PR (steps in `docs/team.md`) | Merged |
 | Thu 19 | **Excel cross-check model** of the valuation (SPEC §8) for the synthetic company, built by you from the SPEC formulas, **not** from the code. Save it in `docs/crosscheck/` | Matches SPEC Appendix A, or you report the difference |
-| Thu 19 | **Sign-off for S0c:** recalculate rows CALC-D1–D6, CALC-V1–V6, CALC-W1–W4 and CALC-F1–F5 of `docs/acceptance.md` (your Excel model counts) | Your sign-off comment on A's S0c PR |
+| Thu 19 | **Sign-off for S0c:** recalculate rows CALC-D1–D6, CALC-V1–V6, CALC-W1–W4 and CALC-F1–F5 of `docs/acceptance.md` (your Excel model counts) | Your sign-off comment on PR #5 |
 | Thu 19 → Wed 25 | S8: cost of capital, forecast, terminal value, reverse DCF, sensitivity, branch `c/S8-valuation-engine` | Matches your Excel model and Appendix A; property tests pass |
 | Sat 21–Sun 22 | S7: dividend checks D1–D6 (D2 "not assessed" until S4 and a share price), branch `c/S7-dividend-checks` | Appendix A values reproduced; edge cases tested |
 | Mon 23–Wed 25 | S9 with B: valuation checks V1–V6; switch on D2, branch `c/S9-valuation-checks` | Appendix A values reproduced |
@@ -26,9 +26,10 @@ tests. **Backup:** B (you review B's PRs first, B reviews yours). **Reconciliati
 
 Sections per slice: S7 → §5, §7 (dividend), §11; S8 → §8, §11, §15 (property tests); S9 → §7 (valuation), §8.4.
 
-**How to sign off (S0c):** recalculate your rows on paper or in Excel, then post a review comment on A's S0c
-pull request: the rows, the date, how you calculated, and any difference. A records it in
-`app/tests/fixtures/synthetic_co.yaml`; until then the fixture refuses your rows.
+**How to sign off (S0c):** recalculate your rows on paper or in Excel, then post a review comment on
+[PR #5](https://github.com/BossToGo/filing-scorecard/pull/5): the rows, the date, how you calculated, and any
+difference. A records it under `sign_off` in `app/tests/fixtures/synthetic_co.yaml`, with a link to your
+comment. Until then the fixture refuses your rows with the error `NotSignedOff`, naming you.
 
 ## Rules for your area
 
@@ -36,8 +37,8 @@ pull request: the rows, the date, how you calculated, and any difference. A reco
   `net_income`; amounts stay in USD as filed, never millions).
 - "Not assessed" (D2 until S4 and a share price) is the status `insufficient_data` with the reason in the explanation
   (decision Q9 in `docs/plan.md`).
-- Appendix A values for your tests come from `synthetic.expected_check("D3")` in
-  `app/tests/fixtures/synthetic.py`. It refuses a row until your sign-off is recorded (rule 14.5).
+- Appendix A values for your tests come from `synthetic.expected_check("D3")` and
+  `synthetic.expected_valuation("cost_of_capital")` in `app/tests/fixtures/synthetic.py`. It refuses a row until your sign-off is recorded (rule 14.5).
 - Valuation and checks are pure functions: no network, no interface (SPEC §11). The risk-free rate comes in as an
   input (FRED or `settings.yaml`); downloading it is A's data layer.
 - Property tests with Hypothesis (SPEC §15): the cost of capital lies between the after-tax cost of debt and the

@@ -12,7 +12,7 @@ Markdown through pull requests, like everyone else (SPEC §12).
 |---|---|---|
 | Wed 18 | Accept the invitation; your `docs/team.md` PR (steps in `docs/team.md`) | Merged |
 | Thu 19 | Book 3 to 5 **user interviews** (analysts, advisers, investment-club members); notes without names in `docs/business-plan/interviews.md` | Interviews booked |
-| Thu 19 | **Sign-off for S0c:** recalculate CALC-S (the four area scores) in `docs/acceptance.md` | Your sign-off comment on A's S0c PR |
+| Thu 19 | **Sign-off for S0c:** recalculate CALC-S (the four area scores) in `docs/acceptance.md` | Your sign-off comment on PR #5 (it unlocks `synthetic.expected_scores()` for the app tests) |
 | Sat 21 → | **Business plan** draft in `docs/business-plan/business-plan.md` (contents: SPEC §17); everyone contributes | Draft by Sun 22; final by Sun 29; PDF on `main` |
 | Sat 21–Sun 22 | S16a: texts for the 18 tier 1 checks in `app/ui/texts.yaml` (agree the key names with D) | Each check shows its text; reviewed by the check's owner |
 | Sat 21–Sun 22 | S15: collect the five reconciliation files (A: KO, B: AAPL, C: NVDA, D: MCD, you: AMZN) | 30 figures match the app within USD 0.5 million |
@@ -23,9 +23,10 @@ Markdown through pull requests, like everyone else (SPEC §12).
 | Mon 30 | Two timed rehearsals; record the fallback demo with D | Recording saved |
 | Tue 1 Dec | Handout section 11 checklist; `AI-USAGE.md` summary complete; everything on `main` by 12:00 | Done |
 
-**How to sign off (S0c):** recalculate your rows on paper or in Excel, then post a review comment on A's S0c
-pull request: the rows, the date, how you calculated, and any difference. A records it in
-`app/tests/fixtures/synthetic_co.yaml`; until then the fixture refuses your rows.
+**How to sign off (S0c):** recalculate your rows on paper or in Excel, then post a review comment on
+[PR #5](https://github.com/BossToGo/filing-scorecard/pull/5): the rows, the date, how you calculated, and any
+difference. A records it under `sign_off` in `app/tests/fixtures/synthetic_co.yaml`, with a link to your
+comment. Until then the fixture refuses your rows with the error `NotSignedOff`, naming you.
 
 **Prompt for writing** (replace the task and file):
 

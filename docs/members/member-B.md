@@ -12,7 +12,7 @@ industry files in `app/data/` (`benchmarks_us_2026.csv`, `industry_lookup_us_202
 |---|---|---|
 | Wed 18 | Accept the invitation; your `docs/team.md` PR (steps in `docs/team.md`) | Merged |
 | Thu 19 | **Day-one task (30 min, no code):** open Damodaran's `indname.xls`; write its sheet and column names in `docs/benchmarks.md`; say whether it has a ticker column (in which format, e.g. `NasdaqGS:AAPL`) and SEC industry codes (SPEC §9.1) | `docs/benchmarks.md` merged |
-| Thu 19 | **Sign-off for S0c:** recalculate rows CALC-P1 to CALC-P6 and CALC-H1 to CALC-H6 of `docs/acceptance.md` by hand or in Excel | Your sign-off comment on A's S0c PR |
+| Thu 19 | **Sign-off for S0c:** recalculate rows CALC-P1 to CALC-P6 and CALC-H1 to CALC-H6 of `docs/acceptance.md` by hand or in Excel | Your sign-off comment on PR #5 |
 | Sat 21–Sun 22 | S5: past performance checks P1–P6 (P4, P5 "not assessed" until S4), branch `b/S5-past-checks` | SPEC Appendix A values reproduced; edge cases tested |
 | Sat 21–Sun 22 | S6: financial health checks H1–H6, branch `b/S6-health-checks` | Same |
 | Thu 19 → Wed 25 | S4: extraction script, benchmark CSV, industry lookup and fallback table, branch `b/S4-benchmarks` | Loader tests; three benchmark values and three company-to-group matches compared by hand with the source files |
@@ -31,9 +31,10 @@ industry files in `app/data/` (`benchmarks_us_2026.csv`, `industry_lookup_us_202
 Sections per slice: S5 → §5, §7 (past performance), §11; S6 → §5, §7 (financial health), §11; S4 → §4, §9.1, §11
 and `docs/benchmarks.md`.
 
-**How to sign off (S0c):** recalculate your rows on paper or in Excel, then post a review comment on A's S0c
-pull request: the rows, the date, how you calculated, and any difference. A records it in
-`app/tests/fixtures/synthetic_co.yaml`; until then the fixture refuses your rows.
+**How to sign off (S0c):** recalculate your rows on paper or in Excel, then post a review comment on
+[PR #5](https://github.com/BossToGo/filing-scorecard/pull/5): the rows, the date, how you calculated, and any
+difference. A records it under `sign_off` in `app/tests/fixtures/synthetic_co.yaml`, with a link to your
+comment. Until then the fixture refuses your rows with the error `NotSignedOff`, naming you.
 
 ## Rules for your area
 

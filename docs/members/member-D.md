@@ -10,7 +10,7 @@ cannot). **Reconciliation company:** McDonald's (MCD).
 | When | Slice | Done when (SPEC §13.2) |
 |---|---|---|
 | Wed 18 | Accept the invitation; your `docs/team.md` PR (steps in `docs/team.md`) | Merged |
-| Thu 19 | **Sign-off for S0c:** recalculate AC3 and AC6 of `docs/acceptance.md` (the tier 1 scores of the synthetic company, and the cash override) | Your sign-off comment on A's S0c PR |
+| Thu 19 | **Sign-off for S0c:** recalculate AC3 and AC6 of `docs/acceptance.md` (the tier 1 scores of the synthetic company, and the cash override) | Your sign-off comment on PR #5 |
 | Thu 19 → Sun 22 | S10: input bar, header, score chart, expandable checks, sources page, overrides; start on the synthetic company, then on real data after A's S2. Branch `d/S10-interface` | `streamlit run` works; an app test opens the synthetic company and finds a known score |
 | Sat 21–Sun 22 | S11: gates (SPEC §10) and error messages, branch `d/S11-gates` | One test per stop and warn case |
 | Sat 21–Sun 22 | S14 with A: demo mode on the five saved companies | App runs with the network off |
@@ -29,12 +29,15 @@ cannot). **Reconciliation company:** McDonald's (MCD).
 
 Sections per slice: S10 → §3, §5.1, §11; S11 → §10; S10b → §3, §8, §9.1; S13 → §3 item 8; S12 → §9; S17 → §15.
 
-**How to sign off (S0c):** recalculate your rows on paper or in Excel, then post a review comment on A's S0c
-pull request: the rows, the date, how you calculated, and any difference. A records it in
-`app/tests/fixtures/synthetic_co.yaml`; until then the fixture refuses your rows.
+**How to sign off (S0c):** recalculate your rows on paper or in Excel, then post a review comment on
+[PR #5](https://github.com/BossToGo/filing-scorecard/pull/5): the rows, the date, how you calculated, and any
+difference. A records it under `sign_off` in `app/tests/fixtures/synthetic_co.yaml`, with a link to your
+comment. Until then the fixture refuses your rows with the error `NotSignedOff`, naming you.
 
 ## Rules for your area
 
+- AC3 and AC6 values for your app tests come from `synthetic.expected_tier1()` and
+  `synthetic.expected_override()` in `app/tests/fixtures/synthetic.py`, once your sign-off is recorded.
 - Figures arrive in USD with a unit from `UNITS` (`app/src/contracts.py`); show amounts in USD m through one
   tested formatting function, never ad hoc in a page. A check with status `insufficient_data` shows its
   explanation ("not assessed until …" or the missing input), never a score.

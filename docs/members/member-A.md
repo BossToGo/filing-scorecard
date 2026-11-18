@@ -15,7 +15,7 @@ Claude Code runs your slices under the delegation recorded in `docs/architecture
 |---|---|---|
 | Wed 18 | S0: PRs #1 (docs), #2 (skeleton), #3 (SPEC v2.1) reviewed and merged; `main` protected; teammates' `docs/team.md` PRs merged; their usernames added to `.github/CODEOWNERS` | Five merged team PRs; a deliberately failing test turns the check red, then green |
 | Thu 19 | S0b: saved SEC files for the five demo companies in `app/evidence/demo/` | Files load in a test with the network off |
-| Thu 19 | S0c: synthetic company fixture `app/tests/fixtures/synthetic_co.yaml`; record each owner's sign-off comment in it (B: P and H rows, C: D, V, W, F rows, D: AC3 and AC6, E: CALC-S) | Merged with five sign-offs in the PR |
+| Thu 19 | S0c: synthetic company fixture, [PR #5](https://github.com/BossToGo/filing-scorecard/pull/5); record each owner's sign-off comment under `sign_off` in `app/tests/fixtures/synthetic_co.yaml`, with a link (B: P and H rows, C: D, V, W, F rows, D: AC3 and AC6, E: CALC-S) | Merged with five sign-offs in the PR |
 | Thu 19 | S1: SEC client and cache | Tests run without network on saved files; a real download works from your laptop |
 | Fri 20 | S2: line-item resolver with sources; also the reconciliation file format in `app/tests/reconciliation/README.md`, so B to E can fill in theirs | Tests for every rule in SPEC §5.3 and every planted mistake in §5.4 |
 | Fri 20 | S3: coverage report → `docs/coverage.md`, verified universe → `app/data/universe.csv` | Go/no-go decided at office hours, 16:00–18:00 (SPEC §13.4) |
