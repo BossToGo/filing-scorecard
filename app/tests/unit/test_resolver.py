@@ -444,6 +444,15 @@ def test_total_liabilities_are_derived_from_assets_minus_total_equity():
     assert data.fact("total_liabilities", fy(2025)).kind == "derived"
 
 
+def test_derived_liabilities_leave_out_temporary_equity():
+    # Redeemable minority stakes sit between liabilities and equity (Walmart, Thermo Fisher; second-source audit).
+    data = run({"Assets": [instant(1750 * M, 2025)], "StockholdersEquity": [instant(800 * M, 2025)],
+                "MinorityInterest": [instant(20 * M, 2025)],
+                "RedeemableNoncontrollingInterestEquityCarryingAmount": [instant(10 * M, 2025)]})
+    fact = data.fact("total_liabilities", fy(2025))
+    assert fact.value == (1750 - 820 - 10) * M and "RedeemableNoncontrollingInterestEquityCarryingAmount" in fact.note
+
+
 def test_negative_equity_is_subtracted_with_its_sign():
     # The McDonald's case: 1,750 − (−200) = 1,950.
     data = run({"Assets": [instant(1750 * M, 2025)], "StockholdersEquity": [instant(-200 * M, 2025)]})
@@ -499,6 +508,21 @@ def test_a_company_without_current_maturities_keeps_its_commercial_paper():
 
 
 INSIDE = {"short_term_inside_long_term_debt": True, "reason": "the 10-K classifies them inside long-term debt"}
+
+
+def test_short_term_borrowings_that_are_the_current_part_of_the_total_are_not_added_twice():
+    # Marvell (10-K 0001835632-26-000011, USD m): LongTermDebt 4,470.6 = non-current 3,970.8 + ShortTermBorrowings
+    # 499.8, so its "short-term borrowings" are the current maturities already inside the total.
+    d, c, _ = debt({"LongTermDebt": [instant(900 * M, 2025)], "LongTermDebtNoncurrent": [instant(800 * M, 2025)],
+                    "ShortTermBorrowings": [instant(100 * M, 2025)]})
+    assert d.value == 900 * M and c.value == 100 * M
+    assert "inside" in d.note
+
+
+def test_short_term_borrowings_that_differ_from_the_current_part_are_added():
+    d, c, _ = debt({"LongTermDebt": [instant(900 * M, 2025)], "LongTermDebtNoncurrent": [instant(800 * M, 2025)],
+                    "ShortTermBorrowings": [instant(30 * M, 2025)]})
+    assert d.value == (900 + 30) * M and c.value == (100 + 30) * M
 
 
 def test_a_cited_override_says_short_term_items_are_inside_long_term_debt():
@@ -642,6 +666,26 @@ def test_without_a_cover_page_count_the_diluted_average_is_used_with_a_warning()
     fact = data.latest("shares")
     assert fact.value == 100_000_000 and fact.kind == "derived" and "average" in fact.note
     assert "AVERAGE_SHARES" in codes(data)
+
+
+def test_a_cover_page_count_from_an_older_annual_report_is_not_used():
+    # Mastercard and Visa stopped filing a single cover-page total in 2010 (second-source audit): their latest one is
+    # 16 years old. Only a cover page of the latest annual report counts; else the diluted average, with a warning.
+    tag = "WeightedAverageNumberOfDilutedSharesOutstanding"
+    dei = {"EntityCommonStockSharesOutstanding": {"units": {"shares": [
+        entry(110_000_000, "2010-02-11", form="10-K", filed="2010-02-18")]}}}
+    data = run({tag: [flow(906_000_000, 2025)]}, dei=dei, units={tag: "shares"})
+    fact = data.latest("shares")
+    assert fact.value == 906_000_000 and fact.kind == "derived"
+    assert "2010-02-11" in fact.note
+    assert "AVERAGE_SHARES" in codes(data)
+
+
+def test_an_implausibly_small_share_count_is_missing():
+    # McDonald's files its weighted averages in millions (716.4 for 2025); taken as shares, that would be absurd.
+    tag = "WeightedAverageNumberOfDilutedSharesOutstanding"
+    fact = run({tag: [flow(716.4, 2025)]}, units={tag: "shares"}).latest("shares")
+    assert fact.kind == "missing" and "millions" in fact.note
 
 
 # --- planted sign error (SPEC §5.4) ---------------------------------------------------------------------------------------

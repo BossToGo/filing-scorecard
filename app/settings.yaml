@@ -29,6 +29,12 @@ data:  # owner A (SPEC §4, §5.3)
   debt_check_warning:
     value: 0.01
     reason: "Flag debt when the reported total long-term debt differs from non-current plus current by more than 1% (plan Q5)"
+  cover_page_max_days:
+    value: 200
+    reason: "A cover-page share count is used only if dated within 200 days after the latest fiscal year end, i.e. from the latest annual report (Mastercard's last single total is from 2010; second-source audit)"
+  min_plausible_shares:
+    value: 100000
+    reason: "A share count below 100,000 is a filing in the wrong scale (McDonald's files its averages in millions), so it is treated as missing"
   fiscal_years:
     value: 5
     reason: "FY0 to FY-4: five fiscal years give the four growth intervals of SPEC §7"

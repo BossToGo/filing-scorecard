@@ -101,10 +101,11 @@ Verified companies with a 53-week year (the trait Apple was chosen for, SPEC §1
 | operating_cash_flow missing | 4 |
 | revenue missing | 4 |
 | current_assets missing | 4 |
-| current_liabilities missing | 4 |
 | fewer than five fiscal years | 4 |
+| current_liabilities missing | 4 |
 | total_liabilities missing | 3 |
 | total_assets missing | 3 |
+| shares missing | 1 |
 | resolver warning TAG_CONFLICT | 1 |
 | net_income missing | 1 |
 | resolver warning NON_USD | 1 |
@@ -125,7 +126,7 @@ Verified companies with a 53-week year (the trait Apple was chosen for, SPEC §1
 | 10 | WMT | Walmart Inc. | 5331 | yes | – |
 | 11 | AMD | ADVANCED MICRO DEVICES INC | 3674 | no | resolver warning DEBT_INCOMPLETE |
 | 12 | MU | MICRON TECHNOLOGY INC | 3674 | yes | – |
-| 13 | V | VISA INC. | 7389 | no | equity missing |
+| 13 | V | VISA INC. | 7389 | no | equity missing; shares missing |
 | 14 | JNJ | JOHNSON & JOHNSON | 2834 | no | equity missing; operating_income missing |
 | 15 | MA | Mastercard Inc | 7389 | yes | – |
 | 16 | ABBV | AbbVie Inc. | 2834 | yes | – |

@@ -279,6 +279,12 @@ class _Resolver:
             assets, total_equity = value("total_assets"), value("total_equity")
             if assets is None or total_equity is None:
                 return not_derivable("total_assets", "total_equity")
+            less = self.spec(metric).get("less")
+            temporary = self.reported(f"{metric} (temporary equity)", {"kind": "instant", "tags": less,
+                                                                        "same_definition": False}, fy_end) if less else None
+            if temporary is not None:
+                return self._derived(metric, assets - total_equity - temporary.value, fy_end,
+                                     f"total_assets − total_equity − temporary equity ({_source(temporary)})"), ""
             return self._derived(metric, assets - total_equity, fy_end, "total_assets − total_equity"), ""
         parts = self.spec(metric).get("parts")
         if parts:  # e.g. depreciation and amortisation: the sum of its parts when no combined tag is reported
@@ -392,8 +398,17 @@ class _Resolver:
                 self.warnings.append(f"DEBT_CHECK: {fy_end}: cannot tell whether {total.tag} {_money(total.value)} "
                                      f"includes the current debt {_source(all_current)}; check the 10-K")
 
+        # Short-term borrowings equal to total − non-current, with no current-maturities tag, are the current part of
+        # long-term debt filed under another name (Marvell): already inside the total.
+        short_is_current_part = (not inside and total is not None and noncurrent is not None and current is None
+                                 and short_total is not None and short_total.value > 0
+                                 and _relative_difference(total.value - noncurrent.value, short_total.value)
+                                 <= self.settings["debt_check_warning"])
         if inside:
             short_term, short_notes = 0, ["short-term borrowings classified inside long-term debt"]
+        elif short_is_current_part:
+            short_term, short_notes = 0, [f"nothing added for {_source(short_total)}: it is the current part of "
+                                          f"{total.tag}, already inside it"]
         elif total_is_noncurrent:
             short_term, short_notes = 0, ["short-term borrowings are inside DebtCurrent"]
         elif short_total is not None:
@@ -436,7 +451,14 @@ class _Resolver:
 
     def shares(self, fy0: date) -> None:
         tags = self.map["shares"]
-        cover = [e for entries in self._annual(tags["cover_tag"], "instant", "shares", "dei").values() for e in entries]
+        every_cover = [e for entries in self._annual(tags["cover_tag"], "instant", "shares", "dei").values()
+                       for e in entries]
+        # Only the cover page of the latest annual report counts: dated after the fiscal year end, within a window.
+        cover = [e for e in every_cover
+                 if 0 < (date.fromisoformat(e["end"]) - fy0).days <= self.settings["cover_page_max_days"]]
+        stale = (f"; the latest cover-page count ({max(every_cover, key=_order)['end']}, "
+                 f"{max(every_cover, key=_order)['accn']}) is not from the latest annual report"
+                 if every_cover and not cover else "")
         if cover:
             latest = max(cover, key=_order)
             when = date.fromisoformat(latest["end"])
@@ -446,15 +468,20 @@ class _Resolver:
                 "cover page of the latest annual report")}
             return
         average = self.reported("shares", {"kind": "flow", "tags": [tags["average_tag"]]}, fy0, unit="shares")
+        if average is not None and average.value < self.settings["min_plausible_shares"]:
+            self.items["shares"] = {fy0: self._missing(
+                "shares", fy0, f"{tags['average_tag']} is {average.value:,} shares, implausibly few: probably filed in "
+                f"millions{stale}", unit="shares")}
+            return
         if average is not None:
             self.items["shares"] = {fy0: self._derived(
                 "shares", average.value, fy0, f"diluted weighted average of the fiscal year ({_source(average)}), "
-                "not a period-end count", unit="shares")}
+                f"not a period-end count{stale}", unit="shares")}
             self.warnings.append("AVERAGE_SHARES: the share count is the diluted average of the fiscal year, not a "
                                  "period-end figure")
             return
         self.items["shares"] = {fy0: self._missing("shares", fy0, f"no {tags['cover_tag']} on the cover page and no "
-                                                                  f"{tags['average_tag']}", unit="shares")}
+                                                                  f"{tags['average_tag']}{stale}", unit="shares")}
 
     def company_data(self) -> CompanyData:
         recent = self.submissions.get("filings", {}).get("recent", {})

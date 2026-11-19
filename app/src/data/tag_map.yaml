@@ -66,6 +66,10 @@ line_items:
   total_liabilities:
     kind: instant
     tags: [Liabilities]  # else total assets − total equity (derived); KO, MCD and AMZN have no `Liabilities`
+    # ... minus temporary equity (redeemable stakes between liabilities and equity), if reported: Walmart and Thermo
+    # Fisher (second-source audit, 2026-11-19). The first tag found is used.
+    less: [TemporaryEquityCarryingAmountIncludingPortionAttributableToNoncontrollingInterests,
+           TemporaryEquityCarryingAmountAttributableToParent, RedeemableNoncontrollingInterestEquityCarryingAmount]
   cash:
     kind: instant
     same_definition: false  # the fallback includes restricted cash
