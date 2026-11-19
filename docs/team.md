@@ -3,6 +3,7 @@
 | Member | Name | GitHub | Assistant | Area (SPEC §12, `docs/architecture.md`) | Backup |
 |---|---|---|---|---|---|
 | A | Igor Willms | @BossToGo | Claude Code | Repository, CI, shared data shapes, SEC data layer, evidence, coverage report, demo snapshot | D |
+| E | Emma Riggi | @EmmaRiggi | Claude Code | Excel export (`app/src/export.py`), plain-language texts (`app/ui/texts.yaml`), business plan, slides, README, question bank, `AI-USAGE.md` coordination, user interviews | — |
 
 ## Your first task: add your own line (SPEC §12, rule 1)
 
