@@ -3,6 +3,7 @@
 | Member | Name | GitHub | Assistant | Area (SPEC §12, `docs/architecture.md`) | Backup |
 |---|---|---|---|---|---|
 | A | Igor Willms | @BossToGo | Claude Code | Repository, CI, shared data shapes, SEC data layer, evidence, coverage report, demo snapshot | D |
+| D | Simon Armengaud | @simonarmengaud | Claude Code | Interface (`app/main.py`, `app/ui/` except `texts.yaml`), five forces panel on screen, gates, app tests | A |
 
 ## Your first task: add your own line (SPEC §12, rule 1)
 
