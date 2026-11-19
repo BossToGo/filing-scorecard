@@ -1,0 +1,35 @@
+# Team
+
+| Member | Name | GitHub | Assistant | Area (SPEC §12, `docs/architecture.md`) | Backup |
+|---|---|---|---|---|---|
+| A | Igor Willms | @BossToGo | Claude Code | Repository, CI, shared data shapes, SEC data layer, evidence, coverage report, demo snapshot | D |
+
+## Your first task: add your own line (SPEC §12, rule 1)
+
+This first pull request proves that your commits are linked to your GitHub account. Individual contribution
+(15 points) is read only from the repository history, so do it from **your own laptop**.
+
+1. Accept the invitation: https://github.com/BossToGo/filing-scorecard/invitations
+2. Check that git uses your name and an e-mail that is verified on your GitHub account (GitHub → Settings →
+   Emails):
+   ```bash
+   git config --global user.name
+   git config --global user.email
+   ```
+3. **Clone** the repository (do not fork it: commits on a fork do not count for the group repository):
+   ```bash
+   git clone https://github.com/BossToGo/filing-scorecard.git
+   ```
+4. Open the `filing-scorecard` folder in VS Code, start your assistant there (`claude` in the terminal) and
+   paste this, filled in:
+
+   > I am member [B/C/D/E], [my name], GitHub [@username], and I use [Claude Code / Cline]. Read AGENTS.md and
+   > docs/team.md. Create the branch [letter]/S0-team-[my first name] from the latest main, add my line to the
+   > table in docs/team.md, add my GitHub username to my lines in .github/CODEOWNERS, then show me the diff.
+   > After I approve, commit it under my own git identity, push the branch and open a pull request using the
+   > template. Leave the Explain-back for me to write.
+
+5. Write the Explain-back yourself, then ask a teammate to approve the pull request on GitHub.
+
+Members and areas: A to E as in SPEC §12. If the group has four members, E's work is shared out; if six, D is
+split into interface and five forces plus export.
