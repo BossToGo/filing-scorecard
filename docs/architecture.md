@@ -10,7 +10,7 @@ root now lives under `app/`, as the starter's `AGENTS.md` requires (decision log
 - **Stack:** Python, pandas, requests, PyYAML, python-dotenv, openpyxl (Excel export), Streamlit and Plotly
   (interface), pytest and Hypothesis (tests). Exact versions pinned in `app/requirements.txt` (§11).
   `xlrd` only in `app/scripts/requirements-scripts.txt` for the one-off benchmark extraction.
-- **Why:** one analyst at a time, data and tables, what-if inputs and a download: the starter's dashboard path.
+- **Why:** one user at a time, data and tables, a few what-if inputs and a download: the starter's dashboard path.
   Everything is Python, so every number comes from tested code (rule 14.7), and Streamlit's built-in `AppTest`
   runs the app in tests without a browser (§11).
 - **Alternative considered:** a hand-built web site (Django or FastAPI with HTML and JavaScript). Not now: about
@@ -37,7 +37,7 @@ filing-scorecard/
     │   ├── benchmarks/       benchmark loader, industry map (B)
     │   ├── checks/           past.py, health.py (B); dividend.py, valuation.py (C)
     │   ├── valuation/        cost of capital, forecast, terminal value, reverse DCF, sensitivity (C)
-    │   ├── forces.py (B)  gates.py (D)  export.py (E)
+    │   ├── highlights.py (B)  gates.py (D)  export.py (E)
     ├── scripts/              extract_benchmarks.py (B); coverage.py (A)
     ├── data/                 benchmarks_us_2026.csv, industry_lookup_us_2026.csv, sic_to_damodaran.csv (B);
     │                         universe.csv (A)
@@ -51,7 +51,7 @@ filing-scorecard/
 | Part | Folder / file | Responsibility | Must not |
 |---|---|---|---|
 | Interface | `app/main.py`, `app/ui/` | Inputs, layout, display of values it receives; charts draw prepared values | Compute, round or fill in financial numbers; call the SEC |
-| Logic (shared, tested) | `app/src/checks/`, `app/src/valuation/`, `app/src/forces.py`, `app/src/gates.py` | The 24 checks, valuation, five forces indicators, gates; display-ready values with units, periods and reasons for gaps | Import from `app/ui/`; touch the network or files |
+| Logic (shared, tested) | `app/src/checks/`, `app/src/valuation/`, `app/src/highlights.py`, `app/src/gates.py` | The 24 checks, valuation, strengths and points to watch, gates; display-ready values with units, periods and reasons for gaps | Import from `app/ui/`; touch the network or files |
 | Data access | `app/src/data/`, `app/src/benchmarks/` | SEC and FRED requests (rate limit, retries, cache), resolving tags into `Fact`s with sources, benchmark CSVs | Contain check or valuation rules |
 | Shared shapes | `app/src/contracts.py` | `Fact`, `CheckResult`, `CompanyData` (§11) | Change without the affected owners' approval |
 | Export | `app/src/export.py` | Excel file from prepared values | Recompute anything |
@@ -127,3 +127,4 @@ filing-scorecard/
 | 2026-11-18 | **Delegation.** Igor delegates to Claude Code the routine decisions, commits and pushes on his own branches, and opening pull requests and issues for member A's work (S0, S0b, S0c, S1, S2, S3, S14, release checks). Not covered (`AGENTS.md` rule 1): scope changes, expected values, accepting a blocker or major risk, money, personal data, secrets. Merges need a teammate's approval; explain-back paragraphs are written by Igor | Speed for the foundation the others depend on | Igor |
 | 2026-11-18 | Scope and architecture agreed | Product interview run from SPEC; only §16 asked | Igor; group by reviewing this PR |
 | 2026-11-18 | Names and roles: A Igor, B Greg, C Flo, D Simon, E Emma. The Excel export (S13, `app/src/export.py`) moves from D to E; the five forces indicators (`app/src/forces.py`) move from D to B, D keeps the panel on screen; each member writes one business plan section | Every member contributes code (session 1, slide 10); D had the most slices | Igor; group by approving SPEC v2.2 (PR #3) |
+| 2026-11-19 | **SPEC v2.3, product direction** (Igor, explicitly in the session, not under the delegation): the product is an add-on for retail bank customers; fully automatic, the share price the only required input; optional starting growth and tax rate give a second fair value only, the scores always use the automatic values; no figure, industry or rating overrides; five forces replaced by strengths and points to watch (`app/src/highlights.py`, B); starting growth limited to −10%..+20% and falling in equal steps to terminal growth; beta limited to 0.8–2.0; no fair value when the model does not fit (operating loss, negative first-year free cash flow, equity value ≤ 0); theme colours in `app/.streamlit/config.toml` (D) | The user must be able to trust the page without checking it; Porter's five forces needs judgement and market data the filings do not contain; the valuation rules follow the published Simply Wall St model (github.com/SimplyWallSt/Company-Analysis-Model) | Igor; group by approving the SPEC v2.3 pull request; instructor at office hours (§16.8) |

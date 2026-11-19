@@ -1,50 +1,59 @@
 # Product: Filing Scorecard (working title, SPEC 16.7 [to confirm])
 
 Status: agreed on 2026-11-18 by Igor (member A) on the basis of `SPEC.md` version 2; confirmed by the group
-through the review of the pull request that adds this file.
+through the review of the pull request that adds this file. Updated on 2026-11-19 for `SPEC.md` version 2.3
+(Igor's product direction: retail bank customers, fully automatic, strengths and points to watch instead of five
+forces); the group confirms it by approving the SPEC v2.3 pull request.
 
 **`SPEC.md` has the final say.** This file summarises it for the assistant and the team. If the two disagree,
 `SPEC.md` wins and this file is corrected by pull request. Section numbers below (§) point to `SPEC.md`.
 
 ## Problem and customers
 
-- **Customer:** an analyst at a small asset manager, wealth adviser, family office or investment club with no
-  Bloomberg or FactSet licence (§1).
-- **Problem today:** the first look at a US company takes hours of copying figures from 10-K reports into Excel,
-  is done differently by each analyst, and leaves no trail from a number back to its filing (§1).
-- **Success looks like:** typing a ticker gives a one-page scorecard in under a minute (seconds in demo mode),
-  and every figure on it can be traced to its filing, tag and filing date on the sources page.
+- **Customer:** a retail bank that offers the scorecard to its customers next to its order screen; the **user**
+  is the bank's customer who is about to buy a US stock and wants a quick, objective first look (§1).
+- **Problem today:** reading annual reports takes hours and knowledge most retail investors do not have; free
+  websites mix reported figures with forecasts and rarely show sources; the bank wants to help without giving
+  advice (§1).
+- **Success looks like:** typing a ticker and the share price gives a one-page scorecard in under a minute
+  (seconds in demo mode) that needs no checking by the user: every figure passed the automatic checks or is shown
+  as "not assessed", and each one can be traced to its filing, tag and filing date on the sources page.
 
 ## Main user journey
 
-1. The analyst opens the app on a laptop and sees the input bar: ticker, share price (USD, optional), demo mode.
-2. They type a ticker (and, for valuation, the share price they want to test).
+1. The user opens the app and sees the input bar: ticker, share price (USD; the only required input), demo mode.
+2. They type a ticker and the share price (in a bank, the price would come from the bank's own quote).
 3. The app fetches the company's SEC filings (or reads saved data in demo mode), runs the data-quality gates
-   (§10), and shows the header, the score chart and the 24 checks (§3, §7).
-4. They open a check to see the rule, formula, input figures with fiscal years and the link to the filing; they
-   override a figure if they disagree, and the scores recalculate at once.
-5. They read the valuation detail and the five forces panel, check the sources page, and download the Excel file.
+   (§10), and shows the header, the score chart, the strengths and points to watch and the 24 checks (§3, §7, §9).
+4. They open a check to see the rule in plain words, the formula, the input figures with fiscal years and the
+   link to the filing. Nothing is corrected by hand: a figure that cannot be read is "not assessed" (§1).
+5. They read the valuation detail; if they want, they change the starting growth or the tax rate and see a second
+   fair value "with your assumptions", while the scores stay the same (§8.7). They can check the sources page and
+   download the Excel file.
 
 ## Screens and visuals
 
-Look: a dashboard with one score chart, expandable checks and tables. Used on a phone: no (laptop demo).
-Visual references: none. We do **not** use Simply Wall St's name, the word "snowflake", their radar-chart design
-or their text (§1, rule 14.16).
+Look: a dashboard with one score chart, the strengths and points to watch, expandable checks and tables. Calm and
+light, one accent colour, no gradients, glow or emoji; colours defined once in `app/.streamlit/config.toml` so a
+bank can apply its brand (§3). Used on a phone: no (laptop demo). Visual reference: the way Simply Wall St
+presents results (areas, ticks, strengths and risks), in our own design. We do **not** use Simply Wall St's name,
+the word "snowflake", their radar-chart design or their text (§1, rule 14.16). Wording is information, not
+advice: never "buy", "sell" or "undervalued" (§3).
 
 | Screen | Purpose | The user sees first | Cards / charts / tables (unit, period) | The user can | Loading / empty / error |
 |---|---|---|---|---|---|
-| Scorecard (main page) | First-pass view of one company | Header: company, industry and how it was found, fiscal year end, latest 10-K date, retrieval date, warnings; then the score chart | Score chart (4 areas, passes out of 6); 24 checks, each expandable to rule, formula, inputs (USD m, fiscal year) and filing link | Type ticker and share price (USD); switch demo mode; open a check; override a figure | Loading: "Fetching SEC filings…". Unknown ticker, unsupported company (bank, insurer, REIT, non-USD, non-10-K), source unreachable: a message that says how to fix it (§3) |
-| Valuation detail (tier 2, on the main page) | Show how the fair value was built | Fair value per share against the share price (USD) | Tables: cost of capital build-up (%), 5-year forecast (USD m), growth implied by the price next to actual growth (%), sensitivity grid (USD per share) | Override the forecast ratios and g | No share price: the whole area shows "insufficient data, enter a share price" |
-| Five forces panel (tier 3, on the main page) | Quantitative indicators per force | Five rows: force, suggested rating | Table of indicators with units, company against industry | Confirm or override each rating, with a note | Benchmark missing: "insufficient data" with the reason |
+| Scorecard (main page) | First-pass view of one company | Header: company, industry and how it was found, fiscal year end, latest 10-K date, retrieval date, warnings; then the score chart | Score chart (4 areas, passes out of 6); 24 checks, each expandable to rule, formula, inputs (USD m, fiscal year) and filing link | Type ticker and share price (USD); switch demo mode; open a check | Loading: "Fetching SEC filings…". Unknown ticker, unsupported company (bank, insurer, REIT, non-USD, non-10-K), source unreachable: a message that says how to fix it (§3) |
+| Valuation detail (tier 2, on the main page) | Show how the fair value was built | Fair value per share against the share price (USD) | Tables: cost of capital build-up (%), 5-year forecast (USD m), growth implied by the price next to actual growth (%), sensitivity grid (USD per share) | Optionally type a starting growth (%) and a tax rate (%): a second fair value "with your assumptions" appears; scores unchanged (§8.7) | No share price: the whole area shows "insufficient data, enter a share price". Model does not fit (§8.6): no fair value, the reason in plain words |
+| Strengths and points to watch (tier 3, next to the score chart) | Say in plain words what the numbers mean | Up to five strengths and five points to watch, important ones first | List of short statements with the company's numbers, each linked to its check or figures (§9) | Open the check behind a statement | Inputs missing: the statement is not shown (never guessed) |
 | Sources page | Trace every number | One row per figure | Table: metric, value, unit, period, kind, tag, form, accession, filed, retrieved, note | Filter by kind; follow the link to the filing | Missing figures listed with the reason and the checks they block |
 | Export (tier 2) | Take the work away | Download button | Excel file, three sheets: report, figures, sources | Download | Disabled until a company is loaded |
 
 Agreed visuals:
 
 1. **Score chart** [design details to confirm by member D]. Question: "how does the company do in each area?"
-   Horizontal bars, one per area, on a fixed 0 to 6 scale. Passes filled; fails, "insufficient data" and "not
-   applicable" told apart by pattern and by a text label such as "4 of 5 assessed, 1 with insufficient data"
-   (§3), never by colour alone. No radar chart.
+   One bar of six blocks per area (§3). Passes filled; fails, "insufficient data" and "not applicable" told apart
+   by pattern and by a text label such as "4 of 5 assessed, 1 with insufficient data" (§3), never by colour
+   alone. No radar chart.
 2. **Check details**: tables, not charts. Every figure with unit and fiscal year; missing figures shown as "n/a"
    with the reason, never as 0.
 3. **Sensitivity grid**: a table of fair value per share (USD) for cost of capital ± 1 point against terminal
@@ -61,20 +70,22 @@ message says how to fix the problem.
 | F1 | Ticker in → header with industry, warnings and the stop rules of §10 | 1 | Knows at once whether the company is supported and what to watch |
 | F2 | 18 checks: past performance, financial health, dividend (§7) | 1 | The first-pass view itself |
 | F3 | Sources page: every figure with tag, filing, filing date, retrieval time, kind (§5) | 1 | The trail from number to filing that Excel copying lacks; never cut |
-| F4 | Manual override of any figure, instant recalculation | 1 | The analyst stays in control of disputed figures |
+| F4 | Fully automatic: no figure is typed or corrected by the user; a figure that does not resolve or pass the checks is "not assessed" (§1) | 1 | The user can trust the page without checking it |
 | F5 | Offline demo mode on saved data for five companies | 1 | Reliable demo; no network needed |
 | F6 | Industry lookup and benchmarks; P4, P5, D2 switch on (§4, §9.1) | 2 | Company compared with its industry |
-| F7 | Valuation: 6 checks, DCF, reverse DCF, sensitivity (§7, §8) | 2 | Is the price demanding? |
-| F8 | Excel export: report, figures, sources | 2 | Fits the analyst's existing workflow |
-| F9 | Five forces panel with suggested rating and analyst override (§9) | 3 | Structured view of the industry |
+| F7 | Valuation: 6 checks, DCF with growth limit and fade, reverse DCF, sensitivity, "model does not fit" rules, optional growth and tax inputs for a second fair value (§7, §8) | 2 | Is the price demanding? |
+| F8 | Excel export: report, figures, sources | 2 | Take the result away |
+| F9 | Strengths and points to watch: plain-language statements from fixed rules (§9) | 3 | What the numbers mean, in words a retail customer understands |
 
-Cut list if time runs short, in this order (§2): watchlist → five forces panel → sensitivity table → Excel export.
+Cut list if time runs short, in this order (§2): watchlist → strengths and points to watch → sensitivity table →
+Excel export.
 F1 to F3 are never cut.
 
 ## Explicitly not in the MVP
 
 - Watchlist comparing several companies: stretch, only after release v0.3 (§2).
 - Buy or sell recommendations, analyst forecasts, live share prices, news (§1, §2).
+- Manual correction of figures or of the industry, and Porter's five forces (§2, version 2.3).
 - Automatic share price from Yahoo Finance: decided 2026-11-18, typed in only (§16.2).
 - Banks, insurers and real estate investment trusts (SEC industry codes 6000 to 6799); companies that do not file
   10-K reports in US dollars under US accounting rules (§2).
@@ -97,8 +108,9 @@ F1 to F3 are never cut.
 |---|---|---|---|
 | The 24 checks P1–V6 | §7, one rule each, thresholds in `settings.yaml` | Ratios stored as decimals, shown as %; amounts stored in USD, shown in USD m | Resolved SEC figures (§5, §6), benchmarks, typed price |
 | Cost of capital | §8.1: risk-free + re-levered industry beta × 5.0% premium; cost of debt from filings; 21% tax | % | FRED or setting, benchmarks, SEC figures, price |
-| Fair value per share | §8.2–8.3: 5-year forecast at growth g, terminal value with return on new capital = cost of capital, bridge to equity, ÷ shares | USD per share | As above |
-| Growth implied by the price | §8.4: bisection on g in −20% to +50%; "no solution" if none | % per year | As above |
+| Fair value per share | §8.2–8.3: 5-year forecast; starting growth = past revenue growth limited to −10%..+20%, falling in equal steps to terminal growth; terminal value with return on new capital = cost of capital; bridge to equity; ÷ shares. Not shown when the model does not fit (§8.6) | USD per share | As above |
+| Starting growth implied by the price | §8.4: bisection on the starting growth in −20% to +50%, same fade; "no solution" if none | % per year | As above |
+| Strengths and points to watch | §9: G1–G10, W1–W16, fixed rules, thresholds in `settings.yaml` | Statements with the company's numbers | Check results, SEC figures |
 | Area scores | Number of passes, always with the number assessed | "x of y assessed" | Check results |
 
 Kinds of number (§5.2): `reported`, `derived`, `assumption`, `missing`. **Missing is never zero and never guessed.**
@@ -109,7 +121,7 @@ Known-answer examples: `docs/acceptance.md` (from SPEC Appendix A).
 | Capability | Needed? | Notes |
 |---|---|---|
 | Accounts / sign-in | no | §2 |
-| Per-user saved data | no | Overrides last for the session only |
+| Per-user saved data | no | The optional growth and tax inputs last for the session only |
 | File uploads | no | |
 | Payments | no | |
 | Must be online for others | no | Runs on a laptop from the README; demo mode needs no network (§11) |

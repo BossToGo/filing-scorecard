@@ -68,7 +68,7 @@ valuation:  # owner C (SPEC §7, §8)
     reason: "Default cost of debt is the risk-free rate plus 1.5 points, labelled assumption (SPEC §8.1)"
   forecast_years:
     value: 5
-    reason: "Five-year forecast with one growth rate (SPEC §8.2)"
+    reason: "Five-year forecast; growth falls in equal steps from the starting growth to terminal growth (SPEC v2.3 §8.2)"
   terminal_growth_cap:
     value: 0.025
     reason: "Terminal growth is the lower of the risk-free rate and 2.5% (SPEC §8.3)"
@@ -87,6 +87,21 @@ valuation:  # owner C (SPEC §7, §8)
   well_below_fair_value:
     value: 0.80
     reason: "Well below fair value: share price at most 80% of fair value (V2)"
+  growth_floor:
+    value: -0.10
+    reason: "Lowest automatic starting growth; a steeper past fall is not projected forward (SPEC v2.3 §8.2; C to confirm)"
+  growth_cap:
+    value: 0.20
+    reason: "Highest automatic starting growth: fading to terminal growth, revenue reaches about 1.7 times FY0 in year 5; Nvidia's 68% a year (FY2022-FY2026) is not projected forward (SPEC v2.3 §8.2; C to confirm)"
+  beta_min:
+    value: 0.8
+    reason: "Re-levered beta is kept at or above 0.8, as in the Simply Wall St model (SPEC v2.3 §8.1)"
+  beta_max:
+    value: 2.0
+    reason: "Re-levered beta is kept at or below 2.0, as in the Simply Wall St model (SPEC v2.3 §8.1)"
+  user_tax_rate_max:
+    value: 0.40
+    reason: "Highest tax rate the user may type for their own fair value; 0% is the lowest (SPEC v2.3 §8.7)"
 
 gates:  # owner D (SPEC §10)
   unsupported_sic_min:
@@ -111,4 +126,4 @@ gates:  # owner D (SPEC §10)
     value: 10
     reason: "Warn when the industry group has fewer than 10 firms (SPEC §10)"
 
-forces: {}  # owner B: thresholds for the low / medium / high ratings, set in slice S12 (SPEC §9)
+highlights: {}  # owner B: thresholds of the strengths and points to watch (G1-G10, W1-W16), set in slice S12 (SPEC v2.3 §9)

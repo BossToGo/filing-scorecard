@@ -8,7 +8,8 @@ from pathlib import Path
 import yaml
 
 SETTINGS = Path(__file__).resolve().parents[2] / "settings.yaml"
-SECTIONS = {"data", "benchmarks", "past_performance", "financial_health", "dividend", "valuation", "gates", "forces"}
+SECTIONS = {"data", "benchmarks", "past_performance", "financial_health", "dividend", "valuation", "gates",
+            "highlights"}
 
 
 def load():
@@ -43,6 +44,8 @@ RATES = {  # every setting that is a rate or a share: a decimal strictly between
         "sensitivity_range",
         "sensitivity_step",
         "well_below_fair_value",
+        "growth_cap",
+        "user_tax_rate_max",
     ],
     "gates": ["balance_sheet_tolerance", "terminal_value_share_warning"],
 }
@@ -56,5 +59,10 @@ def test_rates_are_decimals_not_percentages():
             assert 0 < settings[section][name]["value"] < 1, f"{section}.{name} must be a decimal, e.g. 0.40 for 40%"
     valuation = settings["valuation"]
     assert -1 < valuation["reverse_dcf_min_growth"]["value"] < 0 < valuation["reverse_dcf_max_growth"]["value"] < 1
+    # SPEC v2.3 §8.2: the automatic starting growth is limited to a range inside the reverse calculation's range.
+    assert valuation["reverse_dcf_min_growth"]["value"] <= valuation["growth_floor"]["value"] < 0
+    assert 0 < valuation["growth_cap"]["value"] <= valuation["reverse_dcf_max_growth"]["value"]
+    # SPEC v2.3 §8.1: the re-levered beta is limited (0.8 to 2.0), written as plain numbers, not percentages.
+    assert 0 < valuation["beta_min"]["value"] < 1 < valuation["beta_max"]["value"] < 5
     risk_free = valuation["risk_free_rate"]["value"]
     assert risk_free is None or 0 <= risk_free < 0.2, "risk_free_rate is a decimal, e.g. 0.042 for 4.2%"

@@ -6,10 +6,14 @@ One page per member: what you own, what you do and when, and the exact prompts t
 | Member | Guide | Area in one line |
 |---|---|---|
 | A, Igor (@BossToGo) | [member-A.md](member-A.md) | Repository, CI, shared data shapes, SEC data layer, demo data, releases |
-| B, Greg (@Greg3334444) | [member-B.md](member-B.md) | Industry benchmarks, past performance and financial health checks, five forces indicators |
-| C, Flo (@florian-spitzer) | [member-C.md](member-C.md) | Dividend and valuation checks, valuation engine, Excel cross-check |
-| D, Simon (@Simonarmengaud) | [member-D.md](member-D.md) | Interface, gates, demo mode with A, five forces panel, app tests |
-| E, Emma (@EmmaRiggi) | [member-E.md](member-E.md) | Excel export (code), business plan, slides, README, check texts, AI-usage report, question bank |
+| B, Greg (@Greg3334444) | [member-B.md](member-B.md) | Industry benchmarks, past performance and financial health checks, strengths and points to watch |
+| C, Flo (@florian-spitzer) | [member-C.md](member-C.md) | Dividend and valuation checks, valuation engine (growth limit and fade, "model does not fit"), Excel cross-check |
+| D, Simon (@Simonarmengaud) | [member-D.md](member-D.md) | Interface and theme, gates, demo mode with A, strengths and points to watch on screen, app tests |
+| E, Emma (@EmmaRiggi) | [member-E.md](member-E.md) | Excel export (code), business plan, slides, README, check and statement texts, AI-usage report, question bank |
+
+**SPEC v2.3 (19 November):** the product is for retail bank customers and fully automatic. The share price is the
+only required input; nobody corrects figures by hand; five forces is replaced by strengths and points to watch
+(SPEC §9). Read SPEC §1, §3 and the sections of your slices before your next prompt.
 
 ## Every work session, the same seven steps
 

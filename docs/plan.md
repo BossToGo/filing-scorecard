@@ -34,30 +34,31 @@ Status values: `todo`, `in progress`, `done (<date>, commit <short hash>)`, `blo
 | S2 | Line-item resolver with sources (§5, §6) | A | S1, S0b | Tests for every rule in §5.3 and every planted mistake in §5.4 | E5–E8, PE1–PE6 | todo |
 | S3 | Coverage report over about 100 non-financial companies from at least 8 industries → `docs/coverage.md`; the 30 companies of the verified universe → `app/data/universe.csv` | A | S2 | Table exists; go/no-go decided at office hours Fri 20 (§13.4) | E16 | todo |
 | S5 | Past performance checks P1–P6 (P4, P5 "not assessed" until S4) | B | S0c | Appendix A values reproduced; edge cases tested | AC3, CALC-P* | todo |
-| S6 | Financial health checks H1–H6 | B | S0c | Same | AC3, AC6, CALC-H*, E9, E12 | todo |
+| S6 | Financial health checks H1–H6 | B | S0c | Same | AC3, CALC-H*, E9, E12 | todo |
 | S7 | Dividend checks D1–D6 (D2 "not assessed" until S4 and a share price) | C | S0c | Same | AC3, CALC-D*, E10, E11 | todo |
-| S10 | Interface: input bar, header, score chart, expandable checks, sources page, overrides | D | S0c, then S2 | `streamlit run` works; app test opens the synthetic company and finds a known score | AC1, AC3–AC6, V1, V3, V4 | todo |
+| S10 | Interface: input bar, header, score chart (six-block bars), expandable checks, sources page, theme file `app/.streamlit/config.toml` (SPEC v2.3 §3) | D | S0c, then S2 | `streamlit run` works; app test opens the synthetic company and finds a known score | AC1, AC3–AC5, V1, V3, V4 | todo |
 | S11 | Gates (§10) and error messages | D | S2 | One test per stop and warn case | AC2, E1–E3, E15, V2 | todo |
 | S14 | Demo mode on the five saved companies | A with D | S2, S10 | App runs with the network switched off | AC7 | todo |
 | S15 | Reconciliation: six figures (revenue, operating income, net income, total assets, operating cash flow, dividends paid) per member for one demo company, read from the 10-K with page and accession number | All, coordinated by E | S2 | 30 figures match the resolver within USD 0.5 million | – | todo |
-| S16a | Plain-language texts for the 18 tier 1 checks | E | S10 | Each check shows its text; reviewed by the check's owner | AC4 | todo |
+| S16a | Plain-language texts for the 18 tier 1 checks, written for a retail reader | E | S10 | Each check shows its text; reviewed by the check's owner | AC4 | todo |
 
 ### Tier 2: release v0.2 "Valuation" (target Wed 25 November)
 
 | # | Slice | Owner | Depends on | Done when (evidence) | Acceptance | Status |
 |---|---|---|---|---|---|---|
 | S4 | Extraction script, benchmark CSV, industry lookup and fallback table (§4, §9.1); starts Thu 19 with the day-one look at `indname.xls`, in parallel with S5 | B | S0 | Loader tests; three benchmark values and three company-to-group matches compared by hand with the source files | AC8, E17 | todo |
-| S8 | Cost of capital, forecast, terminal value, reverse calculation, sensitivity; starts Thu 19 on the synthetic company, with C's Excel model | C | S0c | Matches C's separate Excel model and Appendix A; property tests pass | CALC-W*, CALC-F*, E12–E14 | todo |
-| S9 | Valuation checks V1–V6; switch on P4, P5, D2 | C with B | S8, S4 | Appendix A values reproduced | AC8, AC9, CALC-V*, CALC-S | todo |
-| S10b | Interface: share price input, valuation detail, industry with route and number of firms, override dropdown | D | S8, S4 | App test finds the fair value of the synthetic company | AC9, AC10 | todo |
+| S2b | Before S12: the `Statement` shape in `app/src/contracts.py`; the basic share count per year and cash and short-term investments in the data layer (SPEC v2.3 §6, §9, §11) | A | S2 | Contract tests pass; both resolve for the five demo companies, with the share counts' accession numbers | E21, E23 | todo |
+| S8 | Cost of capital (beta limited to 0.8–2.0), forecast with the growth limit and fade, terminal value, reverse calculation, sensitivity, when the model does not fit, the user's assumptions (SPEC v2.3 §8.1–8.7); starts Thu 19 on the synthetic company, with C's Excel model | C | S0c | Matches C's separate Excel model and Appendix A (valuation rows recalculated by C first: they changed in v2.3); property tests pass; one test per case of §8.6 | CALC-W*, CALC-F*, E12–E14, E18–E20, E22 | todo |
+| S9 | Valuation checks V1–V6 (V6 against the fair value at the growth cap, SPEC v2.3); switch on P4, P5, D2 | C with B | S8, S4 | Appendix A values reproduced; the `insufficient_data` and `not_applicable` cases of §8.6 tested | AC8, AC9, CALC-V*, CALC-S | todo |
+| S10b | Interface: share price input, valuation detail with each assumption and source, optional growth and tax inputs with the second fair value, the reasons of §8.6, industry with route and number of firms | D | S8, S4 | App test finds the fair value of the synthetic company; a changed growth changes only the second fair value | AC6, AC9, AC10 | todo |
 | S13 | Excel export | E | S10 | Export reopened by a test; figures equal the screen | AC11 | todo |
 | S16b | Texts for the valuation checks and the industry explanations | E | S10b | Reviewed by C | – | todo |
 
-### Tier 3: release v0.3 "Five forces" (feature freeze Thu 26 November, 20:00)
+### Tier 3: release v0.3 "Strengths and points to watch" (feature freeze Thu 26 November, 20:00)
 
 | # | Slice | Owner | Depends on | Done when (evidence) | Acceptance | Status |
 |---|---|---|---|---|---|---|
-| S12 | Five forces panel (§9) | B (indicators, `app/src/forces.py`) with D (panel) | S4 | Indicator tests; override survives recalculation | AC12 | todo |
+| S12 | Strengths and points to watch (SPEC v2.3 §9) | B (rules, `app/src/highlights.py`) with D (on screen) and E (texts, reviewed by B) | S2b, S4, S5–S9 | One test per statement (shown, not shown, input missing); the synthetic company's statements match Appendix A | AC12, CALC-G | todo |
 | S17 | End-to-end app test: demo ticker, a known score, a known figure, a known fair value | D | S14 | Passes twice in a row in the workflow | AC1, V1 | todo |
 
 ### After the freeze: fixes only (Fri 27 November – Tue 1 December)
@@ -68,8 +69,8 @@ Status values: `todo`, `in progress`, `done (<date>, commit <short hash>)`, `blo
 | S19 | README and fresh-clone test on one Windows and one Mac laptop, by a member who did not write the README | E writes, two members test | v0.3 | Works from the README alone on both | todo |
 | S20 | Business plan (Markdown → PDF), slides, recorded fallback demo, question bank | E leads and edits; each member writes one section (SPEC §17) | – | Files on `main` before the deadline | todo |
 
-Cut list if a release slips by more than a day (§2): watchlist → five forces panel → sensitivity table → Excel
-export. The tier 1 scorecard and the sources page are never cut. Everything on `main` by Tue 1 December, 12:00.
+Cut list if a release slips by more than a day (§2): watchlist → strengths and points to watch → sensitivity table
+→ Excel export. The tier 1 scorecard and the sources page are never cut. Everything on `main` by Tue 1 December, 12:00.
 
 ## Progress log
 
@@ -81,6 +82,7 @@ export. The tier 1 scorecard and the sources page are never cut. Everything on `
 | 2026-11-18 | S0.3 | Walking skeleton on branch `a/S0-skeleton`: shared data shapes with built-in rules, network guard for tests, layering test, `settings.yaml` with SPEC starting values, first page, CI on Linux and Windows, pull request template, `CODEOWNERS`, `docs/team.md`, team rules in `AGENTS.md` | Tests written first and seen failing (7 failed, 1 error); then pytest: 51 passed locally (Python 3.14.6, macOS); environment rebuilt from `requirements.txt` alone: 51 passed, `pip check` clean | CI result on GitHub: see the pull request |
 | 2026-11-18 | S0 | Member guides in `docs/members/` (A to E) and a shared seven-step session routine; onboarding in `docs/team.md` fixed after the code review (no CODEOWNERS edit by new members, conflict and no-`gh` instructions, no-reply e-mail) | Scripted check against plan, acceptance and architecture: no gaps after two fixes | Names of B to E still [to confirm] |
 | 2026-11-18 | S0 | Names and final roles: B Greg, C Flo, D Simon, E Emma; Excel export (S13) moved from D to E, five forces indicators from D to B, one business plan section per member; guides, owner table and `CODEOWNERS` updated (SPEC v2.2 in PR #3) | Script: names, usernames and owners agree across SPEC, guides, `CODEOWNERS`, plan; 100 tests pass | Group approves PR #3 |
+| 2026-11-19 | S0 | SPEC v2.3 (Igor's product direction): retail bank customers; fully automatic, share price the only required input, optional growth and tax for a second fair value only; no figure or industry overrides; five forces replaced by strengths and points to watch (S12, B); growth limit and fade, beta limits, "model does not fit" rules (S8, C); member guides, product summary and owners updated; `forces` renamed `highlights` in `settings.yaml`, the layering test and `CODEOWNERS` | Appendix A valuation recalculated by an independent script that first reproduced the v2.2 values (21.68, 14.10%): fair value 19.74, implied starting growth 25.00%; pytest on this branch: see the pull request | Group approves the SPEC v2.3 pull request; instructor asked at office hours (§16.8); C and B recalculate their new Appendix A rows |
 
 ## Known problems and open questions
 
@@ -102,7 +104,9 @@ fixed by a pull request to `SPEC.md`.
   positive: with a −5% operating margin, the synthetic company's fair value falls from −5.62 at g = −20% to −50.63
   at g = +50% (USD per share). Proposal: the bisection checks the sign at both ends and does not assume a direction;
   the property test applies only to positive margins; the app says "not meaningful" when the margin is zero or
-  negative. Decide by: C.
+  negative. Decide by: C. **Answered by SPEC v2.3 §8.6 (2026-11-19):** operating income ≤ 0 (or first-year free
+  cash flow ≤ 0, or equity value ≤ 0) → no fair value and no reverse DCF, V1, V2, V6 `not_applicable` with the
+  reason; the property test therefore applies only where the model fits.
 - **Q5. Debt tags may double count** (§6). `CommercialPaper` is often part of `ShortTermBorrowings`; `DebtCurrent`
   is not in the list. Written from memory: check on real files in S2 and S3. Decide by: A.
 - **Q6. Terminal growth barely moves the sensitivity grid** (§8.5). With return on new capital equal to the cost of

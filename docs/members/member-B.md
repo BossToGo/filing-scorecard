@@ -2,9 +2,9 @@
 
 **You own:** `app/src/benchmarks/`, `app/scripts/extract_benchmarks.py`, `app/scripts/requirements-scripts.txt`, the
 industry files in `app/data/` (`benchmarks_us_2026.csv`, `industry_lookup_us_2026.csv`, `sic_to_damodaran.csv`),
-`app/src/checks/past.py`, `app/src/checks/health.py`, `app/src/forces.py` (five forces indicators and suggested
-ratings), `docs/benchmarks.md`, the `benchmarks`, `past_performance`, `financial_health` and `forces` sections of
-`app/settings.yaml`, and your tests.
+`app/src/checks/past.py`, `app/src/checks/health.py`, `app/src/highlights.py` (strengths and points to watch,
+SPEC v2.3 §9), `docs/benchmarks.md`, the `benchmarks`, `past_performance`, `financial_health` and `highlights`
+sections of `app/settings.yaml`, and your tests.
 **Backup:** C, Flo (you review Flo's PRs first, Flo reviews yours). **Reconciliation company:** Apple (AAPL).
 
 ## Your slices, in order
@@ -18,7 +18,7 @@ ratings), `docs/benchmarks.md`, the `benchmarks`, `past_performance`, `financial
 | Sat 21–Sun 22 | S6: financial health checks H1–H6, branch `b/S6-health-checks` | Same |
 | Thu 19 → Wed 25 | S4: extraction script, benchmark CSV, industry lookup and fallback table, branch `b/S4-benchmarks` | Loader tests; three benchmark values and three company-to-group matches compared by hand with the source files |
 | Mon 23–Wed 25 | S9 with C: switch on P4 and P5 | SPEC Appendix A values reproduced |
-| Thu 26 | S12: five forces indicators and suggested ratings in `app/src/forces.py` (SPEC §9), branch `b/S12-five-forces`; Simon (D) shows them on screen | Indicator tests pass; override survives recalculation |
+| Thu 26 | S12: strengths and points to watch in `app/src/highlights.py` (SPEC §9: rules G1–G10 and W1–W16, thresholds in the `highlights` section of `app/settings.yaml`), branch `b/S12-highlights`; Simon (D) shows them, Emma (E) writes the texts | One test per statement (shown, not shown, input missing); the synthetic company's statements match SPEC Appendix A |
 | Sat 21–Sun 29 | **Business plan section:** users, market and alternatives, in `docs/business-plan/sections/B-market.md` (Emma, E, assembles the plan; prompt in `docs/members/README.md`) | Draft by Sun 22; final by Sun 29 |
 | Fri 27–Sun 29 | S18, break-it round: a member from another area reviews your code read-only; you break each of your formulas once on purpose and record each break and the test that caught it in `docs/testing.md` | Every finding is a failing test or a written dismissal |
 
@@ -31,7 +31,7 @@ ratings), `docs/benchmarks.md`, the `benchmarks`, `past_performance`, `financial
 > folders.
 
 Sections per slice: S5 → §5, §7 (past performance), §11; S6 → §5, §7 (financial health), §11; S4 → §4, §9.1, §11
-and `docs/benchmarks.md`; S12 → §9, §11.
+and `docs/benchmarks.md`; S12 → §7, §9, §11 and SPEC Appendix A ("Strengths and points to watch").
 
 **How to sign off (S0c):** recalculate your rows on paper or in Excel, then post a review comment on
 [PR #5](https://github.com/BossToGo/filing-scorecard/pull/5): the rows, the date, how you calculated, and any
@@ -66,6 +66,16 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
   equity" (SPEC §7).
 - The app reads only your CSV files, never Damodaran's `.xls` (SPEC §4). The full `indname.xls` is never committed.
 - For each benchmark, write the column you chose and why in the `benchmarks` section of `app/settings.yaml`.
+  Never extract a column built from analyst forecasts (for example expected growth in `pedata.xls`, SPEC §4).
+- **Strengths and points to watch (S12, SPEC v2.3 §9)** replace the five forces panel. Most statements reuse
+  check results you and Flo already compute (e.g. W8 is "H5 fails"); four are new small indicators (W3 margin
+  drop, W13 profit above cash from operations, W15 cash runway, G9/W16 gross margin spread) plus the share count
+  pair G10/W14. Igor (A) adds what you need first (slice S2b): the `Statement` shape in `app/src/contracts.py`,
+  the basic share count per year with its accession number (G10/W14 compare FY0 with FY-1 only when both come
+  from the same 10-K), and cash and short-term investments (G5, W15). A statement is shown only when every check
+  it names passed or failed and every figure it uses is present; a ratio with a denominator ≤ 0 is not computed.
+  Your function returns `Statement` objects only; the wording is Emma's (`app/ui/texts.yaml`), written within
+  S12 and reviewed by you.
 
 ## Only you
 
@@ -74,9 +84,11 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
    yourself (S4).
 3. **Reconciliation (S15), Apple:** revenue, operating income, net income, total assets, operating cash flow,
    dividends paid, read by hand from the latest 10-K with page and accession number. Not by the assistant.
-4. **Decide** Q3 (H4 when equity is negative) and Q1 (missing versus nil, with Flo and Igor; Amazon has no dividend tag at all (confirmed in the saved SEC files)): see `docs/plan.md`.
-5. **Explain-back** on each PR; at least two reviews a week, Flo's (C) first.
-6. **Before the presentation:** five likely questions and answers on your area to E (Sun 29); walk-through (Mon 30).
+4. **Recalculate** the "Strengths and points to watch" table of SPEC Appendix A (v2.3) before S12, and post it
+   with your S0c sign-off or in the S12 pull request.
+5. **Decide** Q3 (H4 when equity is negative) and Q1 (missing versus nil, with Flo and Igor; Amazon has no dividend tag at all (confirmed in the saved SEC files)): see `docs/plan.md`.
+6. **Explain-back** on each PR; at least two reviews a week, Flo's (C) first.
+7. **Before the presentation:** five likely questions and answers on your area to E (Sun 29); walk-through (Mon 30).
 
 ## If you are blocked
 

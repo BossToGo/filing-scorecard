@@ -40,8 +40,8 @@ This first pull request proves that your commits are linked to your GitHub accou
 5. Write the Explain-back yourself, then ask a teammate to approve the pull request on GitHub. If GitHub says
    your branch has conflicts (another member's line went in first), tell your assistant: "Bring the latest main
    into my branch, keep both rows in docs/team.md, run the tests and push."
-6. Tell Igor (A) your letter and GitHub username. He adds you to `.github/CODEOWNERS`, so GitHub asks you to
+6. Tell Igor (A) your letter and GitHub username. Igor adds you to `.github/CODEOWNERS`, so GitHub asks you to
    review every change to your folders.
 
-Members and areas: A to E as in SPEC §12. If the group has four members, E's work is shared out; if six, D is
-split into interface and five forces plus export.
+Members and areas: A to E as in SPEC §12. If the group has four members, E's work is shared out; if six,
+D's interface work is split in two.
