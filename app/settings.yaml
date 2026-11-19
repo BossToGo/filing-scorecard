@@ -1,0 +1,114 @@
+# Thresholds and assumptions (SPEC §7, §8, §10). The values are the team's starting choices from SPEC.md.
+#
+# One section per owner (SPEC risk R10): change only your own section; for another section, ask its owner.
+# Every setting has exactly a `value` and a one-line `reason` (checked by tests/unit/test_settings.py).
+# Rates are decimals: 40% is written 0.40 (SPEC §5.4, percent against decimal).
+
+data:  # owner A (SPEC §4, §5.3)
+  max_requests_per_second:
+    value: 5
+    reason: "SEC fair access allows 10 per second; we keep half that (SPEC §4)"
+  retries:
+    value: 3
+    reason: "Three retries with a growing pause, then the input is marked missing (SPEC §4)"
+  annual_forms:
+    value: ["10-K", "10-K/A"]
+    reason: "Only annual reports and their amendments (SPEC §5.3.1)"
+  flow_period_min_days:
+    value: 350
+    reason: "A strict 365-day filter would drop 53-week fiscal years (SPEC §5.3.1)"
+  flow_period_max_days:
+    value: 380
+    reason: "Upper bound of an annual flow period, 53-week years included (SPEC §5.3.1)"
+  restatement_warning:
+    value: 0.01
+    reason: "Show both values with a warning when a restatement differs by more than 1% (SPEC §5.3.4)"
+
+benchmarks: {}  # owner B: one benchmark column per check, with the reason for the choice (SPEC §7, slice S4)
+
+past_performance:  # owner B (SPEC §7)
+  p1_min_profitable_years:
+    value: 4
+    reason: "Consistently profitable: net income above zero in at least 4 of the last 5 fiscal years (P1)"
+
+financial_health:  # owner B (SPEC §7)
+  max_net_debt_to_equity:
+    value: 0.40
+    reason: "Moderate debt: (debt minus cash) divided by equity below 40% (H3)"
+  min_operating_cash_flow_to_debt:
+    value: 0.20
+    reason: "Debt covered by cash flow: operating cash flow at least 20% of debt (H5)"
+  min_interest_cover:
+    value: 5.0
+    reason: "Interest covered: operating income at least 5 times interest expense (H6)"
+
+dividend:  # owner C (SPEC §7)
+  max_dividend_cut:
+    value: 0.10
+    reason: "No large cut: no year-on-year fall in dividends paid of more than 10% in five years (D3)"
+  max_payout_ratio:
+    value: 0.90
+    reason: "Covered by earnings: dividends paid below 90% of net income (D5)"
+
+valuation:  # owner C (SPEC §7, §8)
+  risk_free_rate:
+    value: null
+    reason: "Type the 10-year Treasury yield here (e.g. 0.04) when no FRED key is set; otherwise FRED DGS10 (SPEC §8.1)"
+  equity_risk_premium:
+    value: 0.05
+    reason: "Session 5 convention (SPEC §8.1)"
+  tax_rate:
+    value: 0.21
+    reason: "US federal statutory rate; state taxes ignored, stated as a limitation (SPEC §8.1)"
+  cost_of_debt_max_spread:
+    value: 0.08
+    reason: "A cost of debt outside risk-free to risk-free plus 8 points is replaced by the default (SPEC §8.1)"
+  cost_of_debt_default_spread:
+    value: 0.015
+    reason: "Default cost of debt is the risk-free rate plus 1.5 points, labelled assumption (SPEC §8.1)"
+  forecast_years:
+    value: 5
+    reason: "Five-year forecast with one growth rate (SPEC §8.2)"
+  terminal_growth_cap:
+    value: 0.025
+    reason: "Terminal growth is the lower of the risk-free rate and 2.5% (SPEC §8.3)"
+  reverse_dcf_min_growth:
+    value: -0.20
+    reason: "Lower end of the search range for the growth implied by the price (SPEC §8.4)"
+  reverse_dcf_max_growth:
+    value: 0.50
+    reason: "Upper end of the search range for the growth implied by the price (SPEC §8.4)"
+  sensitivity_range:
+    value: 0.01
+    reason: "Sensitivity grid spans plus and minus 1 point of cost of capital and of terminal growth (SPEC §8.5)"
+  sensitivity_step:
+    value: 0.005
+    reason: "Sensitivity grid steps of 0.5 points (SPEC §8.5)"
+  well_below_fair_value:
+    value: 0.80
+    reason: "Well below fair value: share price at most 80% of fair value (V2)"
+
+gates:  # owner D (SPEC §10)
+  unsupported_sic_min:
+    value: 6000
+    reason: "Banks, insurers and real estate trusts (SEC codes 6000 to 6799) are not supported (SPEC §2)"
+  unsupported_sic_max:
+    value: 6799
+    reason: "Upper end of the unsupported SEC industry codes (SPEC §2)"
+  min_fiscal_years:
+    value: 3
+    reason: "Fewer than three fiscal years: no report (SPEC §10)"
+  balance_sheet_tolerance:
+    value: 0.01
+    reason: "Warn when total assets differ from liabilities plus equity by more than 1% (SPEC §10)"
+  stale_report_months:
+    value: 15
+    reason: "Warn when the latest annual report is older than 15 months (SPEC §10)"
+  terminal_value_share_warning:
+    value: 0.75
+    reason: "Warn when the terminal value is above 75% of enterprise value (SPEC §10)"
+  min_firms_in_industry:
+    value: 10
+    reason: "Warn when the industry group has fewer than 10 firms (SPEC §10)"
+
+forces: {}  # owner D: thresholds for the low / medium / high ratings, set in slice S12 (SPEC §9)

@@ -1,0 +1,50 @@
+# Who is asked to review what (SPEC §12). GitHub requests a review from the owner of the files a pull request
+# touches; the last matching line wins. Member A fills in each member's GitHub username once their line is in
+# docs/team.md. Until then those lines stay commented out.
+
+# Default and member A: repository setup, CI, shared shapes, data layer, evidence, coverage, product documents
+*                                   @BossToGo
+
+# Member B (benchmarks, industry files, past performance and health checks)
+# /app/src/benchmarks/                           @<B>
+# /app/scripts/extract_benchmarks.py             @<B>
+# /app/scripts/requirements-scripts.txt          @<B>
+# /app/data/benchmarks_us_2026.csv               @<B>
+# /app/data/industry_lookup_us_2026.csv          @<B>
+# /app/data/sic_to_damodaran.csv                 @<B>
+# /app/src/checks/past.py                        @<B>
+# /app/src/checks/health.py                      @<B>
+# /docs/benchmarks.md                            @<B>
+
+# Member C (dividend and valuation checks, valuation engine, Excel cross-check)
+# /app/src/checks/dividend.py                    @<C>
+# /app/src/checks/valuation.py                   @<C>
+# /app/src/valuation/                            @<C>
+# /docs/crosscheck/                              @<C>
+
+# Member D (interface, five forces, gates, export, app tests)
+# /app/main.py                                   @<D>
+# /app/ui/                                       @<D>
+# /app/src/forces.py                             @<D>
+# /app/src/gates.py                              @<D>
+# /app/src/export.py                             @<D>
+# /app/tests/app/                                @<D>
+
+# Member E (business plan, slides, README, plain-language texts, question bank)
+# /README.md                                     @<E>
+# /app/ui/texts.yaml                             @<E>
+# /docs/business-plan/                           @<E>
+# /docs/slides/                                  @<E>
+# /docs/qa-bank.md                               @<E>
+
+# Guardrails: the files that enforce the team rules. A change here must be reviewed by A and, once known, by the
+# backup D (A cannot approve his own pull requests). Keep these lines last so they win.
+/.github/                           @BossToGo
+/.gitignore                         @BossToGo
+/AGENTS.md                          @BossToGo
+/CLAUDE.md                          @BossToGo
+/.claude/                           @BossToGo
+/app/pytest.ini                     @BossToGo
+/app/tests/conftest.py              @BossToGo
+/app/tests/network_guard.py         @BossToGo
+/app/src/contracts.py               @BossToGo

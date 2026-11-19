@@ -98,10 +98,39 @@ Next: <the suggested next step>
 
 ## This project (filled in by product-interview)
 
-- Product: see `docs/product.md`
-- Stack: `[not chosen yet]`
-- Python environment: `[not set up yet]` (version, `app/.venv`)
-- Install: `[not set up yet]`
-- Run: `[not set up yet]`
-- Test: `[not set up yet]`
-- Browser check: `[not set up yet]`
+- Product: see `docs/product.md`. **`SPEC.md` has the final say** on what is built; read the SPEC sections a
+  task names before planning it.
+- Stack: Python, Streamlit and Plotly (interface), pandas, pytest and Hypothesis; dashboard path A
+  (`docs/architecture.md`). Versions pinned in `app/requirements.txt`.
+- Python environment: Python 3.11 to 3.14 in `app/.venv` (A's laptop: Anaconda Python 3.14.6). The tests run on
+  Python 3.11 and 3.14, Linux and Windows, on every pull request; newer Pythons are untested.
+- Install: `cd app`, then `python3 -m venv .venv` and `.venv/bin/python -m pip install -r requirements.txt`
+  (Windows: `py -0p` to list the installed versions, then e.g. `py -3.13 -m venv .venv` and
+  `.venv\Scripts\python -m pip install -r requirements.txt`); the student creates `app/.env` with
+  `cp .env.example .env` (Windows: `copy .env.example .env`).
+- Run: `cd app` then `.venv/bin/python -m streamlit run main.py` (Windows: `.venv\Scripts\python -m streamlit run
+  main.py`), open http://localhost:8501.
+- Test: `cd app` then `.venv/bin/python -m pytest` (Windows: `.venv\Scripts\python -m pytest`).
+- Browser check: not installed; Streamlit's `AppTest` checks the app without a browser (`app/tests/app/`).
+
+### Team rules for every session (SPEC §0, §12, §14)
+
+This is a team project: five members, A to E, listed in `docs/team.md`. Each member owns folders, listed in
+`docs/architecture.md` under "Folder layout and owners".
+
+1. **First ask** which member (A to E) the student is and which slice of `docs/plan.md` they are working on. If
+   their line is missing from `docs/team.md`, their first task is the pull request that adds it (instructions in
+   `docs/team.md`).
+2. **Work only on that slice and only in that member's folders.** A change needed in another member's folder or
+   in `app/src/contracts.py` is described for its owner (a GitHub issue or a message), never made directly.
+3. **Branch** `<member>/<slice-id>-<short-name>` (e.g. `b/S5-past-checks`), started from the latest `main`; at
+   the start of every session bring the latest `main` into the branch. Never commit to `main`.
+4. **Tests first, and see them fail.** Expected values come from the student's own hand working or a cited source
+   (SPEC Appendix A only after the owner has recalculated it), never from running the code under test. Never edit
+   a failing test or an expected value, and never special-case a test input, without a written reason the student
+   agrees to.
+5. Tests never use the network (blocked in `app/tests/conftest.py`); no AI call anywhere in the app; missing data
+   is never zero (enforced by `app/src/contracts.py`).
+6. **Before the pull request:** all tests pass; `docs/plan.md` (slice status, progress log) and `AI-USAGE.md`
+   updated; the pull request template filled in, leaving the Explain-back for the student to write in their own
+   words. A teammate approves before the merge.

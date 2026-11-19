@@ -9,7 +9,7 @@ Each criterion is checkable: a starting state, an action, an expected result. St
 |---|---|---|---|---|---|
 | AC1 | F1 | Demo mode on | The user types `KO` | The header shows The Coca-Cola Company, its industry and how the industry was found, fiscal year end, latest 10-K date, retrieval date, and any warnings | open |
 | AC2 | F1 | Any mode | The user types `JPM` | "Not supported" with the reason (bank, SEC industry code in 6000–6799); no scores shown | open |
-| AC3 | F2 | Tier 1 build, synthetic company, no share price | The scorecard opens | Past performance 4 of 4 assessed (P4, P5 not assessed); financial health 4 of 6; dividend 5 of 5 assessed (D2 not assessed) | open |
+| AC3 | F2 | Tier 1 build, synthetic company, no share price | The scorecard opens | Past performance 4 passed of 4 assessed (P4, P5 "not assessed": status `insufficient_data`, no benchmark yet); financial health 4 of 6; dividend 5 passed of 5 assessed (D2 "not assessed") | open |
 | AC4 | F2 | Any loaded company | The user opens a check | It shows the result, the rule in plain words, the formula, the input figures with units and fiscal years, and a link to the filing | open |
 | AC5 | F3 | Any loaded company | The user opens the sources page | One row per figure with metric, value, unit, period, kind, tag, form, accession, filing date, retrieval time and note; each missing figure shows its reason and the checks it blocks | open |
 | AC6 | F4 | Synthetic company loaded | The user overrides FY2025 cash from 120 to 140 (USD m) | H3 becomes pass ((450 − 140) ÷ 820 = 310 ÷ 820 = 37.80% < 40%); financial health 5 of 6; the figure shows as `assumption` on the sources page | open |
