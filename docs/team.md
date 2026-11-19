@@ -3,6 +3,7 @@
 | Member | Name | GitHub | Assistant | Area (SPEC §12, `docs/architecture.md`) | Backup |
 |---|---|---|---|---|---|
 | A | Igor Willms | @BossToGo | Claude Code | Repository, CI, shared data shapes, SEC data layer, evidence, coverage report, demo snapshot | D |
+| C | Florian Spitzer | @florian-spitzer | Claude Code | Dividend and valuation checks (`app/src/checks/dividend.py`, `app/src/checks/valuation.py`), valuation engine (`app/src/valuation/`), Excel cross-check model (`docs/crosscheck/`) | B |
 
 ## Your first task: add your own line (SPEC §12, rule 1)
 
