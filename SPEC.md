@@ -162,10 +162,10 @@ These tags are a starting list written from memory of the US accounting taxonomy
 | Depreciation and amortisation | `DepreciationDepletionAndAmortization` → `DepreciationAndAmortization` → `DepreciationAmortizationAndAccretionNet`, else `Depreciation` + `AmortizationOfIntangibleAssets` (derived, and labelled as possibly below the cash flow line; an amortisation not reported counts as nil and is noted, unless it is reported for another year, then the figure is missing; no `Depreciation` means missing) |
 | Total assets | `Assets` |
 | Current assets, current liabilities | `AssetsCurrent`, `LiabilitiesCurrent` |
-| Total liabilities | `Liabilities`, else total assets − total equity including non-controlling interests (derived) |
+| Total liabilities | `Liabilities`, else total assets − total equity including non-controlling interests − temporary equity if reported (redeemable stakes between liabilities and equity; derived) |
 | Equity | `StockholdersEquity`; total equity: `StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest` |
 | Cash | `CashAndCashEquivalentsAtCarryingValue` |
-| Financial debt | `LongTermDebtNoncurrent` + `LongTermDebtCurrent` + `ShortTermBorrowings` (+ `CommercialPaper`), else `LongTermDebt` + short-term items (derived). Operating leases are excluded. |
+| Financial debt | `LongTermDebtNoncurrent` + `LongTermDebtCurrent` + `ShortTermBorrowings` (+ `CommercialPaper`), else `LongTermDebt` + short-term items (derived). Short-term borrowings equal to total − non-current, with no current-maturities tag, are the current part of long-term debt and are not added again (Marvell). Operating leases are excluded. The full rules, with cited cases, are in `src/data/tag_map.yaml`. |
 | Current financial debt | Current maturities of long-term debt + short-term borrowings, derived from the debt parts above. When only a long-term total is reported, `DebtCurrent` (all current debt, short-term borrowings included) gives the current part, and the principal `DebtInstrumentCarryingAmount` decides whether the total already includes it: total + `DebtCurrent` within 1% of the principal means the total was only the non-current part (Tesla), otherwise the debt is flagged (section 10). Used by the working capital ratio, section 8.2 |
 | Cash and short-term investments (G5, W15 only) | `CashCashEquivalentsAndShortTermInvestments`, else cash + `ShortTermInvestments`, else cash + `MarketableSecuritiesCurrent` (derived). No investment tag: cash alone, and the statement says "no short-term investments reported" |
 | Receivables, inventory, payables | `AccountsReceivableNetCurrent`, `InventoryNet`, `AccountsPayableCurrent` (not used by any check since version 2.3; shown on the sources page) |
@@ -173,7 +173,7 @@ These tags are a starting list written from memory of the US accounting taxonomy
 | Operating cash flow | `NetCashProvidedByUsedInOperatingActivities` |
 | Capital expenditure | `PaymentsToAcquirePropertyPlantAndEquipment` |
 | Dividends paid | `PaymentsOfDividends` → `PaymentsOfDividendsCommonStock` |
-| Shares | `dei:EntityCommonStockSharesOutstanding` (latest filing), else `WeightedAverageNumberOfDilutedSharesOutstanding` of the latest year (derived, with a warning) |
+| Shares | `dei:EntityCommonStockSharesOutstanding` from the cover page of the latest annual report (dated within 200 days after the end of FY0; Mastercard's last single total is from 2010), else `WeightedAverageNumberOfDilutedSharesOutstanding` of the latest year (derived, with a warning). Fewer than 100,000 shares is a filing in the wrong scale and counts as missing |
 | Basic share count per year (G10, W14 only) | `WeightedAverageNumberOfSharesOutstandingBasic`, per fiscal year |
 | Bridge items | `MinorityInterest`, `PreferredStockValue`, `EquityMethodInvestments` (optional; see section 8) |
 
