@@ -159,14 +159,14 @@ These tags are a starting list written from memory of the US accounting taxonomy
 | Operating income | `OperatingIncomeLoss` |
 | Net income | `NetIncomeLoss` → `ProfitLoss` |
 | Interest expense | `InterestExpense` → `InterestExpenseNonoperating` → `InterestExpenseDebt` |
-| Depreciation and amortisation | `DepreciationDepletionAndAmortization` → `DepreciationAndAmortization` → `DepreciationAmortizationAndAccretionNet`, else `Depreciation` + `AmortizationOfIntangibleAssets` (derived; amortisation not reported counts as nil and is noted; no `Depreciation` means missing) |
+| Depreciation and amortisation | `DepreciationDepletionAndAmortization` → `DepreciationAndAmortization` → `DepreciationAmortizationAndAccretionNet`, else `Depreciation` + `AmortizationOfIntangibleAssets` (derived, and labelled as possibly below the cash flow line; an amortisation not reported counts as nil and is noted, unless it is reported for another year, then the figure is missing; no `Depreciation` means missing) |
 | Total assets | `Assets` |
 | Current assets, current liabilities | `AssetsCurrent`, `LiabilitiesCurrent` |
 | Total liabilities | `Liabilities`, else total assets − total equity including non-controlling interests (derived) |
 | Equity | `StockholdersEquity`; total equity: `StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest` |
 | Cash | `CashAndCashEquivalentsAtCarryingValue` |
 | Financial debt | `LongTermDebtNoncurrent` + `LongTermDebtCurrent` + `ShortTermBorrowings` (+ `CommercialPaper`), else `LongTermDebt` + short-term items (derived). Operating leases are excluded. |
-| Current financial debt | Current maturities of long-term debt + short-term borrowings, derived from the debt parts above; if no current maturities can be formed, `DebtCurrent` alone (it already includes short-term borrowings). Used by the working capital ratio, section 8.2 |
+| Current financial debt | Current maturities of long-term debt + short-term borrowings, derived from the debt parts above. When only a long-term total is reported, `DebtCurrent` (all current debt, short-term borrowings included) gives the current part, and the principal `DebtInstrumentCarryingAmount` decides whether the total already includes it: total + `DebtCurrent` within 1% of the principal means the total was only the non-current part (Tesla), otherwise the debt is flagged (section 10). Used by the working capital ratio, section 8.2 |
 | Cash and short-term investments (G5, W15 only) | `CashCashEquivalentsAndShortTermInvestments`, else cash + `ShortTermInvestments`, else cash + `MarketableSecuritiesCurrent` (derived). No investment tag: cash alone, and the statement says "no short-term investments reported" |
 | Receivables, inventory, payables | `AccountsReceivableNetCurrent`, `InventoryNet`, `AccountsPayableCurrent` (not used by any check since version 2.3; shown on the sources page) |
 | Net property, plant and equipment | `PropertyPlantAndEquipmentNet` (likewise) |
