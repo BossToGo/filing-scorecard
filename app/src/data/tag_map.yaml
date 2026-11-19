@@ -39,6 +39,13 @@ line_items:
   depreciation_amortization:
     kind: flow
     tags: [DepreciationDepletionAndAmortization, DepreciationAndAmortization, DepreciationAmortizationAndAccretionNet]
+    # Else derived: Depreciation + AmortizationOfIntangibleAssets. An amortisation absent this year counts as nil
+    # (noted) unless it is reported for another year, then the figure is missing; no Depreciation means missing.
+    # 11 of the 30 verified companies of the S3 sample (e.g. Microsoft, AbbVie, Intel, Union Pacific) have no
+    # combined tag for their latest year; their cash flow line uses a company-specific tag that the SEC company
+    # facts do not carry (S3 cache, 2026-11-19). The sum can be below that line, which can also hold e.g. the
+    # amortisation of finance-lease assets or other non-cash items; the figure is labelled derived and says so.
+    parts: [Depreciation, AmortizationOfIntangibleAssets]
   total_assets:
     kind: instant
     tags: [Assets]
@@ -119,6 +126,13 @@ debt:
   long_term_total: [LongTermDebt, LongTermDebtAndCapitalLeaseObligationsIncludingCurrentMaturities]
   short_term_total: [ShortTermBorrowings]  # when present, commercial paper is assumed to be inside it
   short_term_parts: [CommercialPaper, OtherShortTermBorrowings]
+  # When the long-term total is the only long-term tag and no current maturities are reported: DebtCurrent is all
+  # current debt (short-term borrowings included), and the principal tells whether the total already includes it.
+  # Tesla's LongTermDebt is only the non-current part: 6,584 + DebtCurrent 1,569 = 8,153 against the principal
+  # 8,177 (USD m, 10-K 0001628280-26-003952). Within 1% (debt_check_warning) of the principal: settled; otherwise
+  # DEBT_CHECK. Not used when only the non-current part is reported (non-current + DebtCurrent: a group decision).
+  current_total: [DebtCurrent]
+  principal_check: [DebtInstrumentCarryingAmount]
 
 # Company-specific tag order, only where a filing shows that the general order picks the wrong figure. Each entry
 # cites the filing. A difference explained here is recorded in the figure's note but not raised as a warning.

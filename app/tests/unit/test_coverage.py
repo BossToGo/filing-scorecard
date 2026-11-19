@@ -34,7 +34,7 @@ GOOD = {  # USD millions, the same every year: assets 1,750 = liabilities 930 + 
     "revenue": 1300, "operating_income": 208, "net_income": 140, "interest_expense": 26,
     "depreciation_amortization": 65, "total_assets": 1750, "current_assets": 540, "current_liabilities": 360,
     "total_liabilities": 930, "equity": 820, "total_equity": 820, "cash": 120, "financial_debt": 450,
-    "operating_cash_flow": 215, "capital_expenditure": 85, "dividends_paid": 56,
+    "operating_cash_flow": 215, "capital_expenditure": 85, "dividends_paid": 56, "current_financial_debt": 50,
 }
 
 
@@ -47,9 +47,12 @@ def fact(metric, value, year_end, kind="reported"):
 
 
 def company(ticker="TST", sic="2080", values=None, missing=(), derived=(), warnings=(), filed=date(2026, 2, 20),
-            years=YEARS, drop=()):
+            years=YEARS, drop=(), shares=100):
     values = {**GOOD, **(values or {})}
     items = {}
+    if shares is not None:  # the cover-page count of the latest 10-K (SPEC §6), keyed at its own date
+        items["shares"] = {years[-1]: Fact("shares", shares * M, "shares", None, years[-1], "reported",
+                                           "EntityCommonStockSharesOutstanding", "10-K", "acc", None, None)}
     for metric, value in values.items():
         if metric in drop:
             continue
@@ -172,6 +175,33 @@ def test_a_tag_conflict_on_a_tier1_figure_is_a_problem():
     assert check(company(warnings=["TAG_CONFLICT: net_income 2025-12-31: a used, b gives c"]))
 
 
+@pytest.mark.parametrize("metric", ["depreciation_amortization", "current_financial_debt"])
+def test_a_valuation_input_missing_in_the_latest_year_is_a_problem(metric):
+    # SPEC v2.3 §8.6: without it there is no fair value, so the company is not verified for the demo.
+    problems = check(company(missing=[(metric, YEARS[-1])]))
+    assert any(metric in p and "valuation" in p for p in problems)
+
+
+def test_a_valuation_input_missing_only_in_an_earlier_year_is_not_a_problem():
+    assert check(company(missing=[("depreciation_amortization", YEARS[1])])) == []  # the valuation uses FY0
+
+
+def test_a_derived_valuation_input_counts():
+    assert check(company(derived=["depreciation_amortization", "current_financial_debt"])) == []
+
+
+def test_a_company_without_a_share_count_is_a_problem():
+    assert any("shares" in p and "valuation" in p for p in check(company(shares=None)))
+    missing = Fact("shares", None, "shares", None, YEARS[-1], "missing", None, None, None, None, None, "not reported")
+    assert any("shares" in p and "valuation" in p for p in check(company().with_fact(missing)))
+
+
+def test_missing_current_debt_is_not_counted_again_when_the_debt_itself_is_missing():
+    problems = check(company(missing=[("financial_debt", YEARS[-1]), ("current_financial_debt", YEARS[-1])]))
+    assert any(p.startswith("financial_debt missing") for p in problems)
+    assert not any(p.startswith("current_financial_debt") for p in problems)
+
+
 def test_an_average_share_count_does_not_hold_back_tier1():
     # Shares are used from tier 2 on (D2, valuation); the gates warn about the average.
     assert check(company(warnings=["AVERAGE_SHARES: the share count is the diluted average"])) == []
@@ -198,6 +228,10 @@ def test_a_company_verified_only_by_the_no_dividend_rule_is_marked():
     ("only 3 fiscal years, 5 needed", "fewer than five fiscal years"),
     ("latest annual report older than 15 months", "latest annual report older than 15 months"),
     ("balance sheet does not balance in 2025-12-31: assets 1", "balance sheet does not balance"),
+    ("depreciation_amortization missing for 2025-12-31 (valuation input, SPEC v2.3 §8.6)",
+     "depreciation_amortization missing"),
+    ("current_financial_debt missing for 2025-12-31 (valuation input, SPEC v2.3 §8.6)", "current_financial_debt missing"),
+    ("shares missing for the latest annual report (valuation input, SPEC v2.3 §8.6)", "shares missing"),
 ])
 def test_problems_are_grouped_by_kind(problem, kind):
     assert problem_type(problem) == kind

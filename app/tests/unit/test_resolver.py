@@ -368,6 +368,63 @@ def test_gross_profit_is_derived_when_not_reported():
     assert "DERIVED" in codes(data)
 
 
+def test_depreciation_and_amortisation_are_added_when_only_the_parts_are_reported():
+    # S3 follow-up: 11 verified companies (e.g. Microsoft, AbbVie) tag only the two parts; their cash flow line
+    # uses a company-specific tag that the SEC company facts do not carry.
+    data = run({"Depreciation": [flow(300 * M, 2025)], "AmortizationOfIntangibleAssets": [flow(50 * M, 2025)]})
+    fact = data.fact("depreciation_amortization", fy(2025))
+    assert fact.kind == "derived" and fact.value == (300 + 50) * M
+    assert "Depreciation 300,000,000" in fact.note and "AmortizationOfIntangibleAssets 50,000,000" in fact.note
+    assert "0000000000-26-000001" in fact.note  # each part names its filing (SPEC §5.1)
+    assert "may be below" in fact.note  # the cash flow line can hold more items than these two parts
+    assert "DERIVED" in codes(data)
+
+
+def test_depreciation_alone_is_used_when_no_amortisation_is_reported_and_says_so():
+    fact = run({"Depreciation": [flow(300 * M, 2025)]}).fact("depreciation_amortization", fy(2025))
+    assert fact.kind == "derived" and fact.value == 300 * M
+    assert "AmortizationOfIntangibleAssets not reported" in fact.note
+
+
+def test_amortisation_alone_does_not_make_a_depreciation_figure():
+    fact = run({"AmortizationOfIntangibleAssets": [flow(50 * M, 2025)]}).fact("depreciation_amortization", fy(2025))
+    assert fact.kind == "missing" and fact.value is None
+    assert "Depreciation" in fact.note
+
+
+def test_a_combined_depreciation_tag_wins_over_the_parts():
+    fact = run({"DepreciationDepletionAndAmortization": [flow(360 * M, 2025)], "Depreciation": [flow(300 * M, 2025)],
+                "AmortizationOfIntangibleAssets": [flow(50 * M, 2025)]}).fact("depreciation_amortization", fy(2025))
+    assert fact.kind == "reported" and fact.value == 360 * M
+
+
+def test_an_amortisation_missing_this_year_but_reported_in_another_is_not_counted_as_nil():
+    # Like the equity rule: a part that exists in other years is not assumed to be zero in this one.
+    data = run({"Depreciation": [flow(300 * M, 2024), flow(320 * M, 2025)],
+                "AmortizationOfIntangibleAssets": [flow(50 * M, 2024)]})
+    assert data.fact("depreciation_amortization", fy(2024)).value == (300 + 50) * M
+    fact = data.fact("depreciation_amortization", fy(2025))
+    assert fact.kind == "missing" and "2024" in fact.note
+
+
+def test_a_switch_between_the_combined_tag_and_the_parts_is_flagged():
+    data = run({"DepreciationAndAmortization": [flow(340 * M, 2024)],
+                "Depreciation": [flow(300 * M, 2025)], "AmortizationOfIntangibleAssets": [flow(50 * M, 2025)]})
+    assert data.fact("depreciation_amortization", fy(2024)).kind == "reported"
+    assert data.fact("depreciation_amortization", fy(2025)).kind == "derived"
+    switch = [w for w in data.warnings if w.startswith("TAG_SWITCH: depreciation_amortization")]
+    assert switch and "Depreciation + AmortizationOfIntangibleAssets" in switch[0]
+    derived = [w for w in data.warnings if w.startswith("DERIVED") and "depreciation_amortization" in w]
+    assert derived and "2025-12-31" in derived[0] and "2024-12-31" not in derived[0]
+
+
+def test_a_company_tag_order_override_keeps_the_parts_fallback():
+    override = {"tags": ["DepreciationAndAmortization", "DepreciationDepletionAndAmortization"], "reason": "cited"}
+    data = run({"Depreciation": [flow(300 * M, 2025)], "AmortizationOfIntangibleAssets": [flow(50 * M, 2025)]},
+               tag_map=with_override("depreciation_amortization", override))
+    assert data.fact("depreciation_amortization", fy(2025)).value == (300 + 50) * M
+
+
 def test_a_derived_figure_with_a_missing_input_stays_missing_and_says_why():
     fact = run().fact("gross_profit", fy(2025))  # revenue present, cost of revenue missing
     assert fact.kind == "missing" and fact.value is None
@@ -486,6 +543,64 @@ def test_a_missing_current_portion_is_not_counted_as_zero():
     d, c, data = debt({"LongTermDebtNoncurrent": [instant(400 * M, 2025)]})
     assert d.value == 400 * M and "DEBT_INCOMPLETE" in codes(data)
     assert c.kind == "missing"
+
+
+# When LongTermDebt is the only long-term tag and DebtCurrent is reported, LongTermDebt may or may not include its
+# current part. Tesla's does not (10-K 0001628280-26-003952: LongTermDebt 6,584 + DebtCurrent 1,569 = 8,153, close to
+# the principal DebtInstrumentCarryingAmount 8,177, USD m). The principal decides; without it the debt is flagged.
+
+def test_a_long_term_total_that_is_only_the_non_current_part_is_completed_with_debt_current():
+    data = run({"LongTermDebt": [instant(600 * M, 2025)], "DebtCurrent": [instant(150 * M, 2025)],
+                "DebtInstrumentCarryingAmount": [instant(752 * M, 2025)]})
+    d, c = data.fact("financial_debt", fy(2025)), data.fact("current_financial_debt", fy(2025))
+    assert d.value == (600 + 150) * M  # 750 is within 1% of the principal 752; 600 alone is 20% below it
+    assert c.value == 150 * M and "DebtCurrent" in c.note
+    assert "DEBT_CHECK" not in codes(data)
+
+
+def test_a_long_term_total_that_matches_the_principal_already_includes_its_current_part():
+    data = run({"LongTermDebt": [instant(400 * M, 2025)], "DebtCurrent": [instant(80 * M, 2025)],
+                "ShortTermBorrowings": [instant(30 * M, 2025)], "DebtInstrumentCarryingAmount": [instant(402 * M, 2025)]})
+    d, c = data.fact("financial_debt", fy(2025)), data.fact("current_financial_debt", fy(2025))
+    assert d.value == (400 + 30) * M
+    assert c.value == 80 * M  # not 80 + 30: DebtCurrent is all current debt, short-term borrowings included
+    assert "DEBT_CHECK" not in codes(data)
+
+
+def test_without_a_principal_to_decide_the_debt_is_flagged():
+    data = run({"LongTermDebt": [instant(600 * M, 2025)], "DebtCurrent": [instant(150 * M, 2025)]})
+    assert data.fact("financial_debt", fy(2025)).value == 600 * M
+    assert data.fact("current_financial_debt", fy(2025)).value == 150 * M
+    assert "DEBT_CHECK" in codes(data)
+
+
+def test_current_debt_larger_than_total_debt_is_flagged():
+    data = run({"LongTermDebt": [instant(0, 2025)], "DebtCurrent": [instant(50 * M, 2025)]})
+    assert "DEBT_CHECK" in codes(data)
+
+
+def test_debt_current_alone_is_not_passed_off_as_total_debt():
+    d, c, _ = debt({"DebtCurrent": [instant(50 * M, 2025)]})
+    assert d.kind == "missing" and c.kind == "missing"
+
+
+def test_debt_current_does_not_fill_the_gap_of_a_non_current_only_debt():
+    # Non-current + DebtCurrent would complete the total; not applied yet (a group decision), so nothing changes.
+    d, c, data = debt({"LongTermDebtNoncurrent": [instant(400 * M, 2025)], "DebtCurrent": [instant(60 * M, 2025)]})
+    assert d.value == 400 * M and "DEBT_INCOMPLETE" in codes(data)
+    assert c.kind == "missing"
+
+
+def test_the_inside_override_is_not_changed_by_debt_current():
+    d, c, _ = debt({"LongTermDebt": [instant(400 * M, 2025)], "LongTermDebtNoncurrent": [instant(380 * M, 2025)],
+                    "DebtCurrent": [instant(999 * M, 2025)]}, tag_map=with_override("debt", INSIDE))
+    assert d.value == 400 * M and c.value == (400 - 380) * M
+
+
+def test_tagged_current_maturities_win_over_debt_current():
+    _, c, _ = debt({"LongTermDebt": [instant(450 * M, 2025)], "LongTermDebtCurrent": [instant(50 * M, 2025)],
+                    "ShortTermBorrowings": [instant(30 * M, 2025)], "DebtCurrent": [instant(999 * M, 2025)]})
+    assert c.value == (50 + 30) * M
 
 
 def test_short_term_borrowings_alone_are_not_passed_off_as_total_debt():
