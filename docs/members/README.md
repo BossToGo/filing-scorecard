@@ -7,7 +7,7 @@ One page per member: what you own, what you do and when, and the exact prompts t
 |---|---|---|
 | A, Igor (@BossToGo) | [member-A.md](member-A.md) | Repository, CI, shared data shapes, SEC data layer, demo data, releases |
 | B, Greg (@Greg3334444) | [member-B.md](member-B.md) | Industry benchmarks, past performance and financial health checks, strengths and points to watch |
-| C, Flo (@florian-spitzer) | [member-C.md](member-C.md) | Dividend and valuation checks, valuation engine (growth limit and fade, "model does not fit"), Excel cross-check |
+| C, Flo (@florian-spitzer) | [member-C.md](member-C.md) | Dividend and valuation checks, valuation engine (equity method, growth decay, "model does not fit"), Excel cross-check |
 | D, Simon (@Simonarmengaud) | [member-D.md](member-D.md) | Interface and theme, gates, demo mode with A, strengths and points to watch on screen, app tests |
 | E, Emma (@EmmaRiggi) | [member-E.md](member-E.md) | Excel export (code), business plan, slides, README, check and statement texts, AI-usage report, question bank |
 

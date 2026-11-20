@@ -12,7 +12,7 @@ pull requests, like everyone else (SPEC §12). The Excel export is your code fea
 |---|---|---|
 | Wed 18 | Accept the invitation; your `docs/team.md` PR (steps in `docs/team.md`) | Merged |
 | Thu 19 | Book 3 to 5 **user interviews** (retail investors who buy single stocks through their bank, and if possible one person who works at a retail bank; SPEC v2.3 §1); notes without names in `docs/business-plan/interviews.md` | Interviews booked |
-| Thu 19 | **Sign-off for S0c:** recalculate CALC-S (the four area scores) in `docs/acceptance.md` | Your sign-off comment on PR #5 (it unlocks `synthetic.expected_scores()` for the app tests) |
+| Thu 19 | **Sign-off for S0c:** recalculate CALC-S (the four area scores) in `docs/acceptance.md`; since SPEC v2.3 the valuation score is 3 of 6 (V6 passes), so please check it again | Your sign-off comment on PR #5 (it unlocks `synthetic.expected_scores()` for the app tests) |
 | Sat 21 → | **Business plan:** write problem and evidence, how roles and decisions change in a firm (the bank that offers the add-on to its customers), SDG 9 and next steps; assemble everyone's sections from `docs/business-plan/sections/` into `docs/business-plan/business-plan.md` and the PDF (contents: SPEC §17) | Draft by Sun 22; final by Sun 29; PDF on `main` |
 | Sat 21–Sun 22 | S16a: texts for the 18 tier 1 checks in `app/ui/texts.yaml` (agree the key names with Simon, D), plus a test in `app/tests/unit/test_texts.py` that every check has a text | Each check shows its text; reviewed by the check's owner |
 | Sat 21–Sun 22 | S15: collect the five reconciliation files (A: KO, B: AAPL, C: NVDA, D: MCD, you: AMZN) | 30 figures match the app within USD 0.5 million |

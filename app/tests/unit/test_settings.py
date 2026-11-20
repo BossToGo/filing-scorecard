@@ -51,11 +51,15 @@ def test_the_valuation_settings_follow_the_equity_method():
     # free cash flow starts from the margin of the last few fiscal years.
     settings = load()
     removed = {"cost_of_debt_max_spread", "cost_of_debt_default_spread", "sensitivity_range", "sensitivity_step",
-               "user_tax_rate_max"}
+               "user_tax_rate_max", "reverse_dcf_min_growth", "reverse_dcf_max_growth"}
     assert not removed & set(settings["valuation"])
     assert "terminal_value_share_warning" not in settings["gates"]
     years = settings["valuation"]["fcf_base_years"]["value"]
     assert isinstance(years, int) and 1 <= years <= 5
+    # Round 2: ten forecast years, growth halving its gap to terminal growth every two years, cap 30%.
+    assert settings["valuation"]["forecast_years"]["value"] == 10
+    assert settings["valuation"]["growth_half_life_years"]["value"] == 2
+    assert settings["valuation"]["growth_cap"]["value"] == 0.30
 
 
 def test_rates_are_decimals_not_percentages():
@@ -65,10 +69,8 @@ def test_rates_are_decimals_not_percentages():
         for name in names:
             assert 0 < settings[section][name]["value"] < 1, f"{section}.{name} must be a decimal, e.g. 0.40 for 40%"
     valuation = settings["valuation"]
-    assert -1 < valuation["reverse_dcf_min_growth"]["value"] < 0 < valuation["reverse_dcf_max_growth"]["value"] < 1
-    # SPEC v2.3 §8.2: the automatic starting growth is limited to a range inside the reverse calculation's range.
-    assert valuation["reverse_dcf_min_growth"]["value"] <= valuation["growth_floor"]["value"] < 0
-    assert 0 < valuation["growth_cap"]["value"] <= valuation["reverse_dcf_max_growth"]["value"]
+    # SPEC v2.3 §8.2 (round 2): the automatic starting growth is limited, then decays towards terminal growth.
+    assert -1 < valuation["growth_floor"]["value"] < 0 < valuation["growth_cap"]["value"] < 1
     # SPEC v2.3 §8.1: the re-levered beta is limited (0.8 to 2.0), written as plain numbers, not percentages.
     assert 0 < valuation["beta_min"]["value"] < 1 < valuation["beta_max"]["value"] < 5
     risk_free = valuation["risk_free_rate"]["value"]

@@ -21,7 +21,7 @@ Claude Code runs your slices under the delegation recorded in `docs/architecture
 | Fri 20 | S3: coverage report → `docs/coverage.md`, verified universe → `app/data/universe.csv` | Go/no-go decided at office hours, 16:00–18:00 (SPEC §13.4) |
 | Sat 21–Sun 22 | S14 with D: demo mode; release check and tag **v0.1** (Sun evening) | App runs with the network off |
 | Wed 25 | Release check and tag **v0.2** | – |
-| Mon 23–Wed 25 | S2b, before Greg's S12 (SPEC v2.3 §11): the `Statement` shape in `app/src/contracts.py`, and the "overrides" wording in `contracts.py` updated (Simon's review of #2); minority interests derived from total equity − equity when the tag is absent, plus temporary equity (SPEC §8.3), branch `a/S2b-statement` | Contract tests pass; the minority-interest rule tested |
+| Mon 23–Wed 25 | S2b, before Greg's S12 (SPEC v2.3 §11): the `Statement` shape in `app/src/contracts.py`, and the "overrides" wording in `contracts.py` updated (Simon's review of #2), branch `a/S2b-statement` | Contract tests pass |
 | Thu 26, 20:00 | Feature freeze; release check and tag **v0.3** | – |
 | Sat 21–Sun 29 | **Business plan section:** data dependencies, failure modes and the controls built into the app, in `docs/business-plan/sections/A-data-and-controls.md` (Emma, E, assembles the plan; prompt in `docs/members/README.md`) | Draft by Sun 22; final by Sun 29 |
 | Fri 27–Sun 29 | S18, break-it round: a member from another area reviews your code read-only; you break each of your formulas once on purpose and record each break and the test that caught it in `docs/testing.md` | Every finding is a failing test or a written dismissal |
@@ -67,5 +67,5 @@ in `docs/plan.md`.
 4. Everyone: accept the invitation, then their `docs/team.md` PR today (instructions in `docs/team.md`).
 5. Product name (SPEC §16.7); who asks the instructor about the overlap with the session 5 demo (§16.3).
 6. SPEC v2.3 (19 November): retail bank customers, fully automatic, strengths and points to watch instead of five
-   forces, growth limit and fade. Everyone reads it and one teammate approves the pull request; ask the instructor
+   forces, equity method with growth decay. Everyone reads it and one teammate approves the pull request; ask the instructor
    at office hours (§16.8).

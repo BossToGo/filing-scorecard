@@ -66,6 +66,8 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
   equity" (SPEC §7).
 - The app reads only your CSV files, never Damodaran's `.xls` (SPEC §4). The full `indname.xls` is never committed.
 - For each benchmark, write the column you chose and why in the `benchmarks` section of `app/settings.yaml`.
+  S4 also extracts the **whole-US-market price to earnings** from `pedata.xls` (for V4, SPEC v2.3: trailing or current,
+  never forward); `vebitda.xls` is no longer needed.
   Never extract a column built from analyst forecasts (for example expected growth in `pedata.xls`, SPEC §4).
 - **Strengths and points to watch (S12, SPEC v2.3 §9)** replace the five forces panel: 15 statements, all from
   check results you and Flo already compute (e.g. W5 is "H5 fails") plus one simple indicator (W2, operating
