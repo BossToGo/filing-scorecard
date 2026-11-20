@@ -23,6 +23,9 @@ data:  # owner A (SPEC §4, §5.3)
   restatement_warning:
     value: 0.01
     reason: "Show both values with a warning when a restatement differs by more than 1% (SPEC §5.3.4)"
+  risk_free_average_years:
+    value: 5
+    reason: "The risk-free rate is the average of the last five years of daily FRED DGS10 values, as in the Simply Wall St model: steadier estimates (decided by Igor, 20 November; SPEC v2.3 §4, §8.1)"
 
 benchmarks: {}  # owner B: one benchmark column per check, with the reason for the choice (SPEC §7, slice S4)
 
@@ -53,7 +56,7 @@ dividend:  # owner C (SPEC §7)
 valuation:  # owner C (SPEC §7, §8)
   risk_free_rate:
     value: null
-    reason: "Fallback for demo mode, a missing FRED key or no network: type the latest 10-year Treasury yield here (e.g. 0.04) and its date in this reason; otherwise the app downloads FRED DGS10 live (SPEC v2.3 §4, §8.1). A refreshes it before each release"
+    reason: "Fallback for demo mode, a missing FRED key or no network: the five-year average of FRED DGS10 (e.g. 0.04), with its period written in this reason; otherwise the app computes that average live (SPEC v2.3 §4, §8.1). A refreshes it before each release"
   equity_risk_premium:
     value: 0.05
     reason: "Session 5 convention (SPEC §8.1)"
