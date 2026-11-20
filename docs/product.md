@@ -27,8 +27,8 @@ forces); the group confirms it by approving the SPEC v2.3 pull request.
    (§10), and shows the header, the score chart, the strengths and points to watch and the 24 checks (§3, §7, §9).
 4. They open a check to see the rule in plain words, the formula, the input figures with fiscal years and the
    link to the filing. Nothing is corrected by hand: a figure that cannot be read is "not assessed" (§1).
-5. They read the valuation detail: the estimate per share against the price and how it was built (for fast
-   growers, a line saying the estimate is cautious). They can check the sources page and download the Excel file. The share price is the only input
+5. They read the valuation detail: the estimate per share against the price and how it was built (and, when the
+   growth limit applies, a factual growth note). They can check the sources page and download the Excel file. The share price is the only input
    (§1, §8.7).
 
 ## Screens and visuals
@@ -43,7 +43,7 @@ advice: never "buy", "sell" or "undervalued" (§3).
 | Screen | Purpose | The user sees first | Cards / charts / tables (unit, period) | The user can | Loading / empty / error |
 |---|---|---|---|---|---|
 | Scorecard (main page) | First-pass view of one company | Header: company, industry and how it was found, fiscal year end, latest 10-K date, retrieval date, and only two warnings ("not fully checked", "old annual report"; the rest on the sources page, §10); then the score chart | Score chart (4 areas, passes out of 6); 24 checks, each expandable to rule, formula, inputs (USD m, fiscal year) and filing link | Type ticker and share price (USD); switch demo mode; open a check | Loading: "Fetching SEC filings…". Unknown ticker, unsupported company (bank, insurer, REIT, non-USD, non-10-K), source unreachable: a message that says how to fix it (§3) |
-| Valuation detail (tier 2, on the main page) | Show how the fair value was built | Fair value per share against the share price (USD) | Tables: cost of equity build-up (%), 10-year free cash flow forecast (USD m), actual revenue growth (%); for fast growers the "cautious estimate" line | Nothing to type: the share price in the input bar is the only input | No share price: the whole area shows "insufficient data, enter a share price". Model does not fit (§8.6): no fair value, the reason in plain words |
+| Valuation detail (tier 2, on the main page) | Show how the fair value was built | Fair value per share against the share price (USD) | Tables: cost of equity build-up (%), 10-year free cash flow forecast (USD m), actual revenue growth (%); the growth note when the growth limit applies | Nothing to type: the share price in the input bar is the only input | No share price: the whole area shows "insufficient data, enter a share price". Model does not fit (§8.6): no fair value, the reason in plain words |
 | Strengths and points to watch (tier 3, next to the score chart) | Say in plain words what the numbers mean | Up to five strengths and five points to watch, important ones first | List of short statements with the company's numbers, each linked to its check or figures (§9) | Open the check behind a statement | Inputs missing: the statement is not shown (never guessed) |
 | Sources page | Trace every number | One row per figure | Table: metric, value, unit, period, kind, tag, form, accession, filed, retrieved, note | Filter by kind; follow the link to the filing | Missing figures listed with the reason and the checks they block |
 | Export (tier 2) | Take the work away | Download button | Excel file, two sheets: scorecard; figures and sources | Download | Disabled until a company is loaded |

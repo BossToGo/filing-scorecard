@@ -11,7 +11,7 @@ tests. **Backup:** B, Greg (you review Greg's PRs first, Greg reviews yours). **
 | Wed 18 | Accept the invitation; your `docs/team.md` PR (steps in `docs/team.md`) | Merged |
 | Thu 19 | **Excel cross-check model** of the valuation (SPEC §8, version 2.3, **equity method**: operating cash flow − capex from the three-year margin, cost of equity, growth that decays towards terminal growth over 10 years, minus minority interests) for the synthetic company, built by you from the SPEC formulas, **not** from the code. Save it in `docs/crosscheck/` | Matches SPEC Appendix A (fair value USD 20.13; USD 37.37 at the 30% cap, so V6 passes), or you report the difference |
 | Thu 19 | **Sign-off for S0c:** recalculate rows CALC-D1–D6, CALC-V1–V6, CALC-W1–W4 and CALC-F1–F5 of `docs/acceptance.md` (your Excel model counts) | Your sign-off comment on PR #5 |
-| Thu 19 → Wed 25 | S8: the equity method (SPEC §8): cost of equity (beta limited to 0.8–2.0), starting free cash flow from the three-year margin, starting growth capped at −10% to +30% and decaying towards terminal growth (half-life 2 years, 10 years), terminal value at year 10, minus reported minority interests, "model does not fit" (§8.6), the "cautious estimate" line for fast growers. No cost of debt, no sensitivity table, no implied growth, no user inputs. Branch `c/S8-valuation-engine` | Matches your Excel model and Appendix A; property tests pass; one test per case of §8.6 |
+| Thu 19 → Wed 25 | S8: the equity method (SPEC §8): cost of equity (beta limited to 0.8–2.0), starting free cash flow from the three-year margin, starting growth capped at −10% to +30% and decaying towards terminal growth (half-life 2 years, 10 years), terminal value at year 10, minus reported minority interests, "model does not fit" (§8.6), the growth note when the growth limit applies. No cost of debt, no sensitivity table, no implied growth, no user inputs. Branch `c/S8-valuation-engine` | Matches your Excel model and Appendix A; property tests pass; one test per case of §8.6 |
 | Sat 21–Sun 22 | S7: dividend checks D1–D6 (D2 "not assessed" until S4 and a share price), branch `c/S7-dividend-checks` | Appendix A values reproduced; edge cases tested |
 | Mon 23–Wed 25 | S9 with B: valuation checks V1–V6; switch on D2, branch `c/S9-valuation-checks` | Appendix A values reproduced |
 | Sat 21–Sun 29 | **Business plan section:** business model, in `docs/business-plan/sections/C-business-model.md` (Emma, E, assembles the plan; prompt in `docs/members/README.md`) | Draft by Sun 22; final by Sun 29 |
@@ -66,7 +66,7 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
 - **Growth:** starting growth g1 = past revenue growth FY-4 to FY0, limited to `growth_floor` (−10%) and
   `growth_cap` (+30%), then g(t) = gT + (g1 − gT) × 0.5^((t − 1) ÷ 2): the gap to terminal growth halves every
   `growth_half_life_years` (2). Real case: Nvidia's past growth is 68.3% a year, so its g1 is the cap, with a note
-  giving 68.3% and the "cautious estimate" line in the valuation detail.
+  giving 68.3% and the growth note in the valuation detail.
 - **Terminal value and equity value (§8.3):** FCF(10) × (1 + gT) ÷ (cost of equity − gT); end-of-year discounting,
   terminal value discounted at t = 10; equity value = present value − reported minority interests (nil if not
   reported, labelled); ÷ shares. **Never** adjust assumptions to match a price.

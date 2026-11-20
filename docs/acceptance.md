@@ -97,7 +97,7 @@ that shares no code with the app. All agree within the rounding shown (discounte
 | E15 | A warning that is not for the customer (e.g. a restated or derived figure) | Not in the header; listed on the sources page next to the figure (§10) | open |
 | E16 | Ticker outside the verified universe | Report shown, marked "not verified" (§2, §10) | open |
 | E17 | Industry not found in the lookup or the fallback table | Benchmarks `missing`; dependent checks "insufficient data"; no user override (§9.1, v2.3) | open |
-| E18 | Past revenue growth above the cap (Nvidia: 68.3% a year, FY2022 to FY2026) or below the floor | Starting growth 30% (or −10%), labelled `assumption`; the note gives the growth before the limit; the valuation detail adds the "cautious estimate" line (§8.2, §8.3) | open |
+| E18 | Past revenue growth above the cap (Nvidia: 68.3% a year, FY2022 to FY2026) or below the floor | Starting growth 30% (or −10%), labelled `assumption`; the note gives the growth before the limit; the valuation detail adds the growth note (§8.2, §8.3) | open |
 | E19 | Three-year free cash flow zero or negative, or equity value ≤ 0 after minority interests | No fair value; V1, V2, V6 `not_applicable` with the reason in plain words; V3 to V5 still assessed (§8.6) | open |
 | E20 | Levered beta outside 0.8 to 2.0 | Beta set to the limit, labelled `assumption`, the note gives the value before the limit; warning (§8.1, §10) | open |
 | E22 | A valuation input is missing (e.g. depreciation) or fewer than five fiscal years resolve | No fair value; V1, V2, V6 `insufficient_data` naming the missing input; checked before the cases of E19 (§8.6) | open |
