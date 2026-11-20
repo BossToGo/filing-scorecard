@@ -16,9 +16,9 @@ sections of `app/settings.yaml`, and your tests.
 | Thu 19 | **Sign-off for S0c:** recalculate rows CALC-P1 to CALC-P6 and CALC-H1 to CALC-H6 of `docs/acceptance.md` by hand or in Excel | Your sign-off comment on PR #5 |
 | Sat 21–Sun 22 | S5: past performance checks P1–P6 (P4, P5 "not assessed" until S4), branch `b/S5-past-checks` | SPEC Appendix A values reproduced; edge cases tested |
 | Sat 21–Sun 22 | S6: financial health checks H1–H6, branch `b/S6-health-checks` | Same |
-| Thu 19 → Wed 25 | S4: extraction script, benchmark CSV, industry lookup and fallback table, branch `b/S4-benchmarks` | Loader tests; three benchmark values and three company-to-group matches compared by hand with the source files |
+| Thu 19 → Wed 25 | S4: extraction script, benchmark CSV, industry lookup, and the fallback table **only if it can be generated** from SEC codes in his file (no hand-built table, SPEC v2.3 §9.1), branch `b/S4-benchmarks` | Loader tests; three benchmark values and three company-to-group matches compared by hand with the source files; every verified company has a match, or the gap is reported |
 | Mon 23–Wed 25 | S9 with C: switch on P4 and P5 | SPEC Appendix A values reproduced |
-| Thu 26 | S12: strengths and points to watch in `app/src/highlights.py` (SPEC §9: rules G1–G10 and W1–W16, thresholds in the `highlights` section of `app/settings.yaml`), branch `b/S12-highlights`; Simon (D) shows them, Emma (E) writes the texts | One test per statement (shown, not shown, input missing); the synthetic company's statements match SPEC Appendix A |
+| Thu 26 | S12: strengths and points to watch in `app/src/highlights.py` (SPEC §9: 15 rules, G1–G7 and W1–W8, threshold `margin_drop_min` in the `highlights` section of `app/settings.yaml`), branch `b/S12-highlights`; Simon (D) shows them, Emma (E) writes the texts | One test per statement (shown, not shown, input missing); the synthetic company's statements match SPEC Appendix A |
 | Sat 21–Sun 29 | **Business plan section:** users, market and alternatives, in `docs/business-plan/sections/B-market.md` (Emma, E, assembles the plan; prompt in `docs/members/README.md`) | Draft by Sun 22; final by Sun 29 |
 | Fri 27–Sun 29 | S18, break-it round: a member from another area reviews your code read-only; you break each of your formulas once on purpose and record each break and the test that caught it in `docs/testing.md` | Every finding is a failing test or a written dismissal |
 
@@ -67,15 +67,13 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
 - The app reads only your CSV files, never Damodaran's `.xls` (SPEC §4). The full `indname.xls` is never committed.
 - For each benchmark, write the column you chose and why in the `benchmarks` section of `app/settings.yaml`.
   Never extract a column built from analyst forecasts (for example expected growth in `pedata.xls`, SPEC §4).
-- **Strengths and points to watch (S12, SPEC v2.3 §9)** replace the five forces panel. Most statements reuse
-  check results you and Flo already compute (e.g. W8 is "H5 fails"); four are new small indicators (W3 margin
-  drop, W13 profit above cash from operations, W15 cash runway, G9/W16 gross margin spread) plus the share count
-  pair G10/W14. Igor (A) adds what you need first (slice S2b): the `Statement` shape in `app/src/contracts.py`,
-  the basic share count per year with its accession number (G10/W14 compare FY0 with FY-1 only when both come
-  from the same 10-K), and cash and short-term investments (G5, W15). A statement is shown only when every check
-  it names passed or failed and every figure it uses is present; a ratio with a denominator ≤ 0 is not computed.
-  Your function returns `Statement` objects only; the wording is Emma's (`app/ui/texts.yaml`), written within
-  S12 and reviewed by you.
+- **Strengths and points to watch (S12, SPEC v2.3 §9)** replace the five forces panel: 15 statements, all from
+  check results you and Flo already compute (e.g. W5 is "H5 fails") plus one simple indicator (W2, operating
+  margin down by at least 1 point against the year before). No new data is needed; Igor (A) only adds the
+  `Statement` shape in `app/src/contracts.py` (slice S2b). A statement is shown only when every check it names
+  passed or failed and every figure it uses is present; a ratio with a denominator ≤ 0 is not computed. Your
+  function returns `Statement` objects only; the wording is Emma's (`app/ui/texts.yaml`), written within S12 and
+  reviewed by you.
 
 ## Only you
 

@@ -38,17 +38,24 @@ RATES = {  # every setting that is a rate or a share: a decimal strictly between
     "valuation": [
         "equity_risk_premium",
         "tax_rate",
-        "cost_of_debt_max_spread",
-        "cost_of_debt_default_spread",
         "terminal_growth_cap",
-        "sensitivity_range",
-        "sensitivity_step",
         "well_below_fair_value",
         "growth_cap",
-        "user_tax_rate_max",
     ],
-    "gates": ["balance_sheet_tolerance", "terminal_value_share_warning"],
+    "gates": ["balance_sheet_tolerance"],
 }
+
+
+def test_the_valuation_settings_follow_the_equity_method():
+    # SPEC v2.3 (lean, 20 November): no cost of debt, no sensitivity table, no user inputs, no terminal-value warning;
+    # free cash flow starts from the margin of the last few fiscal years.
+    settings = load()
+    removed = {"cost_of_debt_max_spread", "cost_of_debt_default_spread", "sensitivity_range", "sensitivity_step",
+               "user_tax_rate_max"}
+    assert not removed & set(settings["valuation"])
+    assert "terminal_value_share_warning" not in settings["gates"]
+    years = settings["valuation"]["fcf_base_years"]["value"]
+    assert isinstance(years, int) and 1 <= years <= 5
 
 
 def test_rates_are_decimals_not_percentages():

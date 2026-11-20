@@ -9,11 +9,11 @@ review Igor's PRs first, Igor reviews yours; you run the release check if Igor c
 | When | Slice | Done when (SPEC §13.2) |
 |---|---|---|
 | Wed 18 | Accept the invitation; your `docs/team.md` PR (steps in `docs/team.md`) | Merged |
-| Thu 19 | **Sign-off for S0c:** recalculate AC3 and AC6 of `docs/acceptance.md` (the tier 1 scores of the synthetic company, and the optional growth input that must leave the scores unchanged) | Your sign-off comment on PR #5 |
+| Thu 19 | **Sign-off for S0c:** recalculate AC3 of `docs/acceptance.md` (the tier 1 scores of the synthetic company) | Your sign-off comment on PR #5 |
 | Thu 19 → Sun 22 | S10: input bar, header, score chart (one bar of six blocks per area), expandable checks, sources page, theme file; start on the synthetic company, then on real data after A's S2. Branch `d/S10-interface` | `streamlit run` works; an app test opens the synthetic company and finds a known score |
 | Sat 21–Sun 22 | S11: gates (SPEC §10) and error messages, including E4 (SEC unreachable), branch `d/S11-gates` | One test per stop and warn case |
 | Sat 21–Sun 22 | S14 with A: demo mode on the five saved companies | App runs with the network off |
-| Mon 23–Wed 25 | S10b: share price input, valuation detail with each assumption and its source, the optional starting growth and tax rate inputs with the second fair value "with your assumptions" (SPEC §8.7), the reasons when the model does not fit (§8.6), industry with route and number of firms | App test finds the fair value of the synthetic company; a changed growth changes only the second fair value, not the scores |
+| Mon 23–Wed 25 | S10b: share price input; valuation detail: cost of equity build-up with each assumption and its source, the free cash flow table, fair value against the price, the growth the price implies (SPEC §8); the reasons when the model does not fit (§8.6); industry with route and number of firms. No sensitivity table, no user inputs | App test finds the fair value of the synthetic company |
 | Mon 23–Wed 25 | "Download Excel" button that calls Emma's export (S13, `app/src/export.py`) | The button downloads the file Emma's test checks |
 | Thu 26 | S12 with B: the strengths and points to watch next to the score chart, from Greg's `app/src/highlights.py` with Emma's texts (SPEC §9: up to five of each, important first); S17: end-to-end app test | The synthetic company shows the statements of SPEC Appendix A; S17 passes twice in a row on GitHub |
 | Sat 21–Sun 29 | **Business plan section:** the solution, with screenshots, in `docs/business-plan/sections/D-solution.md` (Emma, E, assembles the plan; prompt in `docs/members/README.md`) | Draft by Sun 22; final by Sun 29 |
@@ -57,13 +57,13 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
   missing, suggest demo mode); `MissingUserAgent` and `SecRefused` mean fix `app/.env` or wait;
   `UnknownTicker`, `NotFound` and `InvalidCik` mean the company does not exist. The interface reaches the
   data layer through A's S2 and S14, never `SecClient` directly.
-- AC3 and AC6 values for your app tests come from `synthetic.expected_tier1()` and
-  `synthetic.expected_user_assumptions()` in `app/tests/fixtures/synthetic.py`, once your sign-off is recorded
-  (Igor replaces the old `expected_override()` with it as soon as SPEC v2.3 is merged).
+- AC3 values for your app tests come from `synthetic.expected_tier1()` in `app/tests/fixtures/synthetic.py`, once
+  your sign-off is recorded.
 - **No overrides anywhere (SPEC v2.3):** no figure override, no industry dropdown, no rating override. The only
-  inputs are the ticker, the share price (USD), the demo switch and, in the valuation detail, the optional
-  starting growth (−20% to +50%) and tax rate (0% to 40%), each validated with a message that says how to fix
-  it.
+  inputs are the ticker, the share price (USD, greater than 0) and the demo switch (SPEC §3, AC6). Each invalid
+  entry gets a message that says how to fix it.
+- **Header warnings (SPEC v2.3 §10):** show only "not fully checked" (outside the verified universe) and "latest
+  annual report is old". Every other warning goes on the sources page next to its figure.
 - Figures arrive in USD with a unit from `UNITS` (`app/src/contracts.py`); show amounts in USD m through one
   tested formatting function, never ad hoc in a page. A check with status `insufficient_data` shows its
   explanation ("not assessed until …" or the missing input), never a score.

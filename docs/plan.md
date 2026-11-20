@@ -46,19 +46,19 @@ Status values: `todo`, `in progress`, `done (<date>, commit <short hash>)`, `blo
 
 | # | Slice | Owner | Depends on | Done when (evidence) | Acceptance | Status |
 |---|---|---|---|---|---|---|
-| S4 | Extraction script, benchmark CSV, industry lookup and fallback table (§4, §9.1); starts Thu 19 with the day-one look at `indname.xls`, in parallel with S5 | B | S0 | Loader tests; three benchmark values and three company-to-group matches compared by hand with the source files | AC8, E17 | todo |
-| S2b | Before S12: the `Statement` shape in `app/src/contracts.py`; the basic share count per year and cash and short-term investments in the data layer (SPEC v2.3 §6, §9, §11) | A | S2 | Contract tests pass; both resolve for the five demo companies, with the share counts' accession numbers | E21, E23 | todo |
-| S8 | Cost of capital (beta limited to 0.8–2.0), forecast with the growth limit and fade, terminal value, reverse calculation, sensitivity, when the model does not fit, the user's assumptions (SPEC v2.3 §8.1–8.7); starts Thu 19 on the synthetic company, with C's Excel model | C | S0c | Matches C's separate Excel model and Appendix A (valuation rows recalculated by C first: they changed in v2.3); property tests pass; one test per case of §8.6 | CALC-W*, CALC-F*, E12–E14, E18–E20, E22 | todo |
+| S4 | Extraction script, benchmark CSV, industry lookup; fallback table only if generated from SEC codes in his file, never by hand (SPEC v2.3 §4, §9.1); starts Thu 19 with the day-one look at `indname.xls`, in parallel with S5 | B | S0 | Loader tests; three benchmark values and three company-to-group matches compared by hand with the source files; every verified company matched or the gap reported | AC8, E17 | todo |
+| S2b | Before S12: the `Statement` shape in `app/src/contracts.py`, and the "overrides" wording there updated (SPEC v2.3 §11) | A | S0 | Contract tests pass | – | todo |
+| S8 | Equity method (SPEC v2.3 §8): cost of equity (beta limited to 0.8–2.0), starting free cash flow from the three-year margin, growth limit and fade, terminal value, minority interests, growth the price implies, when the model does not fit; starts Thu 19 on the synthetic company, with C's Excel model | C | S0c | Matches C's separate Excel model and Appendix A (valuation rows recalculated by C first: they changed in v2.3); property tests pass; one test per case of §8.6 | CALC-W*, CALC-F*, E12, E14, E18–E20, E22 | todo |
 | S9 | Valuation checks V1–V6 (V6 against the fair value at the growth cap, SPEC v2.3); switch on P4, P5, D2 | C with B | S8, S4 | Appendix A values reproduced; the `insufficient_data` and `not_applicable` cases of §8.6 tested | AC8, AC9, CALC-V*, CALC-S | todo |
-| S10b | Interface: share price input, valuation detail with each assumption and source, optional growth and tax inputs with the second fair value, the reasons of §8.6, industry with route and number of firms | D | S8, S4 | App test finds the fair value of the synthetic company; a changed growth changes only the second fair value | AC6, AC9, AC10 | todo |
-| S13 | Excel export | E | S10 | Export reopened by a test; figures equal the screen | AC11 | todo |
+| S10b | Interface: share price input, valuation detail (cost of equity build-up, free cash flow table, fair value against the price, growth the price implies), the reasons of §8.6, industry with route and number of firms; no sensitivity table, no user inputs | D | S8, S4 | App test finds the fair value of the synthetic company | AC6, AC9, AC10 | todo |
+| S13 | Excel export, two sheets: scorecard; figures and sources | E | S10 | Export reopened by a test; figures equal the screen | AC11 | todo |
 | S16b | Texts for the valuation checks and the industry explanations | E | S10b | Reviewed by C | – | todo |
 
 ### Tier 3: release v0.3 "Strengths and points to watch" (feature freeze Thu 26 November, 20:00)
 
 | # | Slice | Owner | Depends on | Done when (evidence) | Acceptance | Status |
 |---|---|---|---|---|---|---|
-| S12 | Strengths and points to watch (SPEC v2.3 §9) | B (rules, `app/src/highlights.py`) with D (on screen) and E (texts, reviewed by B) | S2b, S4, S5–S9 | One test per statement (shown, not shown, input missing); the synthetic company's statements match Appendix A | AC12, CALC-G | todo |
+| S12 | Strengths and points to watch (SPEC v2.3 §9: 15 statements from the checks) | B (rules, `app/src/highlights.py`) with D (on screen) and E (texts, reviewed by B) | S2b, S4, S5–S9 | One test per statement (shown, not shown, input missing); the synthetic company's statements match Appendix A | AC12, CALC-G | todo |
 | S17 | End-to-end app test: demo ticker, a known score, a known figure, a known fair value | D | S14 | Passes twice in a row in the workflow | AC1, V1 | todo |
 
 ### After the freeze: fixes only (Fri 27 November – Tue 1 December)
@@ -69,8 +69,8 @@ Status values: `todo`, `in progress`, `done (<date>, commit <short hash>)`, `blo
 | S19 | README and fresh-clone test on one Windows and one Mac laptop, by a member who did not write the README | E writes, two members test | v0.3 | Works from the README alone on both | todo |
 | S20 | Business plan (Markdown → PDF), slides, recorded fallback demo, question bank | E leads and edits; each member writes one section (SPEC §17) | – | Files on `main` before the deadline | todo |
 
-Cut list if a release slips by more than a day (§2): watchlist → strengths and points to watch → sensitivity table
-→ Excel export. The tier 1 scorecard and the sources page are never cut. Everything on `main` by Tue 1 December, 12:00.
+Cut list if a release slips by more than a day (§2): strengths and points to watch → the growth the price implies →
+Excel export. The tier 1 scorecard and the sources page are never cut. Everything on `main` by Tue 1 December, 12:00.
 
 ## Progress log
 
@@ -84,6 +84,7 @@ Cut list if a release slips by more than a day (§2): watchlist → strengths an
 | 2026-11-18 | S0 | Member guides in `docs/members/` (A to E) and a shared seven-step session routine; onboarding in `docs/team.md` fixed after the code review (no CODEOWNERS edit by new members, conflict and no-`gh` instructions, no-reply e-mail) | Scripted check against plan, acceptance and architecture: no gaps after two fixes | Names of B to E still [to confirm] |
 | 2026-11-18 | S0 | Names and final roles: B Greg, C Flo, D Simon, E Emma; Excel export (S13) moved from D to E, five forces indicators from D to B, one business plan section per member; guides, owner table and `CODEOWNERS` updated (SPEC v2.2 in PR #3) | Script: names, usernames and owners agree across SPEC, guides, `CODEOWNERS`, plan; 100 tests pass | Group approves PR #3 |
 | 2026-11-19 | S0 | SPEC v2.3 (Igor's product direction): retail bank customers; fully automatic, share price the only required input, optional growth and tax for a second fair value only; no figure or industry overrides; five forces replaced by strengths and points to watch (S12, B); growth limit and fade, beta limits, "model does not fit" rules (S8, C); member guides, product summary and owners updated; `forces` renamed `highlights` in `settings.yaml`, the layering test and `CODEOWNERS` | Appendix A valuation recalculated by an independent script that first reproduced the v2.2 values (21.68, 14.10%): fair value 19.74, implied starting growth 25.00%; pytest on this branch: see the pull request | Group approves the SPEC v2.3 pull request; instructor asked at office hours (§16.8); C and B recalculate their new Appendix A rows |
+| 2026-11-20 | S0 | **Lean SPEC v2.3**, agreed by the group: equity method (operating cash flow − capex from the three-year margin, cost of equity, minus minority interests) instead of the firm method; growth the price implies kept as a display line; sensitivity table and the user's growth and tax inputs cut (share price the only input); 15 strengths and points to watch from the checks only (S2b shrinks to the `Statement` shape); fallback industry table generated only; customers see two warnings, the rest on the sources page; two-sheet export; watchlist dropped. Guides, product summary, acceptance criteria and settings updated | Appendix A recalculated for the equity method by an independent script (fair value 19.65, 26.07 at the cap, implied 26.97%; scores unchanged) and by a separate reviewer agent; settings test written first and seen failing; pytest: see the pull request | Instructor's view on the equity method (§16.8); Flo recalculates the valuation rows, Greg the statement table |
 
 ## Known problems and open questions
 
@@ -107,13 +108,15 @@ fixed by a pull request to `SPEC.md`.
   the property test applies only to positive margins; the app says "not meaningful" when the margin is zero or
   negative. Decide by: C. **Answered by SPEC v2.3 §8.6 (2026-11-19):** operating income ≤ 0 (or first-year free
   cash flow ≤ 0, or equity value ≤ 0) → no fair value and no reverse DCF, V1, V2, V6 `not_applicable` with the
-  reason; the property test therefore applies only where the model fits.
+  reason; the property test therefore applies only where the model fits. With the equity method of the lean v2.3
+  (20 November) the value always rises with growth when the starting free cash flow is positive.
 - **Q5. Debt tags may double count** (§6). `CommercialPaper` is often part of `ShortTermBorrowings`; `DebtCurrent`
   is not in the list. Written from memory: check on real files in S2 and S3. Decide by: A.
 - **Q6. Terminal growth barely moves the sensitivity grid** (§8.5). With return on new capital equal to the cost of
   capital, terminal value = operating profit after tax × (1 + gT) ÷ cost of capital, so ±1 point of gT moves the
   synthetic fair value only from USD 21.50 to 21.86, against 18.81 to 25.32 for ±1 point of cost of capital. Not a
-  bug: session 5 slide 33 says the same. Prepare the explanation for questions. Owner: C.
+  bug: session 5 slide 33 says the same. Prepare the explanation for questions. Owner: C. **Closed 2026-11-20:** the
+  sensitivity table is cut in the lean SPEC v2.3, and the firm method's terminal value is no longer used.
 - **Q7. Team letters and names.** Decided 2026-11-18: A Igor (`BossToGo`), B Greg (`Greg3334444`), C Flo
   (`florian-spitzer`), D Simon (`Simonarmengaud`), E Emma (`EmmaRiggi`); all invited. Product name (§16.7):
   [to confirm].

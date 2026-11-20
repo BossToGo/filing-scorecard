@@ -27,9 +27,9 @@ forces); the group confirms it by approving the SPEC v2.3 pull request.
    (§10), and shows the header, the score chart, the strengths and points to watch and the 24 checks (§3, §7, §9).
 4. They open a check to see the rule in plain words, the formula, the input figures with fiscal years and the
    link to the filing. Nothing is corrected by hand: a figure that cannot be read is "not assessed" (§1).
-5. They read the valuation detail; if they want, they change the starting growth or the tax rate and see a second
-   fair value "with your assumptions", while the scores stay the same (§8.7). They can check the sources page and
-   download the Excel file.
+5. They read the valuation detail: the estimate per share against the price, how it was built, and the growth the
+   price implies. They can check the sources page and download the Excel file. The share price is the only input
+   (§1, §8.7).
 
 ## Screens and visuals
 
@@ -42,11 +42,11 @@ advice: never "buy", "sell" or "undervalued" (§3).
 
 | Screen | Purpose | The user sees first | Cards / charts / tables (unit, period) | The user can | Loading / empty / error |
 |---|---|---|---|---|---|
-| Scorecard (main page) | First-pass view of one company | Header: company, industry and how it was found, fiscal year end, latest 10-K date, retrieval date, warnings; then the score chart | Score chart (4 areas, passes out of 6); 24 checks, each expandable to rule, formula, inputs (USD m, fiscal year) and filing link | Type ticker and share price (USD); switch demo mode; open a check | Loading: "Fetching SEC filings…". Unknown ticker, unsupported company (bank, insurer, REIT, non-USD, non-10-K), source unreachable: a message that says how to fix it (§3) |
-| Valuation detail (tier 2, on the main page) | Show how the fair value was built | Fair value per share against the share price (USD) | Tables: cost of capital build-up (%), 5-year forecast (USD m), growth implied by the price next to actual growth (%), sensitivity grid (USD per share) | Optionally type a starting growth (%) and a tax rate (%): a second fair value "with your assumptions" appears; scores unchanged (§8.7) | No share price: the whole area shows "insufficient data, enter a share price". Model does not fit (§8.6): no fair value, the reason in plain words |
+| Scorecard (main page) | First-pass view of one company | Header: company, industry and how it was found, fiscal year end, latest 10-K date, retrieval date, and only two warnings ("not fully checked", "old annual report"; the rest on the sources page, §10); then the score chart | Score chart (4 areas, passes out of 6); 24 checks, each expandable to rule, formula, inputs (USD m, fiscal year) and filing link | Type ticker and share price (USD); switch demo mode; open a check | Loading: "Fetching SEC filings…". Unknown ticker, unsupported company (bank, insurer, REIT, non-USD, non-10-K), source unreachable: a message that says how to fix it (§3) |
+| Valuation detail (tier 2, on the main page) | Show how the fair value was built | Fair value per share against the share price (USD) | Tables: cost of equity build-up (%), 5-year free cash flow forecast (USD m), growth the price implies next to actual growth (%) | Nothing to type: the share price in the input bar is the only input | No share price: the whole area shows "insufficient data, enter a share price". Model does not fit (§8.6): no fair value, the reason in plain words |
 | Strengths and points to watch (tier 3, next to the score chart) | Say in plain words what the numbers mean | Up to five strengths and five points to watch, important ones first | List of short statements with the company's numbers, each linked to its check or figures (§9) | Open the check behind a statement | Inputs missing: the statement is not shown (never guessed) |
 | Sources page | Trace every number | One row per figure | Table: metric, value, unit, period, kind, tag, form, accession, filed, retrieved, note | Filter by kind; follow the link to the filing | Missing figures listed with the reason and the checks they block |
-| Export (tier 2) | Take the work away | Download button | Excel file, three sheets: report, figures, sources | Download | Disabled until a company is loaded |
+| Export (tier 2) | Take the work away | Download button | Excel file, two sheets: scorecard; figures and sources | Download | Disabled until a company is loaded |
 
 Agreed visuals:
 
@@ -56,9 +56,7 @@ Agreed visuals:
    alone. No radar chart.
 2. **Check details**: tables, not charts. Every figure with unit and fiscal year; missing figures shown as "n/a"
    with the reason, never as 0.
-3. **Sensitivity grid**: a table of fair value per share (USD) for cost of capital ± 1 point against terminal
-   growth ± 1 point (steps of 0.5); the base case marked in text.
-4. The synthetic test company always carries a "SYNTHETIC DATA" mark.
+3. The synthetic test company always carries a "SYNTHETIC DATA" mark.
 
 Interface rules (§3): a unit on every input and figure; the key result at the top without scrolling; every error
 message says how to fix the problem.
@@ -73,17 +71,18 @@ message says how to fix the problem.
 | F4 | Fully automatic: no figure is typed or corrected by the user; a figure that does not resolve or pass the checks is "not assessed" (§1) | 1 | The user can trust the page without checking it |
 | F5 | Offline demo mode on saved data for five companies | 1 | Reliable demo; no network needed |
 | F6 | Industry lookup and benchmarks; P4, P5, D2 switch on (§4, §9.1) | 2 | Company compared with its industry |
-| F7 | Valuation: 6 checks, DCF with growth limit and fade, reverse DCF, sensitivity, "model does not fit" rules, optional growth and tax inputs for a second fair value (§7, §8) | 2 | Is the price demanding? |
-| F8 | Excel export: report, figures, sources | 2 | Take the result away |
+| F7 | Valuation: 6 checks, equity-method DCF (operating cash flow − capex from the three-year margin, cost of equity) with growth limit and fade, the growth the price implies, "model does not fit" rules (§7, §8) | 2 | Is the price demanding? |
+| F8 | Excel export, two sheets: scorecard; figures and sources | 2 | Take the result away |
 | F9 | Strengths and points to watch: plain-language statements from fixed rules (§9) | 3 | What the numbers mean, in words a retail customer understands |
 
-Cut list if time runs short, in this order (§2): watchlist → strengths and points to watch → sensitivity table →
+Cut list if time runs short, in this order (§2): strengths and points to watch → the growth the price implies →
 Excel export.
 F1 to F3 are never cut.
 
 ## Explicitly not in the MVP
 
-- Watchlist comparing several companies: stretch, only after release v0.3 (§2).
+- Watchlist comparing several companies, sensitivity table, user-adjustable growth or tax rate: dropped in SPEC
+  v2.3 to keep the product simple (§2, §8.5, §8.7).
 - Buy or sell recommendations, analyst forecasts, live share prices, news (§1, §2).
 - Manual correction of figures or of the industry, and Porter's five forces (§2, version 2.3).
 - Automatic share price from Yahoo Finance: decided 2026-11-18, typed in only (§16.2).
@@ -107,10 +106,10 @@ F1 to F3 are never cut.
 | Number the app shows | Formula | Units | Source of inputs |
 |---|---|---|---|
 | The 24 checks P1–V6 | §7, one rule each, thresholds in `settings.yaml` | Ratios stored as decimals, shown as %; amounts stored in USD, shown in USD m | Resolved SEC figures (§5, §6), benchmarks, typed price |
-| Cost of capital | §8.1: risk-free + re-levered industry beta × 5.0% premium; cost of debt from filings; 21% tax | % | FRED or setting, benchmarks, SEC figures, price |
-| Fair value per share | §8.2–8.3: 5-year forecast; starting growth = past revenue growth limited to −10%..+20%, falling in equal steps to terminal growth; terminal value with return on new capital = cost of capital; bridge to equity; ÷ shares. Not shown when the model does not fit (§8.6) | USD per share | As above |
-| Starting growth implied by the price | §8.4: bisection on the starting growth in −20% to +50%, same fade; "no solution" if none | % per year | As above |
-| Strengths and points to watch | §9: G1–G10, W1–W16, fixed rules, thresholds in `settings.yaml` | Statements with the company's numbers | Check results, SEC figures |
+| Cost of equity | §8.1: risk-free + industry beta re-levered with the company's debt (limits 0.8–2.0) × 5.0% premium | % | FRED or setting, benchmarks, SEC figures, price |
+| Fair value per share | §8.2–8.3 (equity method): starting free cash flow = three-year free-cash-flow margin × latest revenue; 5-year forecast with starting growth = past revenue growth limited to −10%..+20%, falling in equal steps to terminal growth; terminal value; − minority interests; ÷ shares. Not shown when the model does not fit (§8.6) | USD per share | SEC figures (operating cash flow, capex, revenue, minority interests, shares), cost of equity |
+| Growth the price implies | §8.4: bisection on the starting growth in −20% to +50%, same fade; "less than −20%" or "more than 50%" outside the range; display only | % per year | As above |
+| Strengths and points to watch | §9: 15 statements (G1–G7, W1–W8) from the checks, threshold in `settings.yaml` | Statements with the company's numbers | Check results, SEC figures |
 | Area scores | Number of passes, always with the number assessed | "x of y assessed" | Check results |
 
 Kinds of number (§5.2): `reported`, `derived`, `assumption`, `missing`. **Missing is never zero and never guessed.**
@@ -121,7 +120,7 @@ Known-answer examples: `docs/acceptance.md` (from SPEC Appendix A).
 | Capability | Needed? | Notes |
 |---|---|---|
 | Accounts / sign-in | no | §2 |
-| Per-user saved data | no | The optional growth and tax inputs last for the session only |
+| Per-user saved data | no | Nothing is saved; the share price lasts for the session only |
 | File uploads | no | |
 | Payments | no | |
 | Must be online for others | no | Runs on a laptop from the README; demo mode needs no network (§11) |

@@ -17,8 +17,8 @@ pull requests, like everyone else (SPEC §12). The Excel export is your code fea
 | Sat 21–Sun 22 | S16a: texts for the 18 tier 1 checks in `app/ui/texts.yaml` (agree the key names with Simon, D), plus a test in `app/tests/unit/test_texts.py` that every check has a text | Each check shows its text; reviewed by the check's owner |
 | Sat 21–Sun 22 | S15: collect the five reconciliation files (A: KO, B: AAPL, C: NVDA, D: MCD, you: AMZN) | 30 figures match the app within USD 0.5 million |
 | Mon 23–Wed 25 | S16b: texts for the valuation checks and the industry explanations | Reviewed by C |
-| Thu 26 | Within S12: texts for the 26 strengths and points to watch (SPEC §9, G1–G10 and W1–W16; agree the key names with Greg and Simon) | Reviewed by B |
-| Mon 23–Wed 25 | **S13: Excel export, your code feature.** `app/src/export.py` writes the report, figures and sources into one Excel file with three sheets; a test reopens it and compares every figure. Branch `e/S13-excel-export`; Simon (D) adds the download button | AC11: export reopened by a test; figures equal the screen |
+| Thu 26 | Within S12: texts for the 15 strengths and points to watch (SPEC §9, G1–G7 and W1–W8; agree the key names with Greg and Simon) | Reviewed by B |
+| Mon 23–Wed 25 | **S13: Excel export, your code feature.** `app/src/export.py` writes one Excel file with **two sheets**: the scorecard (scores, checks, strengths and points to watch, valuation) and the figures with their sources (SPEC §3 item 8); a test reopens it and compares every figure. Branch `e/S13-excel-export`; Simon (D) adds the download button | AC11: export reopened by a test; figures equal the screen |
 | Fri 27–Sun 29 | **README** final; S19: two members who did not write it install the app from the README alone, one on Windows, one on Mac | Works on both |
 | Fri 27–Sun 29 | **Slides** in `docs/slides/` (SPEC §17: problem 1 min, live demo 3–4, how we built and checked it 1–2, transformation and SDG 9 2, next steps); **question bank** `docs/qa-bank.md` (five questions and answers per area, sent by each owner) | On `main` |
 | Fri 27–Sun 29 | S18, break-it round: review one code area read-only (A assigns it), with the break-it prompt in `docs/members/README.md` | Each finding is a failing test or a written dismissal in `docs/testing.md` |
@@ -51,7 +51,7 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
 > /build-feature I am member E, working on slice S13 of SPEC.md. Read AGENTS.md, docs/members/member-E.md,
 > SPEC.md sections 3 (item 8), 5.1 and 11, docs/plan.md and AC11 in docs/acceptance.md. Use the branch
 > e/S13-excel-export from the latest main. Plan this slice only: a function in app/src/export.py that writes the
-> prepared report, figures and sources into one Excel file with three sheets, and a test that reopens the file and
+> prepared scorecard and the figures with their sources into one Excel file with two sheets, and a test that reopens the file and
 > compares every figure. It must not compute any number itself (SPEC §11). Name the files and the tests you will
 > write first, and wait for my go-ahead. I will give you the expected values. Do not change files outside my
 > folders.

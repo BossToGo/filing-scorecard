@@ -59,31 +59,22 @@ valuation:  # owner C (SPEC §7, §8)
     reason: "Session 5 convention (SPEC §8.1)"
   tax_rate:
     value: 0.21
-    reason: "US federal statutory rate; state taxes ignored, stated as a limitation (SPEC §8.1)"
-  cost_of_debt_max_spread:
-    value: 0.08
-    reason: "A cost of debt outside risk-free to risk-free plus 8 points is replaced by the default (SPEC §8.1)"
-  cost_of_debt_default_spread:
-    value: 0.015
-    reason: "Default cost of debt is the risk-free rate plus 1.5 points, labelled assumption (SPEC §8.1)"
+    reason: "US federal statutory rate, used only to re-lever the industry beta; state taxes ignored, stated as a limitation (SPEC §8.1)"
   forecast_years:
     value: 5
-    reason: "Five-year forecast; growth falls in equal steps from the starting growth to terminal growth (SPEC v2.3 §8.2)"
+    reason: "Five-year free cash flow forecast; growth falls in equal steps from the starting growth to terminal growth (SPEC v2.3 §8.2)"
+  fcf_base_years:
+    value: 3
+    reason: "Starting free cash flow = free cash flow margin of the last three fiscal years x latest revenue: smooths working-capital and capex swings (SPEC v2.3 §8.2; C to confirm)"
   terminal_growth_cap:
     value: 0.025
     reason: "Terminal growth is the lower of the risk-free rate and 2.5% (SPEC §8.3)"
   reverse_dcf_min_growth:
     value: -0.20
-    reason: "Lower end of the search range for the growth implied by the price (SPEC §8.4)"
+    reason: "Lower end of the search range for the growth the price implies, a display line (SPEC v2.3 §8.4)"
   reverse_dcf_max_growth:
     value: 0.50
-    reason: "Upper end of the search range for the growth implied by the price (SPEC §8.4)"
-  sensitivity_range:
-    value: 0.01
-    reason: "Sensitivity grid spans plus and minus 1 point of cost of capital and of terminal growth (SPEC §8.5)"
-  sensitivity_step:
-    value: 0.005
-    reason: "Sensitivity grid steps of 0.5 points (SPEC §8.5)"
+    reason: "Upper end of the search range for the growth the price implies, a display line (SPEC v2.3 §8.4)"
   well_below_fair_value:
     value: 0.80
     reason: "Well below fair value: share price at most 80% of fair value (V2)"
@@ -99,9 +90,6 @@ valuation:  # owner C (SPEC §7, §8)
   beta_max:
     value: 2.0
     reason: "Re-levered beta is kept at or below 2.0, as in the Simply Wall St model (SPEC v2.3 §8.1)"
-  user_tax_rate_max:
-    value: 0.40
-    reason: "Highest tax rate the user may type for their own fair value; 0% is the lowest (SPEC v2.3 §8.7)"
 
 gates:  # owner D (SPEC §10)
   unsupported_sic_min:
@@ -119,9 +107,6 @@ gates:  # owner D (SPEC §10)
   stale_report_months:
     value: 15
     reason: "Warn when the latest annual report is older than 15 months (SPEC §10)"
-  terminal_value_share_warning:
-    value: 0.75
-    reason: "Warn when the terminal value is above 75% of enterprise value (SPEC §10)"
   min_firms_in_industry:
     value: 10
     reason: "Warn when the industry group has fewer than 10 firms (SPEC §10)"
