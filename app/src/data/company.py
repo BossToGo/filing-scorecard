@@ -4,7 +4,10 @@
     data = load_company("KO", demo=True)       # CompanyData, no network
     data = load_company("KO")                  # live: needs SEC_USER_AGENT in app/.env
 
-Errors are `SecError`s whose messages say how to fix the problem (see src/data/sec_client.py).
+Errors are `SecError`s whose messages say how to fix the problem. The interface imports them from here, never from
+src.data.sec_client (SPEC §11; a layering test enforces it):
+
+    from src.data.company import load_company, SourceUnreachable, UnknownTicker
 """
 
 from __future__ import annotations
@@ -15,7 +18,19 @@ from pathlib import Path
 
 from src.contracts import CompanyData
 from src.data.resolver import resolve
-from src.data.sec_client import SecClient, UnknownTicker
+from src.data.sec_client import (
+    InvalidCik,
+    MissingUserAgent,
+    NotFound,
+    SecClient,
+    SecError,
+    SecRefused,
+    SourceUnreachable,
+    UnknownTicker,
+)
+
+__all__ = ["load_company", "DEMO_TICKERS", "DEMO_DIR", "SecError", "SourceUnreachable", "SecRefused",
+           "MissingUserAgent", "UnknownTicker", "NotFound", "InvalidCik"]
 
 DEMO_DIR = Path(__file__).resolve().parents[2] / "evidence" / "demo"
 DEMO_TICKERS = ("KO", "AAPL", "NVDA", "MCD", "AMZN")  # plus JPM, which the app must refuse
