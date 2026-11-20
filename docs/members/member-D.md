@@ -42,7 +42,8 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
   traits already confirmed. Never download anything in your code or tests.
 - **Thresholds:** `from src.settings import load_settings`, then `load_settings()["gates"]["stale_report_months"]` gives 15 (PR #7).
   Never hard-code a threshold; a misspelt name raises a `KeyError` naming the section.
-- Never import `src.data.sec_client`: only A's data layer talks to the SEC; your code receives `CompanyData`.
+- Import from the data layer **only** `src.data.company`: `load_company` and the SEC error classes. Never
+  `src.data.sec_client` or the resolver; a layering test enforces this (your question on #7).
 - **Loading a company** (PR #8): `from src.data.company import load_company`, then
   `load_company("MCD", demo=True)` gives `CompanyData` from the saved files, with no network (`DEMO_TICKERS`:
   KO, AAPL, NVDA, MCD, AMZN). The latest fiscal year is `data.fiscal_years("revenue")[-1]`. Shares come from
@@ -52,7 +53,8 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
   TAG_CONFLICT, NON_USD, FY_CHANGE, DERIVED, DEBT_CHECK, DEBT_INCOMPLETE, AVERAGE_SHARES, SIGN and NO_ANNUAL_DATA.
   JPMorgan loads with its header only (SEC industry code 6021), so your gate refuses it by industry code.
   Acceptance E4 is yours: `load_company` raises `SourceUnreachable`; show its message and suggest demo mode.
-- **SEC errors for your messages (S11)**, all subclasses of `SecError` in `src.data.sec_client` (PR #7);
+- **SEC errors for your messages (S11)**, all subclasses of `SecError`, imported with
+  `from src.data.company import SourceUnreachable, UnknownTicker, ...` (PR #8);
   each message already says how to fix the problem: `SourceUnreachable` is temporary (the figure becomes
   missing, suggest demo mode); `MissingUserAgent` and `SecRefused` mean fix `app/.env` or wait;
   `UnknownTicker`, `NotFound` and `InvalidCik` mean the company does not exist. The interface reaches the
