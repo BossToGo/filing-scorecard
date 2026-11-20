@@ -20,6 +20,8 @@ SRC = APP / "src"
 INTERFACE = {"ui", "main", "streamlit", "plotly"}
 NETWORK = {"requests", "urllib", "urllib3", "http", "httpx", "aiohttp", "socket", "ssl", "yfinance", "fredapi"}
 LOGIC_FORBIDDEN = NETWORK | {"src.data", "importlib"}
+# The interface reaches the data layer only through src.data.company (SPEC §11; Simon's review of PR #7).
+INTERFACE_FORBIDDEN = NETWORK | {"src.data.sec_client", "src.data.resolver", "importlib"}
 LOGIC = [SRC / "checks", SRC / "valuation", SRC / "forces.py", SRC / "gates.py"]
 BENCHMARKS = [SRC / "benchmarks"]
 
@@ -135,3 +137,18 @@ def test_the_benchmark_loader_reads_files_only(path):
 def test_the_interface_never_calls_the_network_itself(path):
     found = check(path, NETWORK)
     assert not found, f"{ids(path)} imports {sorted(found)}; the interface asks src.data for data (SPEC §11)"
+
+
+@pytest.mark.parametrize("source, expected", [
+    ("from src.data.sec_client import SourceUnreachable", {"src.data.sec_client", "src.data.sec_client.SourceUnreachable"}),
+    ("from src.data.company import load_company, SourceUnreachable", set()),
+])
+def test_the_import_reader_finds_data_layer_imports_in_the_interface(source, expected):
+    assert violations(imported_modules(source, "ui.page"), INTERFACE_FORBIDDEN) == expected
+
+
+@pytest.mark.parametrize("path", python_files(APP / "main.py", APP / "ui"), ids=ids)
+def test_the_interface_uses_only_src_data_company(path):
+    found = check(path, INTERFACE_FORBIDDEN)
+    assert not found, (f"{ids(path)} imports {sorted(found)}; the interface imports load_company and the SEC errors from "
+                       "src.data.company only (SPEC §11)")
