@@ -21,7 +21,7 @@ Claude Code runs your slices under the delegation recorded in `docs/architecture
 | Fri 20 | S3: coverage report → `docs/coverage.md`, verified universe → `app/data/universe.csv` | Go/no-go decided at office hours, 16:00–18:00 (SPEC §13.4) |
 | Sat 21–Sun 22 | S14 with D: demo mode; release check and tag **v0.1** (Sun evening) | App runs with the network off |
 | Wed 25 | Release check and tag **v0.2** | – |
-| Mon 23–Wed 25 | S2b, before Greg's S12 (SPEC v2.3 §11): the `Statement` shape in `app/src/contracts.py`, and the "overrides" wording in `contracts.py` updated (Simon's review of #2), branch `a/S2b-statement` | Contract tests pass |
+| Mon 23–Wed 25 | S2b, before Greg's S12 (SPEC v2.3 §11): the `Statement` shape in `app/src/contracts.py`, and the "overrides" wording in `contracts.py` updated (Simon's review of #2); minority interests derived from total equity − equity when the tag is absent, plus temporary equity (SPEC §8.3), branch `a/S2b-statement` | Contract tests pass; the minority-interest rule tested |
 | Thu 26, 20:00 | Feature freeze; release check and tag **v0.3** | – |
 | Sat 21–Sun 29 | **Business plan section:** data dependencies, failure modes and the controls built into the app, in `docs/business-plan/sections/A-data-and-controls.md` (Emma, E, assembles the plan; prompt in `docs/members/README.md`) | Draft by Sun 22; final by Sun 29 |
 | Fri 27–Sun 29 | S18, break-it round: a member from another area reviews your code read-only; you break each of your formulas once on purpose and record each break and the test that caught it in `docs/testing.md` | Every finding is a failing test or a written dismissal |
