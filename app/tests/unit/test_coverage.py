@@ -175,10 +175,9 @@ def test_a_tag_conflict_on_a_tier1_figure_is_a_problem():
     assert check(company(warnings=["TAG_CONFLICT: net_income 2025-12-31: a used, b gives c"]))
 
 
-def test_depreciation_missing_in_the_latest_year_is_a_problem():
-    # SPEC v2.3 §13.4: V4 (enterprise value to EBITDA) needs it, so the company is not verified for the demo.
-    problems = check(company(missing=[("depreciation_amortization", YEARS[-1])]))
-    assert any("depreciation_amortization" in p and "valuation" in p for p in problems)
+def test_depreciation_is_no_longer_needed():
+    # Lean SPEC v2.3 round 2: V4 compares the P/E with the whole market, so no check uses depreciation any more.
+    assert check(company(missing=[("depreciation_amortization", YEARS[-1])])) == []
 
 
 def test_current_debt_is_no_longer_needed():
@@ -232,8 +231,6 @@ def test_a_company_verified_only_by_the_no_dividend_rule_is_marked():
     ("only 3 fiscal years, 5 needed", "fewer than five fiscal years"),
     ("latest annual report older than 15 months", "latest annual report older than 15 months"),
     ("balance sheet does not balance in 2025-12-31: assets 1", "balance sheet does not balance"),
-    ("depreciation_amortization missing for 2025-12-31 (valuation input, SPEC v2.3 §8.6)",
-     "depreciation_amortization missing"),
     ("shares missing for the latest annual report (valuation input, SPEC v2.3 §8.6)", "shares missing"),
 ])
 def test_problems_are_grouped_by_kind(problem, kind):

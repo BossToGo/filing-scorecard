@@ -5,8 +5,8 @@ downloads and the report files are in app/scripts/coverage.py.
 - `coverage`: the share of companies whose latest fiscal year (or every one of five) resolves for a line item;
 - `decision`: the go/no-go of SPEC §13.4 from the two groups of line items;
 - `verification_problems`: why a company is not in the verified universe (empty list: verified): every tier 1
-  figure resolves in every fiscal year and passes the accounting checks, and the shares and the latest year's
-  depreciation (for V4) resolve (lean SPEC v2.3 §8.6 and §13.4, PR #10);
+  figure resolves in every fiscal year and passes the accounting checks, and a share count resolves (lean SPEC v2.3
+  §8.6 and §13.4, PR #10);
 - `choose_universe`: the verified companies to demo, in list order, with at least `min_industries` industries;
 - helpers for the report: `problem_type`, `depends_on_q1`, `longest_year`, `pretax_at`.
 """
@@ -31,10 +31,10 @@ TIER1 = ("revenue", "operating_income", "net_income", "interest_expense", "total
 # Resolver warnings that put a tier 1 figure in doubt (src/data/resolver.py). A restatement alone does not; an
 # average share count matters only from tier 2 on; a TAG_CONFLICT counts only when it is about a tier 1 figure.
 BLOCKING = ("NON_USD", "FY_CHANGE", "DEBT_CHECK", "DEBT_INCOMPLETE", "SIGN", "NO_ANNUAL_DATA")
-# Valuation inputs that are not tier 1 figures (lean SPEC v2.3 §8.6, §13.4, PR #10): depreciation of the latest fiscal
-# year, for V4. Revenue, operating cash flow, capex and debt are tier 1 figures already, in every year. Shares are
-# checked separately: they are keyed at the cover-page date (CompanyData.latest). Current debt is no longer used.
-VALUATION = ("depreciation_amortization",)
+# Valuation inputs that are not tier 1 figures (lean SPEC v2.3 §8.6, §13.4, PR #10): none any more. Revenue, operating
+# cash flow, capex and debt are tier 1 figures already, in every year; depreciation and current debt are no longer used
+# by any check. Shares are checked separately: they are keyed at the cover-page date (CompanyData.latest).
+VALUATION: tuple[str, ...] = ()
 PRETAX_TAGS = ("IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest",
                "IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments")
 

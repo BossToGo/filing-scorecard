@@ -36,40 +36,40 @@ Operating income is unresolved for 17 companies: 16 file no operating income for
 
 ## Verified universe (30 companies, `app/data/universe.csv`)
 
-Verified (SPEC §13.4): every tier 1 figure resolves in each of the 5 fiscal years; the accounting checks pass (reported liabilities + equity within 1% of assets; current assets ≤ total assets; cash ≤ current assets; current liabilities ≤ total liabilities; revenue above zero); no resolver warning that puts a tier 1 figure in doubt (NON_USD, FY_CHANGE, DEBT_CHECK, DEBT_INCOMPLETE, SIGN, or TAG_CONFLICT on a tier 1 figure); latest annual report not older than 15 months; and the share count and the latest fiscal year's depreciation and amortisation (for V4) resolve (lean SPEC v2.3 §13.4). A company with no dividend in any year counts as "no dividend paid", which assumes plan Q1 is accepted: such companies are marked. (The debt half of Q1 is not applied: a company with no debt tag is not verified.) Verified in the sample: 31 of 100. Chosen: the first 30 in list order, with at least 8 industries (13 covered).
+Verified (SPEC §13.4): every tier 1 figure resolves in each of the 5 fiscal years; the accounting checks pass (reported liabilities + equity within 1% of assets; current assets ≤ total assets; cash ≤ current assets; current liabilities ≤ total liabilities; revenue above zero); no resolver warning that puts a tier 1 figure in doubt (NON_USD, FY_CHANGE, DEBT_CHECK, DEBT_INCOMPLETE, SIGN, or TAG_CONFLICT on a tier 1 figure); latest annual report not older than 15 months; and a share count resolves (lean SPEC v2.3 §13.4). A company with no dividend in any year counts as "no dividend paid", which assumes plan Q1 is accepted: such companies are marked. (The debt half of Q1 is not applied: a company with no debt tag is not verified.) Verified in the sample: 33 of 100. Chosen: the first 30 in list order, with at least 8 industries (13 covered).
 
 | # | Ticker | Company | Industry (SIC) | FY0 end |
 |---|---|---|---|---|
 | 1 | NVDA | NVIDIA CORP | 3674 Semiconductors & Related Devices | 2026-01-25 |
 | 2 | MSFT | MICROSOFT CORP | 7372 Services-Prepackaged Software | 2026-06-30 |
 | 3 | AMZN (no dividend: plan Q1) | AMAZON COM INC | 5961 Retail-Catalog & Mail-Order Houses | 2025-12-31 |
-| 4 | WMT | Walmart Inc. | 5331 Retail-Variety Stores | 2026-01-31 |
-| 5 | MU | MICRON TECHNOLOGY INC | 3674 Semiconductors & Related Devices | 2026-09-03 |
-| 6 | MA | Mastercard Inc | 7389 Services-Business Services, NEC | 2025-12-31 |
-| 7 | ABBV | AbbVie Inc. | 2834 Pharmaceutical Preparations | 2025-12-31 |
-| 8 | COST | COSTCO WHOLESALE CORP /NEW | 5331 Retail-Variety Stores | 2026-08-30 |
-| 9 | KO | COCA COLA CO | 2080 Beverages | 2025-12-31 |
-| 10 | PG | PROCTER & GAMBLE Co | 2840 Soap, Detergents, Cleang Preparations, Perfumes, Cosmetics | 2026-06-30 |
-| 11 | CSCO | CISCO SYSTEMS, INC. | 3576 Computer Communications Equipment | 2026-07-25 |
-| 12 | INTC | INTEL CORP | 3674 Semiconductors & Related Devices | 2025-12-27 |
-| 13 | PM | Philip Morris International Inc. | 2111 Cigarettes | 2025-12-31 |
-| 14 | LRCX | LAM RESEARCH CORP | 3559 Special Industry Machinery, NEC | 2026-06-28 |
-| 15 | TMO | THERMO FISHER SCIENTIFIC INC. | 3829 Measuring & Controlling Devices, NEC | 2025-12-31 |
-| 16 | AMGN | AMGEN INC | 2836 Biological Products, (No Diagnostic Substances) | 2025-12-31 |
-| 17 | DELL | Dell Technologies Inc. | 3571 Electronic Computers | 2026-01-30 |
-| 18 | GILD | GILEAD SCIENCES, INC. | 2836 Biological Products, (No Diagnostic Substances) | 2025-12-31 |
-| 19 | PEP | PEPSICO INC | 2080 Beverages | 2025-12-27 |
-| 20 | MCD | MCDONALDS CORP | 5812 Retail-Eating  Places | 2025-12-31 |
-| 21 | APH | AMPHENOL CORP /DE/ | 3678 Electronic Connectors | 2025-12-31 |
-| 22 | ABT | ABBOTT LABORATORIES | 2834 Pharmaceutical Preparations | 2025-12-31 |
-| 23 | UNP | UNION PACIFIC CORP | 4011 Railroads, Line-Haul Operating | 2025-12-31 |
-| 24 | DHR | DANAHER CORP /DE/ | 3823 Industrial Instruments For Measurement, Display, and Control | 2025-12-31 |
-| 25 | MRVL | Marvell Technology, Inc. | 3674 Semiconductors & Related Devices | 2026-01-31 |
-| 26 | LMT | LOCKHEED MARTIN CORP | 3760 Guided Missiles & Space Vehicles & Parts | 2025-12-31 |
-| 27 | MO | ALTRIA GROUP, INC. | 2111 Cigarettes | 2025-12-31 |
-| 28 | MCK | MCKESSON CORP | 5122 Wholesale-Drugs, Proprietaries & Druggists' Sundries | 2026-03-31 |
-| 29 | SBUX | STARBUCKS CORP | 5810 Retail-Eating & Drinking Places | 2026-09-27 |
-| 30 | CVS | CVS HEALTH Corp | 5912 Retail-Drug Stores and Proprietary Stores | 2025-12-31 |
+| 4 | TSLA (no dividend: plan Q1) | Tesla, Inc. | 3711 Motor Vehicles & Passenger Car Bodies | 2025-12-31 |
+| 5 | WMT | Walmart Inc. | 5331 Retail-Variety Stores | 2026-01-31 |
+| 6 | MU | MICRON TECHNOLOGY INC | 3674 Semiconductors & Related Devices | 2026-09-03 |
+| 7 | MA | Mastercard Inc | 7389 Services-Business Services, NEC | 2025-12-31 |
+| 8 | ABBV | AbbVie Inc. | 2834 Pharmaceutical Preparations | 2025-12-31 |
+| 9 | COST | COSTCO WHOLESALE CORP /NEW | 5331 Retail-Variety Stores | 2026-08-30 |
+| 10 | KO | COCA COLA CO | 2080 Beverages | 2025-12-31 |
+| 11 | PG | PROCTER & GAMBLE Co | 2840 Soap, Detergents, Cleang Preparations, Perfumes, Cosmetics | 2026-06-30 |
+| 12 | CSCO | CISCO SYSTEMS, INC. | 3576 Computer Communications Equipment | 2026-07-25 |
+| 13 | INTC | INTEL CORP | 3674 Semiconductors & Related Devices | 2025-12-27 |
+| 14 | PM | Philip Morris International Inc. | 2111 Cigarettes | 2025-12-31 |
+| 15 | LRCX | LAM RESEARCH CORP | 3559 Special Industry Machinery, NEC | 2026-06-28 |
+| 16 | TXN | TEXAS INSTRUMENTS INC | 3674 Semiconductors & Related Devices | 2025-12-31 |
+| 17 | TMO | THERMO FISHER SCIENTIFIC INC. | 3829 Measuring & Controlling Devices, NEC | 2025-12-31 |
+| 18 | AMGN | AMGEN INC | 2836 Biological Products, (No Diagnostic Substances) | 2025-12-31 |
+| 19 | DELL | Dell Technologies Inc. | 3571 Electronic Computers | 2026-01-30 |
+| 20 | GILD | GILEAD SCIENCES, INC. | 2836 Biological Products, (No Diagnostic Substances) | 2025-12-31 |
+| 21 | PEP | PEPSICO INC | 2080 Beverages | 2025-12-27 |
+| 22 | MCD | MCDONALDS CORP | 5812 Retail-Eating  Places | 2025-12-31 |
+| 23 | APH | AMPHENOL CORP /DE/ | 3678 Electronic Connectors | 2025-12-31 |
+| 24 | ABT | ABBOTT LABORATORIES | 2834 Pharmaceutical Preparations | 2025-12-31 |
+| 25 | UNP | UNION PACIFIC CORP | 4011 Railroads, Line-Haul Operating | 2025-12-31 |
+| 26 | DHR | DANAHER CORP /DE/ | 3823 Industrial Instruments For Measurement, Display, and Control | 2025-12-31 |
+| 27 | MRVL | Marvell Technology, Inc. | 3674 Semiconductors & Related Devices | 2026-01-31 |
+| 28 | LMT | LOCKHEED MARTIN CORP | 3760 Guided Missiles & Space Vehicles & Parts | 2025-12-31 |
+| 29 | MO | ALTRIA GROUP, INC. | 2111 Cigarettes | 2025-12-31 |
+| 30 | MCK | MCKESSON CORP | 5122 Wholesale-Drugs, Proprietaries & Druggists' Sundries | 2026-03-31 |
 
 ## Demo companies (SPEC §13.2)
 
@@ -95,13 +95,12 @@ Verified companies with a 53-week year (the trait Apple was chosen for, SPEC §1
 | capital_expenditure missing | 8 |
 | dividends_paid missing | 7 |
 | equity missing | 6 |
-| depreciation_amortization missing | 5 |
 | balance sheet does not balance | 5 |
 | operating_cash_flow missing | 4 |
 | revenue missing | 4 |
+| fewer than five fiscal years | 4 |
 | current_assets missing | 4 |
 | current_liabilities missing | 4 |
-| fewer than five fiscal years | 4 |
 | total_liabilities missing | 3 |
 | total_assets missing | 3 |
 | shares missing | 1 |
@@ -120,7 +119,7 @@ Verified companies with a 53-week year (the trait Apple was chosen for, SPEC §1
 | 5 | AMZN | AMAZON COM INC | 5961 | yes (no dividend: plan Q1) | – |
 | 6 | AVGO | Broadcom Inc. | 3674 | no | equity missing |
 | 7 | META | Meta Platforms, Inc. | 7370 | no | dividends_paid missing; resolver warning DEBT_INCOMPLETE |
-| 8 | TSLA | Tesla, Inc. | 3711 | no | depreciation_amortization missing |
+| 8 | TSLA | Tesla, Inc. | 3711 | yes (no dividend: plan Q1) | – |
 | 9 | LLY | ELI LILLY & Co | 2834 | no | capital_expenditure missing; operating_income missing; resolver warning DEBT_INCOMPLETE |
 | 10 | WMT | Walmart Inc. | 5331 | yes | – |
 | 11 | AMD | ADVANCED MICRO DEVICES INC | 3674 | no | resolver warning DEBT_INCOMPLETE |
@@ -143,7 +142,7 @@ Verified companies with a 53-week year (the trait Apple was chosen for, SPEC §1
 | 28 | PM | Philip Morris International Inc. | 2111 | yes | – |
 | 29 | AMAT | APPLIED MATERIALS INC /DE | 3674 | no | resolver warning DEBT_INCOMPLETE |
 | 30 | LRCX | LAM RESEARCH CORP | 3559 | yes | – |
-| 31 | TXN | TEXAS INSTRUMENTS INC | 3674 | no | depreciation_amortization missing |
+| 31 | TXN | TEXAS INSTRUMENTS INC | 3674 | yes | – |
 | 32 | CAT | CATERPILLAR INC | 3531 | no | interest_expense missing; resolver warning DEBT_INCOMPLETE |
 | 33 | RTX | RTX Corp | 3724 | no | interest_expense missing; operating_cash_flow missing |
 | 34 | PANW | Palo Alto Networks Inc | 3577 | no | financial_debt missing |
@@ -153,7 +152,7 @@ Verified companies with a 53-week year (the trait Apple was chosen for, SPEC §1
 | 38 | ANET | Arista Networks, Inc. | 3576 | no | financial_debt missing; interest_expense missing |
 | 39 | LIN | LINDE PLC | 2810 | no | resolver warning TAG_CONFLICT |
 | 40 | IBM | INTERNATIONAL BUSINESS MACHINES CORP | 3570 | no | operating_income missing |
-| 41 | CRWD | CrowdStrike Holdings, Inc. | 7372 | no | depreciation_amortization missing; resolver warning DEBT_INCOMPLETE; revenue missing |
+| 41 | CRWD | CrowdStrike Holdings, Inc. | 7372 | no | resolver warning DEBT_INCOMPLETE; revenue missing |
 | 42 | DELL | Dell Technologies Inc. | 3571 | yes | – |
 | 43 | GEV | GE Vernova Inc. | 3600 | no | current_assets missing; current_liabilities missing; dividends_paid missing; equity missing; fewer than five fiscal years; financial_debt missing; interest_expense missing; total_assets missing; total_liabilities missing |
 | 44 | GILD | GILEAD SCIENCES, INC. | 2836 | yes | – |
@@ -203,12 +202,12 @@ Verified companies with a 53-week year (the trait Apple was chosen for, SPEC §1
 | 88 | NEM | NEWMONT Corp /DE/ | 1040 | no | interest_expense missing; operating_income missing; resolver warning DEBT_CHECK |
 | 89 | CVS | CVS HEALTH Corp | 5912 | yes | – |
 | 90 | MPC | Marathon Petroleum Corp | 2911 | no | balance sheet does not balance |
-| 91 | ABNB | Airbnb, Inc. | 7340 | no | capital_expenditure missing; depreciation_amortization missing; interest_expense missing; resolver warning DEBT_INCOMPLETE |
+| 91 | ABNB | Airbnb, Inc. | 7340 | no | capital_expenditure missing; interest_expense missing; resolver warning DEBT_INCOMPLETE |
 | 92 | NET | Cloudflare, Inc. | 7372 | no | financial_debt missing |
 | 93 | WDC | WESTERN DIGITAL CORP | 3572 | no | balance sheet does not balance |
 | 94 | MAR | MARRIOTT INTERNATIONAL INC /MD/ | 7011 | no | resolver warning DEBT_CHECK |
 | 95 | SO | SOUTHERN CO | 4911 | yes | – |
-| 96 | CVNA | CARVANA CO. | 5500 | no | depreciation_amortization missing; operating_income missing; resolver warning DEBT_CHECK |
+| 96 | CVNA | CARVANA CO. | 5500 | no | operating_income missing; resolver warning DEBT_CHECK |
 | 97 | NOW | ServiceNow, Inc. | 7372 | no | financial_debt missing; interest_expense missing |
 | 98 | ENB | ENBRIDGE INC | 4610 | no | fewer than five fiscal years; resolver warning NON_USD |
 | 99 | VLO | VALERO ENERGY CORP/TX | 2911 | no | capital_expenditure missing; revenue missing |
