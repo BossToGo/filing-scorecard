@@ -1,0 +1,14 @@
+{
+ "ticker": "JPM",
+ "cik": "0000019617",
+ "files": [
+  {
+   "source": "https://data.sec.gov/submissions/CIK0000019617.json",
+   "retrieved": "2026-11-18T14:17:57+00:00",
+   "raw_bytes": 4656302,
+   "raw_sha256": "003b4d13991646fb8a7da897ae4715daae6213fdb39b30dc50fe3e99e4ee0246",
+   "trimmed": "only Form 10-K and 10-K/A in filings.recent; older pages dropped",
+   "file": "submissions.json"
+  }
+ ]
+}

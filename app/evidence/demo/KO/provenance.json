@@ -1,0 +1,22 @@
+{
+ "ticker": "KO",
+ "cik": "0000021344",
+ "files": [
+  {
+   "source": "https://data.sec.gov/submissions/CIK0000021344.json",
+   "retrieved": "2026-11-18T14:17:53+00:00",
+   "raw_bytes": 158870,
+   "raw_sha256": "6b78702392f60b9458f067a3dac80348f0b90fd7544c23e928d17d38a1f7c509",
+   "trimmed": "only Form 10-K and 10-K/A in filings.recent; older pages dropped",
+   "file": "submissions.json"
+  },
+  {
+   "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000021344.json",
+   "retrieved": "2026-11-18T14:17:53+00:00",
+   "raw_bytes": 5206922,
+   "raw_sha256": "87a4173fcd3d662d18d19e0e885095aa5e3812b74c54d1ee55808ff1540a8081",
+   "trimmed": "only Form 10-K and 10-K/A entries (dei: all forms)",
+   "file": "companyfacts.json"
+  }
+ ]
+}
