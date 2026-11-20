@@ -1,0 +1,22 @@
+{
+ "ticker": "AAPL",
+ "cik": "0000320193",
+ "files": [
+  {
+   "source": "https://data.sec.gov/submissions/CIK0000320193.json",
+   "retrieved": "2026-11-18T14:17:55+00:00",
+   "raw_bytes": 164078,
+   "raw_sha256": "157487629a9fbfc48445019105aad015e983a1714fd8406250ccfb25beda6342",
+   "trimmed": "only Form 10-K and 10-K/A in filings.recent; older pages dropped",
+   "file": "submissions.json"
+  },
+  {
+   "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json",
+   "retrieved": "2026-11-18T14:17:55+00:00",
+   "raw_bytes": 3859564,
+   "raw_sha256": "f085735b4d08fb116ade18d24247ffabe11df8eb52eae6556b165831f15ef1ad",
+   "trimmed": "only Form 10-K and 10-K/A entries (dei: all forms)",
+   "file": "companyfacts.json"
+  }
+ ]
+}
