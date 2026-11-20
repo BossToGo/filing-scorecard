@@ -60,6 +60,9 @@ def test_the_valuation_settings_follow_the_equity_method():
     assert settings["valuation"]["forecast_years"]["value"] == 10
     assert settings["valuation"]["growth_half_life_years"]["value"] == 2
     assert settings["valuation"]["growth_cap"]["value"] == 0.30
+    # Risk-free rate: the five-year average of FRED DGS10 (decided 20 November); A's data layer downloads it.
+    average_years = settings["data"]["risk_free_average_years"]["value"]
+    assert isinstance(average_years, int) and 1 <= average_years <= 10
 
 
 def test_rates_are_decimals_not_percentages():
