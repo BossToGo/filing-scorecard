@@ -2,7 +2,7 @@
 
 **Course:** Programming and AI for Corporate Finance (FIN_8546), EDHEC, final group project
 **Deadline:** Tuesday 1 December 2026, 23:59, state of `main`. Presentation Wednesday 2 December 2026 (8 minutes + 4 minutes of questions).
-**Status of this file:** version 2.3 of 20 November 2026 (version 2, risk-reduced: release tiers, risk register, industry lookup, no browser dependency; 2.1: folder layout under `app/`, §11 and §12; 2.2: names and final roles, §12, §13.2, §17; 2.3: for retail bank customers, fully automatic, share price the only input, equity valuation method with growth decaying over ten years, V4 against the whole market, five forces replaced by 15 strengths and points to watch, growth limit and fade, when the valuation model does not fit, sensitivity table and user inputs cut, §1 to §3, §5.2, §6, §8 to §16, Appendix A). To be agreed by the whole group in one meeting, then changed only by pull request.
+**Status of this file:** version 2.3 of 20 November 2026 (version 2, risk-reduced: release tiers, risk register, industry lookup, no browser dependency; 2.1: folder layout under `app/`, §11 and §12; 2.2: names and final roles, §12, §13.2, §17; 2.3: for retail bank customers, fully automatic, share price the only input, equity valuation method with growth decaying over ten years, V4 against the whole market, five forces replaced by 15 strengths and points to watch, growth limit and decay, when the valuation model does not fit, sensitivity table, growth the price implies and user inputs cut, §1 to §3, §5.2, §6, §8 to §16, Appendix A). To be agreed by the whole group in one meeting, then changed only by pull request.
 
 **The one principle of this version:** `main` always holds a working, demo-ready app. We build in three tiers. Each tier ends with a tagged release that runs offline and passes all tests. If time runs out, we present the last release and cut the rest; nothing half-finished is ever merged.
 
@@ -83,7 +83,7 @@ Each tier is a complete product on its own. A later tier only starts when the ea
 3. **Score chart.** Four areas, each 0 to 6, shown as "passed / assessed" (for example "4 of 5 assessed, 1 with insufficient data"). Each area is one bar of six blocks, never a radar or "snowflake" shape. A block has one of four looks: passed (filled), failed (filled in a second colour, with a cross), insufficient data (dashed outline, "not assessed") or not applicable (an empty slot marked "n/a"). Colour is never the only signal (pattern and text too). Not-applicable checks are not counted as assessed: with no dividend, the dividend bar shows D1 failed, five "n/a" slots and the label "no dividend paid, 0 of 1 assessed"; when the valuation model does not fit (section 8.6), V1, V2 and V6 are "n/a" with the reason.
 4. **Strengths and points to watch.** Next to the score chart: up to five of each, important ones first (section 9).
 5. **Checks.** Each check expands to show: result, the rule in plain words, the formula, the input figures with their fiscal years, and a link to the filing.
-6. **Valuation detail.** Cost of equity build-up with each assumption and its source, the free cash flow forecast table, fair value per share against the share price, the company's actual revenue growth, and for fast growers the "cautious estimate" line of section 8.3. When the model does not fit, the reason in plain words instead (section 8.6).
+6. **Valuation detail.** Cost of equity build-up with each assumption and its source, the free cash flow forecast table, fair value per share against the share price, the company's actual revenue growth, and, when the growth limit applies, the "growth note" of section 8.3. When the model does not fit, the reason in plain words instead (section 8.6).
 7. **Sources page.** One row per figure (section 5.1).
 8. **Export.** One Excel file with two sheets: the scorecard (scores, checks, strengths and points to watch, valuation); the figures with their sources.
 
@@ -223,9 +223,9 @@ If D1 fails, D2 to D6 are `not applicable` and the area shows "no dividend paid"
 | V1 | Below fair value | Share price < fair value per share (section 8) |
 | V2 | Well below fair value | Share price ≤ 80% of fair value |
 | V3 | Price to earnings below industry | (Price × shares) ÷ net income < industry figure. Net income ≤ 0: fail |
-| V4 | Price to earnings below the US market | (Price × shares) ÷ net income < price to earnings of the whole US market (benchmark file, trailing or current, never forward). Net income ≤ 0: fail. (Until version 2.3: enterprise value to EBITDA below industry.) |
+| V4 | Price to earnings below the US market | (Price × shares) ÷ net income < price to earnings of the whole US market: the same column as V3 (current, based on the latest fiscal year's earnings; never forward), from the whole-market row without financial companies (the app excludes them, section 2); B records the row and the column in `settings.yaml`. Net income ≤ 0: fail. (Until version 2.3: enterprise value to EBITDA below industry.) |
 | V5 | Price to book below industry | (Price × shares) ÷ equity < industry figure. Equity ≤ 0: fail |
-| V6 | Price does not demand heroic growth | Share price ≤ fair value per share with the starting growth set to `growth_cap` (30%) instead of the company's own growth (section 8.2): even the highest growth the model ever projects covers the price. (Version 2.2 compared the implied growth with past growth; inside the growth limits that is the same test as V1.) |
+| V6 | Price does not demand heroic growth | Share price ≤ fair value per share with the starting growth set to `growth_cap` (30%) instead of the company's own growth (section 8.2): even the highest growth the model ever projects covers the price. When the company's own growth is already at the cap, V6 repeats V1 (stated, so that one fact is not read as two). (Version 2.2 compared the implied growth with past growth; inside the growth limits that is the same test as V1.) |
 
 The benchmark files contain several versions of some ratios. The owner of the benchmark loader picks one column per check, writes the choice and the reason into `settings.yaml`, and the app shows the column name next to the benchmark.
 
@@ -233,7 +233,7 @@ The benchmark files contain several versions of some ratios. The owner of the be
 
 ## 8. Valuation engine
 
-**Equity method** (version 2.3, agreed by the group on 20 November): the free cash flow that belongs to the shareholders, discounted at the cost of equity, as in the Simply Wall St model. It replaces the firm method of session 5 (free cash flow to the firm at the weighted cost of capital, then an equity bridge) because it needs fewer inputs, all of them well-covered reported figures, and leaves fewer ways to go wrong in an automatic product. Conventions follow session 5 where they still apply (risk-free rate, equity risk premium, beta).
+**Equity method** (version 2.3, agreed by the group on 20 November): the free cash flow that belongs to the shareholders, discounted at the cost of equity, as in the Simply Wall St model. It replaces the firm method of session 5 (free cash flow to the firm at the weighted cost of capital, then an equity bridge) because it needs fewer inputs, all of them well-covered reported figures, and leaves fewer ways to go wrong in an automatic product. Conventions follow session 5 where they still apply (risk-free rate, equity risk premium, beta). Taken from the Simply Wall St model (`https://github.com/SimplyWallSt/Company-Analysis-Model`, `MODEL.markdown`, two-stage free cash flow model and discount rate): levered free cash flow discounted at the cost of equity, ten forecast years with growth decaying towards the long-run rate, a bottom-up beta limited to 0.8–2, and no fair value without positive free cash flow. The team's own choices: the three-year margin instead of analyst forecasts, the 30% cap and −10% floor, the 2-year half-life, and the 2.5% limit on terminal growth.
 
 ### 8.1 Cost of equity
 
@@ -249,18 +249,18 @@ The benchmark files contain several versions of some ratios. The owner of the be
 - **Free cash flow** of a fiscal year = operating cash flow − capital expenditure.
 - **Starting free cash flow** FCF0 = the free cash flow margin of the last three fiscal years (sum of free cash flow FY-2 to FY0 ÷ sum of revenue FY-2 to FY0; setting `fcf_base_years`) × revenue FY0. The average smooths the swings of working capital and of capital expenditure: a single year can be far off (Appendix A: USD 23.02 per share from FY0 alone, against 20.13).
 - **Starting growth.** g1 is the company's compound annual revenue growth FY-4 to FY0, limited to the range from `growth_floor` (−10%) to `growth_cap` (+30%), both settings with a reason, labelled `assumption`. When the limit applies, the note says so and gives the growth before the limit (Nvidia's revenue went from USD 26,914 million in FY2022 to USD 215,938 million in FY2026, 68.3% a year, 10-Ks 0001045810-24-000029 and 0001045810-26-000021; that is not projected forward). Without forecasts the model knows only the past, so the cap keeps one boom period (or one acquisition) from being projected for years.
-- **Growth decays towards terminal growth** (an exponential decay with gT as its horizontal asymptote): the gap between the growth and gT halves every `growth_half_life_years` (2) years: g(t) = gT + (g1 − gT) × 0.5^((t − 1) ÷ 2), for t = 1 to 10 (`forecast_years`). Fast growth fades fast and moderate growth lasts, as in the Simply Wall St model, where growth decays towards the long-run rate over ten years. A start at the 30% cap gives 30%, 21.9%, 16.2%, 12.2%, 9.4%, 7.4%, 5.9%, 4.9%, 4.2% and 3.7%: about 2.9 times the starting level in year 10. In year 10 the growth is still slightly above gT; the terminal value then uses gT.
-- **For t = 1 to 10:** FCF(t) = FCF(t − 1) × (1 + g(t)). The free cash flow margin stays at its three-year average.
+- **Growth decays towards terminal growth** (an exponential decay with gT as its horizontal asymptote): the gap between the growth and gT halves every H = `growth_half_life_years` years: g(t) = gT + (g1 − gT) × 0.5^((t − 1) ÷ H), for t = 1 to N = `forecast_years`. Every company loses the same share of its gap each year, so a high start falls by more percentage points early on. H = 2 and N = 10 are the team's choices: ten years with growth decaying towards the long-run rate follow the Simply Wall St model; a half-life of 2 years with the 30% cap gives the same ten-year total as the earlier 20%-cap linear fade, but front-loaded. A start at the 30% cap gives 30%, 21.9%, 16.25%, 12.2%, 9.4%, 7.4%, 5.9%, 4.9%, 4.2% and 3.7%: free cash flow in year 10 is about 2.9 times FCF0. In year N the growth is still slightly away from gT; the terminal value then uses gT.
+- **For t = 1 to N:** FCF(t) = FCF(t − 1) × (1 + g(t)). The free cash flow margin stays at its three-year average.
 
 ### 8.3 Terminal value and equity value
 
 - Terminal growth gT = the lower of the risk-free rate and 2.5% (a setting).
-- Terminal value = FCF(10) × (1 + gT) ÷ (cost of equity − gT). The cost of equity is always above gT (with a beta of at least 0.8 and a 5% premium it is at least the risk-free rate + 4 points; the settings loader checks that `beta_min` × premium > 0), so the terminal value always exists.
-- Discounting: end of year, by (1 + cost of equity)^t for t = 1 to 10; the terminal value is discounted with t = 10; the valuation date is the end of FY0.
-- Equity value = sum of the discounted free cash flows + discounted terminal value − minority interests (`MinorityInterest`, book value FY0: the cash flows are consolidated and include the minority owners' share; if the tag is absent, "not reported, treated as nil", labelled and listed on the sources page). No other bridge item, as in the Simply Wall St model.
+- Terminal value = FCF(N) × (1 + gT) ÷ (cost of equity − gT). The cost of equity is always above gT (with a beta of at least 0.8 and a 5% premium it is at least the risk-free rate + 4 points; the settings loader checks that `beta_min` × premium > 0), so the terminal value always exists.
+- Discounting: end of year, by (1 + cost of equity)^t for t = 1 to N; the terminal value is discounted with t = N; the valuation date is the end of FY0.
+- Equity value = sum of the discounted free cash flows + discounted terminal value − minority interests (`MinorityInterest`, book value FY0: the cash flows are consolidated and include the minority owners' share; if the tag is absent, "not reported, treated as nil", labelled and listed on the sources page; a negative balance is used as reported and recorded; a tag reported for FY-1 but not for FY0 makes the fair value `insufficient_data`, as for any missing input; when total equity including non-controlling interests exceeds equity by more than 1% and no tag is reported, a record is added on the sources page). No other bridge item, as in the Simply Wall St model, where value per share is the present value divided by the shares.
 - Fair value per share = equity value ÷ shares.
 - Not modelled, and stated as limitations in the README: changes in debt (net borrowing), cash beyond the interest it earns, stock-based pay (added back in operating cash flow), preferred dividends, minority interests that are not tagged as such.
-- For a company whose past growth is above the cap, the valuation detail adds one line: "This company grew x% a year, more than the 30% the model projects, so the estimate is cautious."
+- **Growth note.** When the growth limit applies, the valuation detail adds one factual line, with the values taken from the settings: above the cap, "Revenue grew x% a year over the last four years; the model starts at 30% and lets growth slow towards 2.5%"; below the floor, "Revenue fell x% a year over the last four years; the model starts at −10% and lets growth recover towards 2.5%". No judgement about the price (sections 1 and 3).
 
 ### 8.4 Growth the price implies
 
@@ -335,7 +335,7 @@ The SEC gives each company a four-digit standard industrial classification code 
 1. **Damodaran's own lookup (preferred).** Match the company's ticker in `data/industry_lookup_us_2026.csv` (extracted from his `indname.xls`). This is the group he used to compute the averages, so company and benchmark are classified the same way. Shown as "Industry: [group] (Damodaran lookup)".
 2. **Fallback table, generated only.** If the ticker is not in his file and his file contains SEC codes, the extraction script generates `data/sic_to_damodaran.csv` (for each code, the group most of its companies belong to) and the app looks the company's SEC code up there. Shown as "(mapped from SEC code [code])" on the sources page. No table is built by hand (version 2.3): without a match, the benchmarks are `missing` and the checks that need them show "insufficient data". S4 checks that every ticker of `data/universe.csv` maps to a group, and names the route.
 
-There is no user override (version 2.3): the industry, like every figure the scores use, is chosen automatically, so the scores are the same for every user. If none applies, benchmarks are `missing` and the checks that need them show "insufficient data". Every benchmark shown carries the group name, the number of firms in it and the source file.
+There is no user override (version 2.3): the industry, like every figure the scores use, is chosen automatically, so the scores are the same for every user. If none applies, benchmarks are `missing` and the checks that need them show "insufficient data"; D2 and V4 use the whole-market row and are still assessed. Every benchmark shown carries the group name, the number of firms in it and the source file.
 
 **Day-one task (member B, 30 minutes):** open `indname.xls`, write down its sheet and column names in `docs/benchmarks.md`, and confirm whether it contains a ticker column (and in which format, for example exchange prefix plus ticker) and SEC codes. The extraction script is written against what the file actually contains, not against this description.
 
@@ -516,9 +516,9 @@ Names agreed on 18 November 2026. If the group has four members, the work of E i
 | S8 | Equity method (section 8): cost of equity with the beta limits, free cash flow forecast from the three-year margin with the growth limit and the exponential decay over ten years, terminal value, minority interests, when the model does not fit | C (starts Thursday 19 on the synthetic company, with the Excel model) | S0c | Matches C's separate Excel model and Appendix A (valuation rows recalculated by C first: they changed in version 2.3); property tests pass; one test per case of section 8.6 |
 | S2b | Before S12: the `Statement` shape in `src/contracts.py` (section 11) | A | S0 | Contract tests pass |
 | S9 | Valuation checks V1 to V6; switch on P4, P5, D2 | C with B | S8, S4 | Appendix A values reproduced; the `insufficient_data` and `not_applicable` cases of section 8.6 tested |
-| S10b | Interface: share price input, valuation detail (cost of equity build-up with each assumption and its source, free cash flow table, fair value against the price, the "cautious estimate" line for fast growers), the reasons of section 8.6, industry shown with route and number of firms | D | S8, S4 | App test finds the fair value of the synthetic company |
+| S10b | Interface: share price input, valuation detail (cost of equity build-up with each assumption and its source, free cash flow table, fair value against the price, the growth note when the growth limit applies), the reasons of section 8.6, industry shown with route and number of firms | D | S8, S4 | App test finds the fair value of the synthetic company |
 | S13 | Excel export, two sheets: scorecard; figures and sources (section 3) | E | S10 | Export reopened by a test; figures equal the screen |
-| S16b | Texts for the valuation checks and the industry explanations | E | S10b | Reviewed by C |
+| S16b | Texts for the valuation checks, the industry explanations and the growth note (section 8.3) | E | S10b | Reviewed by C |
 
 **Tier 3 — release v0.3 "Strengths and points to watch" (by the feature freeze, Thursday 26 November, 20:00)**
 
@@ -556,8 +556,8 @@ Names agreed on 18 November 2026. If the group has four members, the work of E i
 
 ### 13.4 Go/no-go on Friday 20 November (team's proposed thresholds)
 
-- **Go as planned:** revenue, operating income, net income, total assets, current assets, current liabilities, equity, operating cash flow and capital expenditure each resolve for at least 90% of the 100 test companies; debt, interest expense and depreciation for at least 70%.
-- **Go with gaps:** the first group passes, the second does not. Debt, interest and depreciation are used where they resolve; where they do not, the checks that need them show "insufficient data". Nothing is typed in by the user (section 1, version 2.3; version 2.2 said "go with manual fields").
+- **Go as planned:** revenue, operating income, net income, total assets, current assets, current liabilities, equity, operating cash flow and capital expenditure each resolve for at least 90% of the 100 test companies; debt and interest expense for at least 70% (depreciation, in this group until version 2.3, is no longer used by any check).
+- **Go with gaps:** the first group passes, the second does not. Debt and interest are used where they resolve; where they do not, the checks that need them show "insufficient data". Nothing is typed in by the user (section 1, version 2.3; version 2.2 said "go with manual fields").
 - **Change scope:** the first group fails. Tier 1 is kept with fewer line items; tiers 2 and 3 are dropped.
 
 Whatever the coverage, the verified universe is the 30 companies for which every tier 1 figure resolves and passes the accounting checks, and the inputs of section 8.6 resolve (revenue FY-4 to FY0, operating cash flow and capital expenditure FY-2 to FY0, financial debt and shares). Depreciation and current financial debt are no longer needed. Those are the companies we demo.
@@ -608,8 +608,8 @@ Reviewed at every group meeting. "Trigger" is the signal that the fallback start
 | Layer | What | Where the expected value comes from |
 |---|---|---|
 | Unit (many) | Each of the 24 checks; each valuation formula; each resolver rule | The synthetic company of Appendix A, recalculated by the owner by hand or in Excel; textbook formulas |
-| Property (Hypothesis) | With no debt the levered beta equals the unlevered beta (within the limits); fair value rises with the starting growth and falls with the cost of equity whenever FCF0 > 0; g(t) moves towards gT every year and never crosses it; the beta stays within its limits | The rule itself |
-| Edge cases | Zero debt; negative equity; net income of zero or below; no dividend; a missing figure; a 53-week year; a restated figure; an unmapped industry; past growth above the cap and below the floor; revenue FY-2 missing or FY-4 ≤ 0; three-year free cash flow zero or negative, and equity value ≤ 0 (section 8.6); a missing valuation input | Sections 7 to 10 |
+| Property (Hypothesis) | With no debt the levered beta equals the unlevered beta (within the limits); fair value rises with the starting growth and falls with the cost of equity whenever FCF0 > 0; |g(t + 1) − gT| ≤ |g(t) − gT| and g(t) − gT never changes sign; the beta stays within its limits | The rule itself |
+| Edge cases | Zero debt; negative equity; net income of zero or below; no dividend; a missing figure; a 53-week year; a restated figure; an unmapped industry; past growth above the cap and below the floor; revenue FY-2 missing or FY-4 ≤ 0; three-year free cash flow zero or negative, and equity value ≤ 0 (section 8.6); a missing valuation input; starting growth exactly at the cap (V6 repeats V1) or equal to gT; a negative minority interest | Sections 7 to 10 |
 | Planted errors | Nine months read as a year; thousands read as millions; wrong fiscal-year label; sign flipped | Section 5.4 |
 | Reconciliation | 30 figures read by the members from the 10-K documents | The filing itself (`tests/reconciliation/`) |
 | Cross-check | The valuation engine against C's separate Excel model for the synthetic company and one real company | `docs/crosscheck/` |
@@ -656,7 +656,7 @@ Every bug found becomes a test that stays (the ratchet). The test workflow runs 
 | Operating income | 150 | 170 | 160 | 190 | 208 |
 | Interest expense | 20 | 20 | 22 | 24 | 26 |
 | Net income | 100 | 115 | 105 | 128 | 140 |
-| Depreciation and amortisation | 50 | 54 | 58 | 60 | 65 |
+| Depreciation and amortisation (not used since version 2.3) | 50 | 54 | 58 | 60 | 65 |
 | Capital expenditure | 60 | 70 | 75 | 80 | 85 |
 | Operating cash flow | 160 | 175 | 150 | 195 | 215 |
 | Dividends paid | 40 | 44 | 48 | 45 | 56 |
@@ -701,7 +701,7 @@ Other inputs: current financial debt FY2025 = 50 (not used since version 2.3); s
 
 Scores: past performance 5 of 6, financial health 4 of 6, dividend 6 of 6, valuation 3 of 6.
 
-**Valuation working (version 2.3, equity method with exponential decay; recalculated by the AI assistant from the rules of section 8, to be recalculated by C before use, rule 14.5).** The same script first reproduced the firm-method values of version 2.2 (fair value USD 21.68, implied growth 14.10%).
+**Valuation working (version 2.3, equity method with exponential decay; recalculated by the AI assistant from the rules of section 8, to be recalculated by C before use, rule 14.5).** The same script first reproduced the firm-method values of version 2.2 (fair value USD 21.68, implied growth 14.10%) and the earlier five-year equity values (19.65, and 26.07 at a 20% cap).
 
 - Debt ÷ market value of equity = 450 ÷ 3,000 = 0.15. Levered beta = 0.90 × (1 + 0.79 × 0.15) = 1.00665 (inside 0.8 to 2.0).
 - Cost of equity = 4.0% + 1.00665 × 5.0% = 9.0333% (9.03325%).
@@ -723,7 +723,7 @@ Scores: past performance 5 of 6, financial health 4 of 6, dividend 6 of 6, valua
 
 - Sum of discounted free cash flows 911.21. Terminal value 166.75 × 1.025 ÷ (0.0903325 − 0.025) = 2,616.20, discounted 1,101.75 (54.7% of the total).
 - Equity value 911.21 + 1,101.75 − minority interests 0 = 2,012.95. Fair value per share USD 20.13.
-- V6: the same valuation with g1 = 30% (growth 30%, 21.9%, 16.2%, 12.2%, 9.4%, 7.4%, 5.9%, 4.9%, 4.2%, 3.7%) gives USD 37.37 per share, above the price of USD 30.00, so V6 passes.
+- V6: the same valuation with g1 = 30% (growth 30%, 21.9%, 16.25%, 12.2%, 9.4%, 7.4%, 5.9%, 4.9%, 4.2%, 3.7%) gives USD 37.37 per share, above the price of USD 30.00, so V6 passes.
 - The model fits (section 8.6): FCF0 = 113.66 > 0, equity value > 0.
 - With FY0's free cash flow alone (130) instead of the three-year margin, the fair value would be USD 23.02: the reason for the average.
 
@@ -769,7 +769,7 @@ Overview: strengths G1, G2, G3, G5, G6; points to watch W3, W4, W8 (all minor).
 
 ## Appendix C — Fallbacks
 
-**If the benchmark datasets are not allowed (the low-risk default).** Remove the six checks that compare against an industry (P4, P5, D2, V3, V4, V5): past performance is scored out of 4, dividend out of 5, valuation out of 3 (V1, V2, V6). Beta becomes a setting (default 1.0, stated as an assumption). The strengths G3 and G4, which compare with an industry, are dropped. Nothing else changes, because the benchmarks live in one CSV and one module.
+**If the benchmark datasets are not allowed (the low-risk default).** Remove the six checks that use the benchmark file (P4, P5, D2, V3, V4, V5): past performance is scored out of 4, dividend out of 5, valuation out of 3 (V1, V2, V6). Beta becomes a setting (default 1.0, stated as an assumption). The strengths G3 and G4, which compare with an industry, are dropped. Nothing else changes, because the benchmarks live in one CSV and one module.
 
 **Optional, only if time allows after v0.3:** compute our own industry medians for margins and return on equity from the SEC "frames" interface (one request returns one tag for all companies for a year), grouped by the first two digits of the industry code, and switch P4 and P5 back on.
 
