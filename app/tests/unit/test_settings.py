@@ -31,7 +31,7 @@ def test_every_setting_has_a_value_and_a_reason():
 
 
 RATES = {  # every setting that is a rate or a share: a decimal strictly between 0 and 1
-    "data": ["restatement_warning"],
+    "data": ["restatement_warning", "tag_conflict_warning", "debt_check_warning"],
     "financial_health": ["max_net_debt_to_equity", "min_operating_cash_flow_to_debt"],
     "dividend": ["max_dividend_cut", "max_payout_ratio"],
     "valuation": [
