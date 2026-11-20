@@ -53,7 +53,7 @@ dividend:  # owner C (SPEC §7)
 valuation:  # owner C (SPEC §7, §8)
   risk_free_rate:
     value: null
-    reason: "Type the 10-year Treasury yield here (e.g. 0.04) when no FRED key is set; otherwise FRED DGS10 (SPEC §8.1)"
+    reason: "Fallback for demo mode, a missing FRED key or no network: type the latest 10-year Treasury yield here (e.g. 0.04) and its date in this reason; otherwise the app downloads FRED DGS10 live (SPEC v2.3 §4, §8.1). A refreshes it before each release"
   equity_risk_premium:
     value: 0.05
     reason: "Session 5 convention (SPEC §8.1)"
