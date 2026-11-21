@@ -1,0 +1,38 @@
+# Coca-Cola, read by hand from its 10-K for fiscal year 2025 (slice S15). Owner: A.
+# Format and rules: README.md in this folder. Never edit a figure to match the app: a mismatch is a bug.
+company: KO
+read_by: Igor (A)
+date_read: 2026-11-21
+how_read: >-
+  Checked by hand against the printed pages of the 10-K below; the figures were first extracted with the Codex
+  assistant, then each value and line name was confirmed by Igor on the page (AI-USAGE.md, 21 November).
+accession: 0001628280-26-010047
+filed: 2026-02-20
+fiscal_year_end: 2025-12-31
+document: https://www.sec.gov/Archives/edgar/data/21344/000162828026010047/ko-20251231.htm
+unit: USD millions
+figures:
+  revenue:
+    value: 47941
+    page: 61
+    line_in_filing: Net Operating Revenues
+  operating_income:
+    value: 13762
+    page: 61
+    line_in_filing: Operating Income
+  net_income:
+    value: 13107
+    page: 61
+    line_in_filing: Net Income Attributable to Shareowners of The Coca-Cola Company
+  total_assets:
+    value: 104816
+    page: 63
+    line_in_filing: Total Assets
+  operating_cash_flow:
+    value: 7408
+    page: 64
+    line_in_filing: Net Cash Provided by Operating Activities
+  dividends_paid:
+    value: 8779  # shown in parentheses as a cash outflow; written as the positive amount paid
+    page: 64
+    line_in_filing: Dividends

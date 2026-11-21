@@ -39,7 +39,7 @@ Status values: `todo`, `in progress`, `done (<date>, commit <short hash>)`, `blo
 | S10 | Interface: input bar, header, score chart, expandable checks, sources page, overrides | D | S0c, then S2 | `streamlit run` works; app test opens the synthetic company and finds a known score | AC1, AC3–AC6, V1, V3, V4 | todo |
 | S11 | Gates (§10) and error messages | D | S2 | One test per stop and warn case | AC2, E1–E4, E15, V2 | todo |
 | S14 | Demo mode on the five saved companies | A with D | S2, S10 | App runs with the network switched off | AC7 | todo |
-| S15 | Reconciliation: six figures (revenue, operating income, net income, total assets, operating cash flow, dividends paid) per member for one demo company, read from the 10-K with page and accession number | All, coordinated by E | S2 | 30 figures match the resolver within USD 0.5 million | – | todo |
+| S15 | Reconciliation: six figures (revenue, operating income, net income, total assets, operating cash flow, dividends paid) per member for one demo company, read from the 10-K with page and accession number | All, coordinated by E | S2 | 30 figures match the resolver within USD 0.5 million | – | in progress (KO done: 6 of 30) |
 | S16a | Plain-language texts for the 18 tier 1 checks | E | S10 | Each check shows its text; reviewed by the check's owner | AC4 | todo |
 
 ### Tier 2: release v0.2 "Valuation" (target Wed 25 November)
@@ -88,6 +88,7 @@ export. The tier 1 scorecard and the sources page are never cut. Everything on `
 | 2026-11-20 | S3 (lean v2.3) | The verified universe no longer needs current financial debt (equity method); it still needs the share count and the latest depreciation (for V4) | Test first (seen failing); pytest: 373 passed; coverage regenerated: still 31 verified, the same 30 chosen | – |
 | 2026-11-20 | S3 (lean v2.3 round 2) | The verified universe no longer needs depreciation (V4 now compares the P/E with the whole market): only tier 1 figures, the accounting checks, no blocking warning, a recent report and a share count | Test first (seen failing); pytest: 372 passed; coverage regenerated: 33 verified; Tesla and Texas Instruments back in the 30, Starbucks and CVS out; the demo candidates (KO, NVDA, MCD, AMZN, COST, PEP) all in | – |
 | 2026-11-20 | S2 | Simon's review of #7: the interface imports `load_company` and the SEC error classes from `src.data.company` only, never `src.data.sec_client`; the errors are re-exported there and a layering test forbids the direct import | Tests first (8 failed), then pytest: 298 passed | – |
+| 2026-11-21 | S15 | Reconciliation format (`app/tests/reconciliation/README.md`, the S2 leftover) and its test: every `<TICKER>.yaml` is checked for completeness and compared with the app within USD 0.5 million and against the same accession number; Igor's Coca-Cola record added | Tests first: with no record, with the validator switched off (12 failed) and with a wrong revenue (47,900: failed); then 6 of 6 Coca-Cola figures match exactly; pytest: see the pull request | B, C, D and E add their files (Apple, Nvidia, McDonald's, Amazon) |
 
 ## Known problems and open questions
 
