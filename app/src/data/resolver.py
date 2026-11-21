@@ -345,13 +345,27 @@ class _Resolver:
         short_total = part("short-term borrowings", parts["short_term_total"])
         short_parts = [f for tag in parts["short_term_parts"] if (f := part(tag, [tag])) is not None]
 
+        tolerance = self.settings["debt_check_warning"]
+
+        def same_definition(a, b):  # the newer tag names include finance leases, the older ones do not (plan Q5)
+            return ("CapitalLeaseObligations" in a.tag) == ("CapitalLeaseObligations" in b.tag)
+
+        # A "total" smaller than its own non-current part is not a total (Seagate 2022: 964 against 5,062, audit of
+        # 21 November 2026): it is flagged and left out, and the parts below are used.
+        if (total is not None and noncurrent is not None and not inside and same_definition(total, noncurrent)
+                and total.value < noncurrent.value * (1 - tolerance)):
+            self.warnings.append(f"DEBT_CHECK: {fy_end}: {total.tag} {_money(total.value)} is below its non-current "
+                                 f"part {_money(noncurrent.value)}, so it is not used as the total; check the 10-K")
+            total = None
+        comparable = total is not None and noncurrent is not None and same_definition(total, noncurrent)
+
         notes = [f"company-specific: {override['reason']}"] if inside else []
         if total is not None:
             long_term = total.value
             notes.append(_source(total))
             if noncurrent is not None and current is not None and not inside:
                 parts_sum = noncurrent.value + current.value
-                if _relative_difference(total.value, parts_sum) > self.settings["debt_check_warning"]:
+                if _relative_difference(total.value, parts_sum) > tolerance:
                     self.warnings.append(f"DEBT_CHECK: {fy_end}: total long-term debt {_money(total.value)} differs "
                                          f"from non-current + current {_money(parts_sum)}; check the 10-K")
         elif noncurrent is not None and current is not None:
@@ -370,10 +384,16 @@ class _Resolver:
                 f"current debt on the balance sheet = {total.tag} − {noncurrent.tag}"
         elif current is not None:
             maturities, maturities_note = current.value, _source(current)
-        elif total is not None and noncurrent is not None:
+        elif comparable:
             maturities, maturities_note = total.value - noncurrent.value, f"{total.tag} − {noncurrent.tag}"
         else:
             maturities, maturities_note = None, ""
+        why_no_current = "current maturities of long-term debt not reported"
+        if maturities is None and total is not None and noncurrent is not None and not comparable:
+            # Micron: LongTermDebt (without finance leases) minus LongTermDebtAndCapitalLeaseObligations (with them)
+            # would be negative. The difference of two definitions is not a current part.
+            why_no_current = (f"not derivable: of {total.tag} and {noncurrent.tag} only one includes finance leases, "
+                              "so their difference is not the current part of the debt")
         # Only a long-term total and no current maturities: DebtCurrent (all current debt) gives the current part,
         # and the principal (DebtInstrumentCarryingAmount) tells whether the total already includes it (Tesla's
         # LongTermDebt does not). Without a principal that settles it, the debt is flagged.
@@ -383,7 +403,6 @@ class _Resolver:
         total_is_noncurrent = False
         if all_current is not None:
             principal = part("principal", parts.get("principal_check", []))
-            tolerance = self.settings["debt_check_warning"]
 
             def close(value):
                 return principal is not None and principal.value and \
@@ -398,17 +417,17 @@ class _Resolver:
                 self.warnings.append(f"DEBT_CHECK: {fy_end}: cannot tell whether {total.tag} {_money(total.value)} "
                                      f"includes the current debt {_source(all_current)}; check the 10-K")
 
-        # Short-term borrowings equal to total − non-current, with no current-maturities tag, are the current part of
-        # long-term debt filed under another name (Marvell): already inside the total.
-        short_is_current_part = (not inside and total is not None and noncurrent is not None and current is None
-                                 and short_total is not None and short_total.value > 0
-                                 and _relative_difference(total.value - noncurrent.value, short_total.value)
-                                 <= self.settings["debt_check_warning"])
+        # Short-term borrowings equal (within the tolerance) to the current maturities of long-term debt are that same
+        # balance-sheet line filed under a second name, whether the maturities are tagged (AMD, IBM, T-Mobile: audit of
+        # 21 November 2026) or are total − non-current (Marvell). They are already counted, so nothing is added.
+        short_is_current_part = (not inside and short_total is not None and short_total.value > 0
+                                 and maturities is not None and maturities > 0
+                                 and _relative_difference(maturities, short_total.value) <= tolerance)
         if inside:
             short_term, short_notes = 0, ["short-term borrowings classified inside long-term debt"]
         elif short_is_current_part:
             short_term, short_notes = 0, [f"nothing added for {_source(short_total)}: it is the current part of "
-                                          f"{total.tag}, already inside it"]
+                                          f"long-term debt ({maturities_note}), already counted inside it"]
         elif total_is_noncurrent:
             short_term, short_notes = 0, ["short-term borrowings are inside DebtCurrent"]
         elif short_total is not None:
@@ -432,8 +451,7 @@ class _Resolver:
             current_debt = self._derived("current_financial_debt", maturities + short_term, fy_end,
                                          " + ".join([maturities_note, *short_notes]))
         else:
-            return debt, self._missing("current_financial_debt", fy_end,
-                                       "current maturities of long-term debt not reported")
+            return debt, self._missing("current_financial_debt", fy_end, why_no_current)
         if current_debt.value > debt.value:
             self.warnings.append(f"DEBT_CHECK: {fy_end}: current debt {_money(current_debt.value)} is larger than "
                                  f"total debt {_money(debt.value)}; check the 10-K")
