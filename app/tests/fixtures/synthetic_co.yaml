@@ -1,4 +1,5 @@
-# Synthetic Co. — SYNTHETIC DATA. An invented company for tests: SPEC.md Appendix A, copied cell by cell.
+# Synthetic Co. — SYNTHETIC DATA. An invented company for tests: SPEC.md Appendix A (version 2.3), copied cell
+# by cell.
 #
 # Collected by A (slice S0c). tests/unit/test_synthetic_fixture.py checks every number below against the tables
 # in SPEC.md Appendix A, so a copying mistake fails a test.
@@ -14,7 +15,7 @@
 # millions; rates as decimals. Fiscal years end on 31 December (Appendix A gives fiscal years only).
 
 label: SYNTHETIC DATA
-source: SPEC.md Appendix A
+source: SPEC.md Appendix A, version 2.3 (equity method)
 fiscal_years: [2021, 2022, 2023, 2024, 2025]
 
 line_items:  # USD millions, FY2021 to FY2025
@@ -35,7 +36,7 @@ line_items:  # USD millions, FY2021 to FY2025
   total_liabilities: [800, 830, 870, 890, 930]
 
 other_inputs:
-  current_financial_debt_fy2025: 50   # USD millions
+  current_financial_debt_fy2025: 50   # USD millions; not used since version 2.3
   shares_millions: 100
   share_price_usd: 30.00
   minority_interest: 0                 # "no non-controlling interests, preferred shares or equity-method investments"
@@ -45,20 +46,29 @@ other_inputs:
 settings:
   risk_free_rate: 0.040
   equity_risk_premium: 0.050
-  tax_rate: 0.21
+  tax_rate: 0.21                # for the beta only
   terminal_growth: 0.025
+  fcf_base_years: 3             # free cash flow margin over the last three fiscal years
+  growth_floor: -0.10           # starting growth limited to −10% to +30%
+  growth_cap: 0.30
+  growth_half_life_years: 2     # the gap to terminal growth halves every 2 years
+  forecast_years: 10
+  beta_min: 0.8                 # neither limit applies to this company
+  beta_max: 2.0
 
 benchmarks:  # synthetic
   unlevered_beta: 0.90
   return_on_equity: 0.15
   operating_margin: 0.18
-  price_to_earnings: 20.0
-  ev_to_ebitda: 13.0
+  price_to_earnings: 20.0          # industry
+  market_price_to_earnings: 24.0   # whole US market (V4)
   price_to_book: 4.0
   market_dividend_yield: 0.015
 
 # Expected results, as shown in Appendix A. `value` and `compared_with` are in the unit shown there
 # ("%" means percent: 9.375 is 9.375%). Tolerance: half a unit of the last decimal shown (`decimals`).
+# A test of a check asserts its value and what it is compared with, not only pass or fail: several wrong formulas
+# give the same pass or fail on this company (audit of 21 November 2026).
 expected_checks:
   P1: {owner: B, result: pass, value: 5, compared_with: 5, unit: years, decimals: 0}
   P2: {owner: B, result: pass, value: 140, compared_with: 100, unit: USD m, decimals: 0}
@@ -78,49 +88,61 @@ expected_checks:
   D4: {owner: C, result: pass, value: 56, compared_with: 40, unit: USD m, decimals: 0}
   D5: {owner: C, result: pass, value: 40, unit: "%", decimals: 0}
   D6: {owner: C, result: pass, value: 56, compared_with: 130, unit: USD m, decimals: 0}
-  V1: {owner: C, result: fail, value: 30.00, compared_with: 21.68, unit: USD, decimals: 2}
-  V2: {owner: C, result: fail, value: 30.00, compared_with: 17.34, unit: USD, decimals: 2}
-  V3: {owner: C, result: fail, value: 21.43, compared_with: 20.0, unit: x, decimals: 2}
-  V4: {owner: C, result: pass, value: 12.20, compared_with: 13.0, unit: x, decimals: 2}
+  V1: {owner: C, result: fail, value: 30.00, compared_with: 20.13, unit: USD, decimals: 2}  # price against fair value
+  V2: {owner: C, result: fail, value: 30.00, compared_with: 16.10, unit: USD, decimals: 2}  # against 80% of it
+  V3: {owner: C, result: fail, value: 21.43, compared_with: 20.0, unit: x, decimals: 2}     # P/E against the industry
+  V4: {owner: C, result: pass, value: 21.43, compared_with: 24.0, unit: x, decimals: 2}     # P/E against the US market
   V5: {owner: C, result: pass, value: 3.66, compared_with: 4.0, unit: x, decimals: 2}
-  V6: {owner: C, result: fail, value: 14.10, compared_with: 6.78, unit: "%", decimals: 2}
+  V6: {owner: C, result: pass, value: 30.00, compared_with: 37.37, unit: USD, decimals: 2}  # fair value at the 30% cap
 
 expected_scores:  # passes out of 6, tier 2 (benchmarks and share price present); owner E
   past_performance: 5
   financial_health: 4
   dividend: 6
-  valuation: 2
+  valuation: 3
 
-expected_valuation:  # Appendix A, "Valuation working"; owner C
+expected_valuation:  # Appendix A, "Valuation working" (equity method, growth decaying over ten years); owner C
   levered_beta: {value: 1.00665, unit: x, decimals: 5}
-  cost_of_equity: {value: 9.0333, unit: "%", decimals: 4}
-  cost_of_debt_before_tax: {value: 5.8427, unit: "%", decimals: 4}
-  cost_of_debt_after_tax: {value: 4.6157, unit: "%", decimals: 4}
-  equity_weight: {value: 86.9565, unit: "%", decimals: 4}
-  debt_weight: {value: 13.0435, unit: "%", decimals: 4}
-  cost_of_capital: {value: 8.4571, unit: "%", decimals: 4}
-  growth: {value: 6.7790, unit: "%", decimals: 4}
-  operating_margin: {value: 16.0, unit: "%", decimals: 1}
-  depreciation_ratio: {value: 5.0, unit: "%", decimals: 1}
-  capital_expenditure_ratio: {value: 6.5385, unit: "%", decimals: 4}
-  net_working_capital: {value: 110, unit: USD m, decimals: 0}
-  working_capital_ratio: {value: 8.4615, unit: "%", decimals: 4}
-  forecast:  # USD millions, years 1 to 5
-    revenue: [1388.13, 1482.23, 1582.71, 1690.00, 1804.57]
-    operating_profit_after_tax: [175.46, 187.35, 200.05, 213.62, 228.10]
-    free_cash_flow: [146.65, 156.59, 167.20, 178.54, 190.64]
-    discounted: [135.21, 133.12, 131.06, 129.03, 127.04]
+  cost_of_equity: {value: 9.03325, unit: "%", decimals: 5}
+  base_free_cash_flows: {values: [75, 115, 130], unit: USD m, decimals: 0}  # FY2023 to FY2025
+  free_cash_flow_margin: {value: 8.7432, unit: "%", decimals: 4}
+  starting_free_cash_flow: {value: 113.66, unit: USD m, decimals: 2}  # FCF0
+  starting_growth: {value: 6.7790, unit: "%", decimals: 4}            # g1, inside −10% to +30%
+  forecast:  # years 1 to 10; growth in percent, cash flows in USD millions
+    growth: [6.7790, 5.5257, 4.6395, 4.0129, 3.5697, 3.2564, 3.0349, 2.8782, 2.7674, 2.6891]
+    free_cash_flow: [121.37, 128.07, 134.01, 139.39, 144.37, 149.07, 153.59, 158.01, 162.39, 166.75]
+    discounted: [111.31, 107.73, 103.39, 98.63, 93.69, 88.72, 83.84, 79.11, 74.56, 70.22]
+    growth_decimals: 4
     decimals: 2
-  sum_of_discounted_cash_flows: {value: 655.46, unit: USD m, decimals: 2}
-  terminal_value: {value: 2764.55, unit: USD m, decimals: 2}
-  discounted_terminal_value: {value: 1842.20, unit: USD m, decimals: 2}
-  terminal_value_share_of_ev: {value: 73.8, unit: "%", decimals: 1}
-  enterprise_value: {value: 2497.65, unit: USD m, decimals: 2}
-  equity_value: {value: 2167.65, unit: USD m, decimals: 2}
-  fair_value_per_share: {value: 21.68, unit: USD, decimals: 2}
-  implied_growth: {value: 14.10, unit: "%", decimals: 2}
+  sum_of_discounted_cash_flows: {value: 911.21, unit: USD m, decimals: 2}
+  terminal_value: {value: 2616.20, unit: USD m, decimals: 2}
+  discounted_terminal_value: {value: 1101.75, unit: USD m, decimals: 2}
+  terminal_value_share: {value: 54.7, unit: "%", decimals: 1}
+  equity_value: {value: 2012.95, unit: USD m, decimals: 2}
+  fair_value_per_share: {value: 20.13, unit: USD, decimals: 2}
+  fair_value_at_growth_cap: {value: 37.37, unit: USD, decimals: 2}    # V6: starting growth set to 30%
+  model_fits: {value: true}                                            # section 8.6: FCF0 > 0, equity value > 0
 
-# Not in Appendix A: docs/acceptance.md AC3 and AC6 (tier 1 build: no benchmarks, no share price); owner D.
+# Strengths and points to watch (SPEC section 9 and Appendix A); owner B. `value` as shown in Appendix A.
+expected_statements:
+  G1: {shown: true}
+  G2: {shown: true, value: 8.78, unit: "%", decimals: 2}   # net income growth a year over four years
+  G3: {shown: true}
+  G4: {shown: false}
+  G5: {shown: true}
+  G6: {shown: true}
+  G7: {shown: false}
+  W1: {shown: false}
+  W2: {shown: false}
+  W3: {shown: true}
+  W4: {shown: true}
+  W5: {shown: false}
+  W6: {shown: false}
+  W7: {shown: false}
+  W8: {shown: true, value: 49.0, unit: "%", decimals: 1}   # share price above the estimate
+  overview: {strengths: [G1, G2, G3, G5, G6], points_to_watch: [W3, W4, W8]}
+
+# Not in Appendix A: docs/acceptance.md AC3 (tier 1 build: no benchmarks, no share price); owner D.
 # "Not assessed" checks have the status insufficient_data (docs/plan.md Q9).
 expected_tier1:
   scores:
@@ -128,15 +150,11 @@ expected_tier1:
     financial_health: {passed: 4, assessed: 6}
     dividend: {passed: 5, assessed: 5}
   not_assessed: [P4, P5, D2]
-expected_override:  # FY2025 cash overridden from 120 to 140 (USD millions)
-  cash_from: 120
-  cash_to: 140
-  H3: {result: pass, value: 37.80, unit: "%", decimals: 2}
-  financial_health_passed: 5
 
-# Recorded by A from each owner's review comment on the S0c pull request: "name, date, link to the comment".
+# Recorded by A from each owner's review comment on the S0c pull request (#5): "name, date, link to the comment".
+# All three recorded sign-offs are for the version 2.3 values above.
 sign_off:
-  B: null  # CALC-P1–P6, CALC-H1–H6
-  C: null  # CALC-D1–D6, CALC-V1–V6, CALC-W1–W4, CALC-F1–F5 (valuation working)
-  D: null  # AC3 (tier 1 scores) and AC6 (cash override)
-  E: null  # CALC-S (the four area scores, tier 2)
+  B: null  # CALC-P1–P6, CALC-H1–H6 and the statements (CALC-G): not signed off yet, so these stay locked
+  C: "Florian Spitzer, 2026-11-21, https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6005138344"  # CALC-D1–D6, CALC-V1–V6, CALC-W1–W2, CALC-F1–F4, from his own Excel model (PR #14)
+  D: "Simon Armengaud, 2026-11-19 (confirmed for the lean version 2026-11-21), https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-5977120036"  # AC3 (tier 1 scores)
+  E: "Emma Riggi, 2026-11-21, https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6008385452"  # CALC-S (the four area scores, tier 2)

@@ -1,4 +1,4 @@
-"""Synthetic Co. (SYNTHETIC DATA, SPEC Appendix A) for tests. Collected by A (slice S0c).
+"""Synthetic Co. (SYNTHETIC DATA, SPEC Appendix A, version 2.3) for tests. Collected by A (slice S0c).
 
 Use in a test:
 
@@ -10,6 +10,10 @@ Use in a test:
 
 Expected values are shown as in Appendix A: "%" values are percent (9.375 means 0.09375), "USD m" values are
 millions. Inputs (`inputs()`) are decimals and plain numbers.
+
+Assert the value and what it is compared with, not only pass or fail: on this company several wrong formulas give
+the same result (net against gross debt in H3, FY0 against average equity in P4, any earlier year for "four years
+earlier"). Add one case at each threshold (exactly 40%, 20%, 5 times, −10%, 90%; price equal to the fair value).
 """
 
 from __future__ import annotations
@@ -135,16 +139,16 @@ def expected_scores() -> dict:
     return dict(_load()["expected_scores"])
 
 
+def expected_statements() -> dict:
+    """Which strengths and points to watch are shown (SPEC §9, Appendix A), once owner B has signed off."""
+    _require_sign_off("B", "The expected strengths and points to watch")
+    return {key: dict(entry) for key, entry in _load()["expected_statements"].items()}
+
+
 def expected_tier1() -> dict:
     """Expected tier 1 scores without benchmarks or share price (docs/acceptance.md AC3), once D has signed off."""
     _require_sign_off("D", "The expected tier 1 scores (AC3)")
     return dict(_load()["expected_tier1"])
-
-
-def expected_override() -> dict:
-    """Expected effect of overriding FY2025 cash from 120 to 140 (docs/acceptance.md AC6), once D has signed off."""
-    _require_sign_off("D", "The expected cash override result (AC6)")
-    return dict(_load()["expected_override"])
 
 
 def tolerance(entry: dict) -> float:
