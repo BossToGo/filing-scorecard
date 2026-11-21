@@ -272,6 +272,17 @@ def test_a_fact_is_found_by_line_item_and_fiscal_year_end():
     assert data.fact("net_income", FY2025) is None
 
 
+def test_latest_gives_the_fact_at_the_latest_date_of_a_line_item():
+    # Shares are stored at their cover-page date, a few weeks after the fiscal year end.
+    shares = reported(metric="shares", value=4_300_000_000, unit="shares", period_start=None,
+                      period_end=date(2026, 2, 18), tag="dei:EntityCommonStockSharesOutstanding")
+    data = company({"revenue": {FY2025: reported(), FY2024: reported(period_end=FY2024)},
+                    "shares": {date(2026, 2, 18): shares}})
+    assert data.latest("shares") is shares
+    assert data.latest("revenue").period_end == FY2025
+    assert data.latest("cash") is None
+
+
 def test_fiscal_years_are_listed_oldest_first():
     data = company({"revenue": {FY2025: reported(), FY2024: reported(period_end=FY2024)}})
     assert data.fiscal_years("revenue") == [FY2024, FY2025]

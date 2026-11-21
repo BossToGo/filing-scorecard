@@ -31,11 +31,11 @@
 # /app/tests/app/                                @<D>
 
 # Member E (business plan, slides, README, plain-language texts, question bank)
-# /README.md                                     @<E>
-# /app/ui/texts.yaml                             @<E>
-# /docs/business-plan/                           @<E>
-# /docs/slides/                                  @<E>
-# /docs/qa-bank.md                               @<E>
+/README.md                                      @EmmaRiggi
+/app/ui/texts.yaml                              @EmmaRiggi
+/docs/business-plan/                            @EmmaRiggi
+/docs/slides/                                   @EmmaRiggi
+/docs/qa-bank.md                                @EmmaRiggi
 
 # Guardrails: the files that enforce the team rules. A change here must be reviewed by A and, once known, by the
 # backup D (A cannot approve his own pull requests). Keep these lines last so they win.
