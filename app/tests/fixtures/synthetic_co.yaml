@@ -1,0 +1,142 @@
+# Synthetic Co. — SYNTHETIC DATA. An invented company for tests: SPEC.md Appendix A, copied cell by cell.
+#
+# Collected by A (slice S0c). tests/unit/test_synthetic_fixture.py checks every number below against the tables
+# in SPEC.md Appendix A, so a copying mistake fails a test.
+#
+# Rule 14.5: an expected value may be used in a test only after its owner has recalculated it by hand or in
+# Excel and signed off. How (SPEC slice S0c, five sign-offs in the pull request): the owner posts a review comment
+# on the S0c pull request with the rows, the date, the method and any difference; A then records it under
+# `sign_off` below with a link to that comment. Until then, the expected_...() functions in synthetic.py refuse to
+# return those values. If a recalculation disagrees, do not edit the value here: tell the group, correct SPEC.md
+# Appendix A (or docs/acceptance.md) by pull request, then this file.
+#
+# Units: amounts in USD millions as in Appendix A (the loader converts them to USD for `Fact`s); shares in
+# millions; rates as decimals. Fiscal years end on 31 December (Appendix A gives fiscal years only).
+
+label: SYNTHETIC DATA
+source: SPEC.md Appendix A
+fiscal_years: [2021, 2022, 2023, 2024, 2025]
+
+line_items:  # USD millions, FY2021 to FY2025
+  revenue: [1000, 1080, 1150, 1210, 1300]
+  operating_income: [150, 170, 160, 190, 208]
+  interest_expense: [20, 20, 22, 24, 26]
+  net_income: [100, 115, 105, 128, 140]
+  depreciation_amortization: [50, 54, 58, 60, 65]
+  capital_expenditure: [60, 70, 75, 80, 85]
+  operating_cash_flow: [160, 175, 150, 195, 215]
+  dividends_paid: [40, 44, 48, 45, 56]
+  total_assets: [1400, 1480, 1560, 1640, 1750]
+  current_assets: [420, 450, 470, 500, 540]
+  current_liabilities: [300, 310, 330, 340, 360]
+  cash: [80, 90, 85, 100, 120]
+  financial_debt: [400, 410, 430, 440, 450]
+  equity: [600, 650, 690, 750, 820]
+  total_liabilities: [800, 830, 870, 890, 930]
+
+other_inputs:
+  current_financial_debt_fy2025: 50   # USD millions
+  shares_millions: 100
+  share_price_usd: 30.00
+  minority_interest: 0                 # "no non-controlling interests, preferred shares or equity-method investments"
+  preferred_stock: 0
+  equity_method_investments: 0
+
+settings:
+  risk_free_rate: 0.040
+  equity_risk_premium: 0.050
+  tax_rate: 0.21
+  terminal_growth: 0.025
+
+benchmarks:  # synthetic
+  unlevered_beta: 0.90
+  return_on_equity: 0.15
+  operating_margin: 0.18
+  price_to_earnings: 20.0
+  ev_to_ebitda: 13.0
+  price_to_book: 4.0
+  market_dividend_yield: 0.015
+
+# Expected results, as shown in Appendix A. `value` and `compared_with` are in the unit shown there
+# ("%" means percent: 9.375 is 9.375%). Tolerance: half a unit of the last decimal shown (`decimals`).
+expected_checks:
+  P1: {owner: B, result: pass, value: 5, compared_with: 5, unit: years, decimals: 0}
+  P2: {owner: B, result: pass, value: 140, compared_with: 100, unit: USD m, decimals: 0}
+  P3: {owner: B, result: pass, value: 9.375, compared_with: 8.776, unit: "%", decimals: 3}
+  P4: {owner: B, result: pass, value: 17.83, compared_with: 15, unit: "%", decimals: 2}
+  P5: {owner: B, result: fail, value: 16.00, compared_with: 18, unit: "%", decimals: 2}
+  P6: {owner: B, result: pass, value: 14.96, compared_with: 14.53, unit: "%", decimals: 2}
+  H1: {owner: B, result: pass, value: 540, compared_with: 360, unit: USD m, decimals: 0}
+  H2: {owner: B, result: fail, value: 540, compared_with: 570, unit: USD m, decimals: 0}
+  H3: {owner: B, result: fail, value: 40.24, unit: "%", decimals: 2}
+  H4: {owner: B, result: pass, value: 54.88, compared_with: 66.67, unit: "%", decimals: 2}
+  H5: {owner: B, result: pass, value: 47.78, unit: "%", decimals: 2}
+  H6: {owner: B, result: pass, value: 8.0, unit: x, decimals: 1}
+  D1: {owner: C, result: pass, value: 56, unit: USD m, decimals: 0}
+  D2: {owner: C, result: pass, value: 1.867, compared_with: 1.5, unit: "%", decimals: 3}
+  D3: {owner: C, result: pass, value: -6.25, unit: "%", decimals: 2}
+  D4: {owner: C, result: pass, value: 56, compared_with: 40, unit: USD m, decimals: 0}
+  D5: {owner: C, result: pass, value: 40, unit: "%", decimals: 0}
+  D6: {owner: C, result: pass, value: 56, compared_with: 130, unit: USD m, decimals: 0}
+  V1: {owner: C, result: fail, value: 30.00, compared_with: 21.68, unit: USD, decimals: 2}
+  V2: {owner: C, result: fail, value: 30.00, compared_with: 17.34, unit: USD, decimals: 2}
+  V3: {owner: C, result: fail, value: 21.43, compared_with: 20.0, unit: x, decimals: 2}
+  V4: {owner: C, result: pass, value: 12.20, compared_with: 13.0, unit: x, decimals: 2}
+  V5: {owner: C, result: pass, value: 3.66, compared_with: 4.0, unit: x, decimals: 2}
+  V6: {owner: C, result: fail, value: 14.10, compared_with: 6.78, unit: "%", decimals: 2}
+
+expected_scores:  # passes out of 6, tier 2 (benchmarks and share price present); owner E
+  past_performance: 5
+  financial_health: 4
+  dividend: 6
+  valuation: 2
+
+expected_valuation:  # Appendix A, "Valuation working"; owner C
+  levered_beta: {value: 1.00665, unit: x, decimals: 5}
+  cost_of_equity: {value: 9.0333, unit: "%", decimals: 4}
+  cost_of_debt_before_tax: {value: 5.8427, unit: "%", decimals: 4}
+  cost_of_debt_after_tax: {value: 4.6157, unit: "%", decimals: 4}
+  equity_weight: {value: 86.9565, unit: "%", decimals: 4}
+  debt_weight: {value: 13.0435, unit: "%", decimals: 4}
+  cost_of_capital: {value: 8.4571, unit: "%", decimals: 4}
+  growth: {value: 6.7790, unit: "%", decimals: 4}
+  operating_margin: {value: 16.0, unit: "%", decimals: 1}
+  depreciation_ratio: {value: 5.0, unit: "%", decimals: 1}
+  capital_expenditure_ratio: {value: 6.5385, unit: "%", decimals: 4}
+  net_working_capital: {value: 110, unit: USD m, decimals: 0}
+  working_capital_ratio: {value: 8.4615, unit: "%", decimals: 4}
+  forecast:  # USD millions, years 1 to 5
+    revenue: [1388.13, 1482.23, 1582.71, 1690.00, 1804.57]
+    operating_profit_after_tax: [175.46, 187.35, 200.05, 213.62, 228.10]
+    free_cash_flow: [146.65, 156.59, 167.20, 178.54, 190.64]
+    discounted: [135.21, 133.12, 131.06, 129.03, 127.04]
+    decimals: 2
+  sum_of_discounted_cash_flows: {value: 655.46, unit: USD m, decimals: 2}
+  terminal_value: {value: 2764.55, unit: USD m, decimals: 2}
+  discounted_terminal_value: {value: 1842.20, unit: USD m, decimals: 2}
+  terminal_value_share_of_ev: {value: 73.8, unit: "%", decimals: 1}
+  enterprise_value: {value: 2497.65, unit: USD m, decimals: 2}
+  equity_value: {value: 2167.65, unit: USD m, decimals: 2}
+  fair_value_per_share: {value: 21.68, unit: USD, decimals: 2}
+  implied_growth: {value: 14.10, unit: "%", decimals: 2}
+
+# Not in Appendix A: docs/acceptance.md AC3 and AC6 (tier 1 build: no benchmarks, no share price); owner D.
+# "Not assessed" checks have the status insufficient_data (docs/plan.md Q9).
+expected_tier1:
+  scores:
+    past_performance: {passed: 4, assessed: 4}
+    financial_health: {passed: 4, assessed: 6}
+    dividend: {passed: 5, assessed: 5}
+  not_assessed: [P4, P5, D2]
+expected_override:  # FY2025 cash overridden from 120 to 140 (USD millions)
+  cash_from: 120
+  cash_to: 140
+  H3: {result: pass, value: 37.80, unit: "%", decimals: 2}
+  financial_health_passed: 5
+
+# Recorded by A from each owner's review comment on the S0c pull request: "name, date, link to the comment".
+sign_off:
+  B: null  # CALC-P1–P6, CALC-H1–H6
+  C: null  # CALC-D1–D6, CALC-V1–V6, CALC-W1–W4, CALC-F1–F5 (valuation working)
+  D: null  # AC3 (tier 1 scores) and AC6 (cash override)
+  E: null  # CALC-S (the four area scores, tier 2)
