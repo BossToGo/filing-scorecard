@@ -90,6 +90,7 @@ Cut list if a release slips by more than a day (§2): strengths and points to wa
 | 2026-11-20 | S0 | Risk-free rate: **live FRED kept** (Igor), not a fixed average; demo mode, a missing key or an unreachable FRED use the dated value in `settings.yaml`; the FRED client joins A's S2b | – | Igor gets a free FRED key and adds `FRED_API_KEY` to his own `app/.env` |
 | 2026-11-20 | S0 | Risk-free rate: **five-year average of FRED DGS10**, downloaded live (Igor), as in the Simply Wall St model; setting `risk_free_average_years` (test first); the demo fallback holds the same average with its period | Test company: each half point of the rate moves the fair value by about 8% (4.0% → 20.13, 5.07% → 17.26), the reason for averaging | – |
 | 2026-11-20 | S2 | Simon's review of #7: the interface imports `load_company` and the SEC error classes from `src.data.company` only, never `src.data.sec_client`; the errors are re-exported there and a layering test forbids the direct import | Tests first (8 failed), then pytest: 298 passed | – |
+| 2026-11-21 | S0 | Member guides: Flo's review of #4 applied (C's sign-off rows W1–W2 and F1–F4, cut SPEC sections removed from S8 and S9, FY0 debt among the §8.6 missing inputs); user interviews dropped (Igor), Emma's guide lists the published sources for the problem evidence instead | Each source and figure checked on the original page or PDF | Why a bank would buy: sources still to find (Greg's business plan section) |
 
 ## Known problems and open questions
 

@@ -10,7 +10,7 @@ tests. **Backup:** B, Greg (you review Greg's PRs first, Greg reviews yours). **
 |---|---|---|
 | Wed 18 | Accept the invitation; your `docs/team.md` PR (steps in `docs/team.md`) | Merged |
 | Thu 19 | **Excel cross-check model** of the valuation (SPEC §8, version 2.3, **equity method**: operating cash flow − capex from the three-year margin, cost of equity, growth that decays towards terminal growth over 10 years, minus minority interests) for the synthetic company, built by you from the SPEC formulas, **not** from the code. Save it in `docs/crosscheck/` | Matches SPEC Appendix A (fair value USD 20.13; USD 37.37 at the 30% cap, so V6 passes), or you report the difference |
-| Thu 19 | **Sign-off for S0c:** recalculate rows CALC-D1–D6, CALC-V1–V6, CALC-W1–W4 and CALC-F1–F5 of `docs/acceptance.md` (your Excel model counts) | Your sign-off comment on PR #5 |
+| Thu 19 | **Sign-off for S0c:** recalculate rows CALC-D1–D6, CALC-V1–V6, CALC-W1–W2 and CALC-F1–F4 of `docs/acceptance.md` (your Excel model counts) | Your sign-off comment on PR #5 |
 | Thu 19 → Wed 25 | S8: the equity method (SPEC §8): cost of equity (beta limited to 0.8–2.0), starting free cash flow from the three-year margin, starting growth capped at −10% to +30% and decaying towards terminal growth (half-life 2 years, 10 years), terminal value at year 10, minus reported minority interests, "model does not fit" (§8.6), the growth note when the growth limit applies. No cost of debt, no sensitivity table, no implied growth, no user inputs. Branch `c/S8-valuation-engine` | Matches your Excel model and Appendix A; property tests pass; one test per case of §8.6 |
 | Sat 21–Sun 22 | S7: dividend checks D1–D6 (D2 "not assessed" until S4 and a share price), branch `c/S7-dividend-checks` | Appendix A values reproduced; edge cases tested |
 | Mon 23–Wed 25 | S9 with B: valuation checks V1–V6; switch on D2, branch `c/S9-valuation-checks` | Appendix A values reproduced |
@@ -25,8 +25,8 @@ tests. **Backup:** B, Greg (you review Greg's PRs first, Greg reviews yours). **
 > tests you will write first, and wait for my go-ahead. I will give you the expected values. Do not change files
 > outside my folders.
 
-Sections per slice: S7 → §5, §7 (dividend), §11; S8 → §8.1–8.7, §11, §15 (property tests); S9 → §7 (valuation),
-§8.4, §8.6.
+Sections per slice: S7 → §5, §7 (dividend), §11; S8 → §8.1–8.3, §8.6, §11, §15 (property tests); S9 → §7 (valuation),
+§8.6. (§8.4, §8.5 and §8.7 are cut in v2.3.)
 
 **How to sign off (S0c):** recalculate your rows on paper or in Excel, then post a review comment on
 [PR #5](https://github.com/BossToGo/filing-scorecard/pull/5): the rows, the date, how you calculated, and any
@@ -70,8 +70,9 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
 - **Terminal value and equity value (§8.3):** FCF(10) × (1 + gT) ÷ (cost of equity − gT); end-of-year discounting,
   terminal value discounted at t = 10; equity value = present value − reported minority interests (nil if not
   reported, labelled); ÷ shares. **Never** adjust assumptions to match a price.
-- **§8.6, two tests in order:** first, a missing valuation input (or revenue FY0 or FY-4 ≤ 0, or fewer than five
-  years) → V1, V2, V6 `insufficient_data` naming it; then the model-fit cases (starting free cash flow ≤ 0, or
+- **§8.6, two tests in order:** first, a missing valuation input (revenue FY-4 to FY0, operating cash flow and capex of
+  the last three years, financial debt FY0 for the levered beta, shares, the industry beta), or revenue FY0 or
+  FY-4 ≤ 0, or fewer than five years → V1, V2, V6 `insufficient_data` naming it; then the model-fit cases (starting free cash flow ≤ 0, or
   equity value ≤ 0) → no fair value, V1, V2, V6 `not_applicable` with the reason. V3 to V5 are still assessed. Your
   module returns these reasons; Simon's interface only displays them.
 - **V4 (v2.3):** price to earnings below the **whole US market** (Greg's benchmark file: trailing or current, never
