@@ -1,0 +1,7 @@
+{
+ "source": "https://www.sec.gov/files/company_tickers.json",
+ "retrieved": "2026-11-18T14:17:53+00:00",
+ "raw_bytes": 796025,
+ "raw_sha256": "057ddf20b30c45c5743c3bafdbb41de569bd5ea09a73732ca8cce9cbd14f9f80",
+ "trimmed": "only the tickers ['KO', 'AAPL', 'NVDA', 'MCD', 'AMZN', 'JPM']"
+}
