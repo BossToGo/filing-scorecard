@@ -98,7 +98,8 @@ def test_the_app_reads_the_same_figure_from_the_same_filing(path, name):
     fact = app_data(path.stem).fact(name, as_date(record["fiscal_year_end"]))
     app_value = None if fact is None or fact.value is None else fact.value / 1_000_000
     if by_hand["value"] is None:
-        # The filing has no such line (e.g. no dividends): the app must show none either, as missing or as nil.
+        # The filing has no such line (e.g. no dividends): the app must show none too. Missing or nil are both
+        # accepted until plan Q1 is decided; test_amazon_shows_no_dividend_paid below tracks the difference.
         assert app_value in (None, 0), f"{name}: the filing shows none, the app shows {app_value:,.1f}"
         return
     assert app_value is not None, f"{name}: read by hand as {by_hand['value']:,}, missing in the app"
@@ -108,6 +109,18 @@ def test_the_app_reads_the_same_figure_from_the_same_filing(path, name):
     assert fact.accession == record["accession"], (
         f"{name}: the app took the figure from filing {fact.accession}, the hand reading from {record['accession']}")
 
+
+
+@pytest.mark.xfail(strict=True, reason="plan Q1 open: Amazon's dividends are still a missing figure, not a nil")
+def test_amazon_shows_no_dividend_paid():
+    """Amazon's 10-K has no dividends line (Emma's reading, page 36). SPEC §7 wants D1 to fail with "no dividend
+    paid", so the data layer must give a nil, labelled, not a missing figure (which would give "insufficient data").
+    Expected to fail until plan Q1 is decided and built; strict, so it turns red the day it starts passing: then
+    remove the marker and make the null-value branch above require the nil."""
+    data = app_data("AMZN")
+    fact = data.fact("dividends_paid", data.fiscal_years("revenue")[-1])
+    assert fact is not None and fact.value == 0 and fact.kind == "assumption"
+    assert "treated as nil" in fact.note
 
 GOOD = {
     "company": "KO", "read_by": "Igor (A)", "date_read": "2026-11-21", "fiscal_year_end": "2025-12-31",

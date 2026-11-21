@@ -15,9 +15,9 @@ filing, not a program. Emma (E) coordinates; the format and the test are Igor's 
 
 ## Rules
 
-- **Read the figures yourself, on the page.** An AI assistant may help you find the filing or check your file's
-  format afterwards, but it does not read the figures for you. If a tool extracted them first, say so in
-  `how_read` and `AI-USAGE.md`, and confirm every value and line name on the page yourself.
+- **Every figure is confirmed by you, on the page.** Read the figures yourself, or let a tool extract them first:
+  that is allowed only if you then confirm every value and line name on the printed page yourself, and say so in
+  `how_read` and `AI-USAGE.md` (as `KO.yaml` does). An unconfirmed tool reading never counts.
 - **Never change a figure to match the app.** If the test fails, recheck the page; if your reading is right, the
   app has a bug: tell Igor (A) and open an issue. That is the point of the check (SPEC §13.5, R6).
 - Branch `<member>/S15-reconciliation-<ticker>`, e.g. `b/S15-reconciliation-aapl`; one file per pull request.
@@ -45,6 +45,9 @@ filing, not a program. Emma (E) coordinates; the format and the test are Igor's 
 **Units:** write USD millions. If a statement is in thousands, divide by 1,000 and say so in a `note`.
 **No such line** (e.g. a company that pays no dividend): `value: null`, the page of the statement you checked,
 `line_in_filing: none`, and a `note` saying what the filing shows. The test then expects the app to show none too.
+Until plan Q1 is decided, "none" in the app can be a missing figure or a nil one ("not reported, treated as nil");
+for Amazon's dividends the customer should see "no dividend paid", which needs the nil (SPEC §7, D1). A separate
+test marks this as pending: once Q1 is built, it requires the nil.
 
 ## Template
 
