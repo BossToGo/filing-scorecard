@@ -12,13 +12,13 @@ Each criterion is checkable: a starting state, an action, an expected result. St
 | AC3 | F2 | Tier 1 build, synthetic company, no share price | The scorecard opens | Past performance 4 passed of 4 assessed (P4, P5 "not assessed": status `insufficient_data`, no benchmark yet); financial health 4 of 6; dividend 5 passed of 5 assessed (D2 "not assessed") | open |
 | AC4 | F2 | Any loaded company | The user opens a check | It shows the result, the rule in plain words, the formula, the input figures with units and fiscal years, and a link to the filing | open |
 | AC5 | F3 | Any loaded company | The user opens the sources page | One row per figure with metric, value, unit, period, kind, tag, form, accession, filing date, retrieval time and note; each missing figure shows its reason and the checks it blocks | open |
-| AC6 | F4 | Synthetic company loaded | The user overrides FY2025 cash from 120 to 140 (USD m) | H3 becomes pass ((450 − 140) ÷ 820 = 310 ÷ 820 = 37.80% < 40%); financial health 5 of 6; the figure shows as `assumption` on the sources page | open |
+| AC6 | F4 | Any loaded company | The user looks for an input other than the ticker, the share price and the demo switch | There is none: no way to change a figure, the industry, an assumption or a check result; the scorecard is the same for every user (§1, §3, §8.7) | open |
 | AC7 | F5 | Network switched off, demo mode on | The user opens each of the five demo companies | Each opens without an error | open |
 | AC8 | F6 | Tier 2 build, synthetic company with the synthetic benchmarks | The scorecard opens | P4 pass, P5 fail, D2 pass (share price USD 30.00); each benchmark shows the industry group, the route used, the number of firms and the source file | open |
-| AC9 | F7 | Tier 2 build, synthetic company, share price USD 30.00 | The scorecard opens | Fair value USD 21.68 per share; implied growth 14.10% labelled "describes the price, it is not a forecast"; scores 5 of 6, 4 of 6, 6 of 6, 2 of 6 | open |
+| AC9 | F7 | Tier 2 build, synthetic company, share price USD 30.00 | The scorecard opens | Fair value USD 20.13 per share (equity method); scores 5 of 6, 4 of 6, 6 of 6, 3 of 6 (SPEC v2.3 Appendix A; C's recalculation pending) | open |
 | AC10 | F7 | Any company, no share price | The scorecard opens | The valuation area shows "insufficient data" and asks for a share price; the other areas still show | open |
 | AC11 | F8 | Synthetic company loaded | The user downloads the Excel file | A test reopens it: three sheets (report, figures, sources); every figure equals the screen | open |
-| AC12 | F9 | Tier 3 build, any company | The user overrides a force's rating and writes a note, then changes an input | The override and note survive the recalculation and appear in the export | open |
+| AC12 | F9 | Tier 3 build, synthetic company, share price USD 30.00 | The scorecard opens | Strengths G1, G2, G3, G5, G6; points to watch W3, W4, W8, all minor; each opens its check (SPEC v2.3 §9 and Appendix A; B's recalculation pending) | open |
 
 ## Screens (how each was checked)
 
@@ -32,8 +32,8 @@ Each criterion is checkable: a starting state, an action, an expected result. St
 ## Calculations (known answers)
 
 Source: SPEC Appendix A (synthetic company, USD millions; shares 100 million; price USD 30.00; risk-free 4.0%,
-premium 5.0%, tax 21%, terminal growth 2.5%; benchmarks: unlevered beta 0.90, ROE 15%, operating margin 18%,
-P/E 20.0, EV/EBITDA 13.0, P/B 4.0, market dividend yield 1.5%).
+premium 5.0%, tax 21% (beta only), terminal growth 2.5%, free cash flow margin over three years, starting growth limited to −10%..+30% and halving its gap to 2.5% every 2 years over 10 years, beta limited to 0.8..2.0; benchmarks: unlevered beta 0.90, ROE 15%, operating margin 18%,
+P/E 20.0 (industry) and 24.0 (whole US market), P/B 4.0, market dividend yield 1.5%).
 
 **Rule 14.5:** these values may be used in tests only after the owner named in each row has recalculated them by
 hand or in Excel and signed off in slice S0c. If a recalculation disagrees, the recalculation wins and SPEC
@@ -63,22 +63,20 @@ that shares no code with the app. All agree within the rounding shown (discounte
 | CALC-D4 | Dividend grew | 56 > 40 | pass | C | open, sign-off pending |
 | CALC-D5 | Covered by earnings | 56 ÷ 140 | 40% < 90% → pass | C | open, sign-off pending |
 | CALC-D6 | Covered by cash | 56 ≤ 215 − 85 = 130 | pass | C | open, sign-off pending |
-| CALC-V1 | Below fair value | 30.00 against 21.68 | fail | C | open, sign-off pending |
-| CALC-V2 | Well below fair value | 30.00 against 0.80 × 21.68 = 17.34 | fail | C | open, sign-off pending |
+| CALC-V1 | Below fair value | 30.00 against 20.13 | fail | C | open, v2.3 value (assistant's independent script), C's recalculation pending |
+| CALC-V2 | Well below fair value | 30.00 against 0.80 × 20.13 = 16.10 | fail | C | open, v2.3 value (assistant's independent script), C's recalculation pending |
 | CALC-V3 | P/E vs industry | 3,000 ÷ 140 | 21.43 > 20.0 → fail | C | open, sign-off pending |
-| CALC-V4 | EV/EBITDA vs industry | (3,000 + 450 − 120) ÷ (208 + 65) = 3,330 ÷ 273 | 12.20 < 13.0 → pass | C | open, sign-off pending |
+| CALC-V4 | P/E vs the whole US market (v2.3) | 3,000 ÷ 140 = 21.43 against the synthetic market P/E 24.0 | 21.43 < 24.0 → pass | C | open, v2.3 value (assistant's independent script), C's recalculation pending |
 | CALC-V5 | P/B vs industry | 3,000 ÷ 820 | 3.66 < 4.0 → pass | C | open, sign-off pending |
-| CALC-V6 | Implied vs actual growth | Implied 14.10% (§8.4); actual (1,300 ÷ 1,000)^(1/4) − 1 = 6.78% | fail | C | open, sign-off pending |
-| CALC-W1 | Levered beta | 0.90 × (1 + 0.79 × 450 ÷ 3,000) = 0.90 × 1.1185 | 1.00665 | C | open, sign-off pending |
+| CALC-V6 | Price against the fair value at the growth cap (§7 V6) | Same valuation with g1 = 30% (growth 30%, 21.9%, 16.2%, 12.2%, 9.4%, 7.4%, 5.9%, 4.9%, 4.2%, 3.7%): USD 37.37; 30.00 ≤ 37.37 | pass | C | open, v2.3 value (assistant's independent script), C's recalculation pending |
+| CALC-W1 | Levered beta | 0.90 × (1 + 0.79 × 450 ÷ 3,000) = 0.90 × 1.1185; inside the 0.8–2.0 limits | 1.00665 | C | open, sign-off pending |
 | CALC-W2 | Cost of equity | 4.0% + 1.00665 × 5.0% | 9.0333% | C | open, sign-off pending |
-| CALC-W3 | Cost of debt | 26 ÷ ((440 + 450) ÷ 2) = 26 ÷ 445; after tax × 0.79 | 5.8427%; 4.6157% | C | open, sign-off pending |
-| CALC-W4 | Cost of capital | Weights 3,000 ÷ 3,450 = 86.9565%, 13.0435%; 0.869565 × 9.0333% + 0.130435 × 4.6157% | 8.4571% | C | open, sign-off pending |
-| CALC-F1 | Forecast inputs | g = 6.7790%; margin 16.0%; D&A 5.0%; capex 85 ÷ 1,300 = 6.5385%; NWC (540 − 120) − (360 − 50) = 110 → 8.4615% | as listed | C | open, sign-off pending |
-| CALC-F2 | Free cash flows, years 1–5 | SPEC Appendix A table | 146.65, 156.59, 167.20, 178.54, 190.64 | C | open, sign-off pending |
-| CALC-F3 | Terminal value | 228.10 × 1.025 ÷ 0.084571; both §8.3 forms agree | 2,764.55; discounted 1,842.20 (73.8% of EV) | C | open, sign-off pending |
-| CALC-F4 | Fair value per share | EV 655.46 + 1,842.20 = 2,497.65; equity 2,497.65 − 450 + 120 = 2,167.65; ÷ 100 | USD 21.68 | C | open, sign-off pending |
-| CALC-F5 | Implied growth at USD 30.00 | Bisection on g in −20% to +50% | 14.10% | C | open, sign-off pending |
-| CALC-S | Area scores (tier 2) | Passes per area from the rows above | 5 of 6, 4 of 6, 6 of 6, 2 of 6 | B and C | open, sign-off pending |
+| CALC-F1 | Starting free cash flow | (75 + 115 + 130) ÷ (1,150 + 1,210 + 1,300) = 320 ÷ 3,660 = 8.7432%; × 1,300 | 113.66 | C | open, v2.3 value (assistant's independent script), C's recalculation pending |
+| CALC-F2 | Free cash flows, years 1–10 | g(t) = 2.5% + 4.2790% × 0.5^((t − 1) ÷ 2); discounted at 9.0333% | 121.37, 128.07, 134.01, 139.39, 144.37, 149.07, 153.59, 158.01, 162.39, 166.75; discounted 111.31, 107.73, 103.39, 98.63, 93.69, 88.72, 83.84, 79.11, 74.56, 70.22 (sum 911.21) | C | open, v2.3 value (assistant's independent script), C's recalculation pending |
+| CALC-F3 | Terminal value | 166.75 × 1.025 ÷ (0.0903325 − 0.025) | 2,616.20; discounted 1,101.75 (54.7% of the total) | C | open, v2.3 value (assistant's independent script), C's recalculation pending |
+| CALC-F4 | Fair value per share | Equity value 911.21 + 1,101.75 − minority interests 0 = 2,012.95; ÷ 100 | USD 20.13 | C | open, v2.3 value (assistant's independent script), C's recalculation pending |
+| CALC-S | Area scores (tier 2) | Passes per area from the rows above | 5 of 6, 4 of 6, 6 of 6, 3 of 6 (v2.3: V6 now passes) | B and C | open, sign-off pending (E's earlier check gave 2 of 6 for valuation under the old rules) |
+| CALC-G | Strengths and points to watch (tier 3) | SPEC v2.3 §9 rules on the rows above; SPEC Appendix A table | Shown: G1, G2 (8.78% a year), G3 (17.83% against 15%), G5 (8.0 times), G6; W3 (H2: 540 against 570), W4 (40.24%), W8 (49.0% above the estimate; V6 passes, so no second clause) | B | open, v2.3 value (assistant), B's recalculation pending |
 
 ## Edge cases and errors
 
@@ -95,12 +93,14 @@ that shares no code with the app. All agree within the rounding shown (discounte
 | E9 | Negative equity | H3, P4, V5 fail with the note "negative equity"; warning in the header (§7, §10). H4: see open question in `docs/plan.md` | open |
 | E10 | Net income zero or below | V3 and D5 fail; P2 fails | open |
 | E11 | No dividend | D1 fails; D2 to D6 `not applicable`; area shows "no dividend paid", score 0 | open |
-| E12 | Zero debt | H4 (no debt in both years), H5, H6 (no debt and no interest) pass; the cost of capital equals the cost of equity | open |
-| E13 | Cost of debt outside risk-free to risk-free + 8 points | Risk-free + 1.5 points used, labelled `assumption`, warning (§8.1) | open |
-| E14 | No growth in −20% to +50% matches the price | "No solution in the range"; no number reported (§8.4) | open |
-| E15 | Terminal value above 75% of enterprise value | Warning in the header (§10) | open |
+| E12 | Zero debt | H4 (no debt in both years), H5, H6 (no debt and no interest) pass; the levered beta equals the unlevered beta | open |
+| E15 | A warning that is not for the customer (e.g. a restated or derived figure) | Not in the header; listed on the sources page next to the figure (§10) | open |
 | E16 | Ticker outside the verified universe | Report shown, marked "not verified" (§2, §10) | open |
-| E17 | Industry not found in the lookup or the fallback table | Benchmarks `missing`; dependent checks "insufficient data"; user can choose the group (§9.1) | open |
+| E17 | Industry not found in the lookup or the fallback table | Benchmarks `missing`; dependent checks "insufficient data"; no user override (§9.1, v2.3) | open |
+| E18 | Past revenue growth above the cap (Nvidia: 68.3% a year, FY2022 to FY2026) or below the floor | Starting growth 30% (or −10%), labelled `assumption`; the note gives the growth before the limit; the valuation detail adds the growth note (§8.2, §8.3) | open |
+| E19 | Three-year free cash flow zero or negative, or equity value ≤ 0 after minority interests | No fair value; V1, V2, V6 `not_applicable` with the reason in plain words; V3 to V5 still assessed (§8.6) | open |
+| E20 | Levered beta outside 0.8 to 2.0 | Beta set to the limit, labelled `assumption`, the note gives the value before the limit; warning (§8.1, §10) | open |
+| E22 | A valuation input is missing (e.g. depreciation) or fewer than five fiscal years resolve | No fair value; V1, V2, V6 `insufficient_data` naming the missing input; checked before the cases of E19 (§8.6) | open |
 
 ## Planted errors (each one a test that must catch it, §5.4)
 

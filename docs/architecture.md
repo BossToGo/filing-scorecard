@@ -10,7 +10,7 @@ root now lives under `app/`, as the starter's `AGENTS.md` requires (decision log
 - **Stack:** Python, pandas, requests, PyYAML, python-dotenv, openpyxl (Excel export), Streamlit and Plotly
   (interface), pytest and Hypothesis (tests). Exact versions pinned in `app/requirements.txt` (§11).
   `xlrd` only in `app/scripts/requirements-scripts.txt` for the one-off benchmark extraction.
-- **Why:** one analyst at a time, data and tables, what-if inputs and a download: the starter's dashboard path.
+- **Why:** one user at a time, data and tables, a few what-if inputs and a download: the starter's dashboard path.
   Everything is Python, so every number comes from tested code (rule 14.7), and Streamlit's built-in `AppTest`
   runs the app in tests without a browser (§11).
 - **Alternative considered:** a hand-built web site (Django or FastAPI with HTML and JavaScript). Not now: about
@@ -24,7 +24,7 @@ Every member works only in their own folders (§12). A change in someone else's 
 filing-scorecard/
 ├── SPEC.md  AGENTS.md  CLAUDE.md  README.md (E)  AI-USAGE.md (E coordinates, everyone appends)
 ├── .github/                  workflows/tests.yml, pull_request_template.md, CODEOWNERS (A)
-├── docs/                     product, architecture, acceptance, plan (A); team.md (everyone, own line);
+├── docs/                     product, architecture, acceptance, plan, members/ (A); team.md (everyone, own line);
 │                             coverage.md (A); benchmarks.md (B); testing.md (all); crosscheck/ (C);
 │                             business-plan/, slides/, qa-bank.md (E)
 └── app/
@@ -36,8 +36,8 @@ filing-scorecard/
     │   ├── data/             SEC client, cache, tag_map.yaml, resolver, FRED (A)
     │   ├── benchmarks/       benchmark loader, industry map (B)
     │   ├── checks/           past.py, health.py (B); dividend.py, valuation.py (C)
-    │   ├── valuation/        cost of capital, forecast, terminal value, reverse DCF, sensitivity (C)
-    │   ├── forces.py  gates.py  export.py   (D)
+    │   ├── valuation/        cost of equity, free cash flow forecast, terminal value, growth the price implies (C)
+    │   ├── highlights.py (B)  gates.py (D)  export.py (E)
     ├── scripts/              extract_benchmarks.py (B); coverage.py (A)
     ├── data/                 benchmarks_us_2026.csv, industry_lookup_us_2026.csv, sic_to_damodaran.csv (B);
     │                         universe.csv (A)
@@ -51,7 +51,7 @@ filing-scorecard/
 | Part | Folder / file | Responsibility | Must not |
 |---|---|---|---|
 | Interface | `app/main.py`, `app/ui/` | Inputs, layout, display of values it receives; charts draw prepared values | Compute, round or fill in financial numbers; call the SEC |
-| Logic (shared, tested) | `app/src/checks/`, `app/src/valuation/`, `app/src/forces.py`, `app/src/gates.py` | The 24 checks, valuation, five forces indicators, gates; display-ready values with units, periods and reasons for gaps | Import from `app/ui/`; touch the network or files |
+| Logic (shared, tested) | `app/src/checks/`, `app/src/valuation/`, `app/src/highlights.py`, `app/src/gates.py` | The 24 checks, valuation, strengths and points to watch, gates; display-ready values with units, periods and reasons for gaps | Import from `app/ui/`; touch the network or files |
 | Data access | `app/src/data/`, `app/src/benchmarks/` | SEC and FRED requests (rate limit, retries, cache), resolving tags into `Fact`s with sources, benchmark CSVs | Contain check or valuation rules |
 | Shared shapes | `app/src/contracts.py` | `Fact`, `CheckResult`, `CompanyData` (§11) | Change without the affected owners' approval |
 | Export | `app/src/export.py` | Excel file from prepared values | Recompute anything |
@@ -128,3 +128,9 @@ filing-scorecard/
 | 2026-11-18 | Financial debt rule and company overrides in `tag_map.yaml` (plan Q5): reported total long-term debt first; short-term items inside long-term debt only through a cited override | McDonald's 10-Ks show that adding its commercial paper and current maturities counts them twice | Igor (delegation) |
 | 2026-11-18 | Shares from the cover page of the latest 10-K, stored at that date; `CompanyData.latest()` added | SPEC §5.3.1 allows only 10-K figures (plan Q12) | Igor (delegation); B, C, D review the contract change |
 | 2026-11-18 | Scope and architecture agreed | Product interview run from SPEC; only §16 asked | Igor; group by reviewing this PR |
+| 2026-11-18 | Names and roles: A Igor, B Greg, C Flo, D Simon, E Emma. The Excel export (S13, `app/src/export.py`) moves from D to E; the five forces indicators (`app/src/forces.py`) move from D to B, D keeps the panel on screen; each member writes one business plan section | Every member contributes code (session 1, slide 10); D had the most slices | Igor; group by approving SPEC v2.2 (PR #3) |
+| 2026-11-19 | **SPEC v2.3, product direction** (Igor, explicitly in the session, not under the delegation): the product is an add-on for retail bank customers; fully automatic, the share price the only required input; optional starting growth and tax rate give a second fair value only, the scores always use the automatic values; no figure, industry or rating overrides; five forces replaced by strengths and points to watch (`app/src/highlights.py`, B); starting growth limited to −10%..+20% and falling in equal steps to terminal growth; beta limited to 0.8–2.0; no fair value when the model does not fit (operating loss, negative first-year free cash flow, equity value ≤ 0); theme colours in `app/.streamlit/config.toml` (D) | The user must be able to trust the page without checking it; Porter's five forces needs judgement and market data the filings do not contain; the valuation rules follow the published Simply Wall St model (github.com/SimplyWallSt/Company-Analysis-Model) | Igor; group by approving the SPEC v2.3 pull request; instructor at office hours (§16.8) |
+| 2026-11-20 | **Lean SPEC v2.3** (agreed by the group; Igor confirmed in the session): equity method instead of the firm method (free cash flow = operating cash flow − capex from the three-year margin, cost of equity, minus minority interests); growth the price implies kept as a display line; sensitivity table, user growth and tax inputs, five extra statement indicators, the hand-built industry table, the watchlist and the terminal-value warning cut; customers see two warnings; two-sheet export | Simple, automatic, fewer error sources: the firm method's cost of debt, working-capital and bridge inputs caused most of the data problems found in the S3 audit; the equity method follows the published Simply Wall St model and gives 19.65 against 19.74 on the test company | Igor; group by approving the SPEC v2.3 pull request; instructor asked at office hours (§16.8) |
+| 2026-11-20 | **Lean SPEC v2.3, round 2** (Igor, in the session): growth decays exponentially towards terminal growth (half-life 2 years, 10 years, cap 30%); V4 against the whole-market P/E; growth the price implies cut; reported minority interests only | Without forecasts the model knows only the past: the decay and the cap keep growth companies from being either ignored (5-year linear fade) or extrapolated from one boom (no cap); simpler checks, fewer inputs, closer to the published Simply Wall St model | Igor; group by approving the SPEC v2.3 pull request |
+| 2026-11-20 | Risk-free rate from FRED `DGS10`, live, with a dated fallback value in `settings.yaml` for demo mode, a missing key or no network | Igor preferred a live second data source to a fixed 5-year average; the fallback keeps the offline demo working | Igor |
+| 2026-11-20 | Risk-free rate = five-year average of FRED `DGS10`, downloaded live (replaces the latest daily value decided earlier the same day) | Steadier estimates: each half point of the rate moves a fair value by about 8%; matches the Simply Wall St model; still a live, verifiable source | Igor |
