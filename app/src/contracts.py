@@ -228,6 +228,12 @@ class CompanyData:
         """Fiscal-year end dates available for a line item, oldest first."""
         return sorted(self.items.get(metric, {}))
 
+    def latest(self, metric: str) -> Fact | None:
+        """The fact at the latest date of a line item, or None. Use it for `shares`, which are stored at the date
+        of the cover page of the latest annual report, a few weeks after the fiscal year end."""
+        years = self.fiscal_years(metric)
+        return self.items[metric][years[-1]] if years else None
+
     def with_fact(self, fact: Fact) -> CompanyData:
         """A copy with one fact added or replaced (for user overrides); the original is unchanged."""
         items = {metric: dict(by_year) for metric, by_year in self.items.items()}

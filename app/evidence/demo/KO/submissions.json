@@ -1,0 +1,218 @@
+{
+ "cik": "0000021344",
+ "entityType": "operating",
+ "sic": "2080",
+ "sicDescription": "Beverages",
+ "ownerOrg": "04 Manufacturing",
+ "insiderTransactionForOwnerExists": 1,
+ "insiderTransactionForIssuerExists": 1,
+ "name": "COCA COLA CO",
+ "tickers": [
+  "KO"
+ ],
+ "exchanges": [
+  "NYSE"
+ ],
+ "ein": "580628465",
+ "lei": null,
+ "description": "",
+ "website": "",
+ "investorWebsite": "",
+ "category": "Large accelerated filer",
+ "fiscalYearEnd": "1231",
+ "stateOfIncorporation": "DE",
+ "stateOfIncorporationDescription": "DE",
+ "addresses": {
+  "mailing": {
+   "street1": "ONE COCA COLA PLAZA",
+   "street2": null,
+   "city": "ATLANTA",
+   "stateOrCountry": "GA",
+   "zipCode": "30313",
+   "stateOrCountryDescription": "GA",
+   "isForeignLocation": 0,
+   "foreignStateTerritory": null,
+   "country": null,
+   "countryCode": null
+  },
+  "business": {
+   "street1": "ONE COCA COLA PLAZA",
+   "street2": null,
+   "city": "ATLANTA",
+   "stateOrCountry": "GA",
+   "zipCode": "30313",
+   "stateOrCountryDescription": "GA",
+   "isForeignLocation": null,
+   "foreignStateTerritory": null,
+   "country": null,
+   "countryCode": null
+  }
+ },
+ "phone": "404-676-2121",
+ "flags": "",
+ "formerNames": [],
+ "filings": {
+  "recent": {
+   "accessionNumber": [
+    "0001628280-26-010047",
+    "0000021344-25-000011",
+    "0000021344-24-000009",
+    "0000021344-23-000011",
+    "0000021344-22-000009",
+    "0000021344-21-000008",
+    "0000021344-20-000006",
+    "0000021344-19-000014"
+   ],
+   "filingDate": [
+    "2026-02-20",
+    "2025-02-20",
+    "2024-02-20",
+    "2023-02-21",
+    "2022-02-22",
+    "2021-02-25",
+    "2020-02-24",
+    "2019-02-21"
+   ],
+   "reportDate": [
+    "2025-12-31",
+    "2024-12-31",
+    "2023-12-31",
+    "2022-12-31",
+    "2021-12-31",
+    "2020-12-31",
+    "2019-12-31",
+    "2018-12-31"
+   ],
+   "acceptanceDateTime": [
+    "2026-02-20T14:46:32.000Z",
+    "2025-02-20T20:17:12.000Z",
+    "2024-02-20T18:21:24.000Z",
+    "2023-02-21T21:03:20.000Z",
+    "2022-02-22T20:45:48.000Z",
+    "2021-02-25T18:47:17.000Z",
+    "2020-02-24T21:08:17.000Z",
+    "2019-02-21T21:55:42.000Z"
+   ],
+   "act": [
+    "34",
+    "34",
+    "34",
+    "34",
+    "34",
+    "34",
+    "34",
+    "34"
+   ],
+   "form": [
+    "10-K",
+    "10-K",
+    "10-K",
+    "10-K",
+    "10-K",
+    "10-K",
+    "10-K",
+    "10-K"
+   ],
+   "fileNumber": [
+    "001-02217",
+    "001-02217",
+    "001-02217",
+    "001-02217",
+    "001-02217",
+    "001-02217",
+    "001-02217",
+    "001-02217"
+   ],
+   "filmNumber": [
+    "26657000",
+    "25644916",
+    "24652148",
+    "23648026",
+    "22657897",
+    "21678826",
+    "20644359",
+    "19622621"
+   ],
+   "items": [
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ],
+   "core_type": [
+    "XBRL",
+    "XBRL",
+    "XBRL",
+    "XBRL",
+    "XBRL",
+    "XBRL",
+    "XBRL",
+    "10-K"
+   ],
+   "size": [
+    23510708,
+    23750417,
+    26172517,
+    27436470,
+    26586849,
+    27736932,
+    29240946,
+    28900337
+   ],
+   "isXBRL": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "isInlineXBRL": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0
+   ],
+   "isXBRLNumeric": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "primaryDocument": [
+    "ko-20251231.htm",
+    "ko-20241231.htm",
+    "ko-20231231.htm",
+    "ko-20221231.htm",
+    "ko-20211231.htm",
+    "ko-20201231.htm",
+    "a2019123110-k.htm",
+    "a2018123110-k.htm"
+   ],
+   "primaryDocDescription": [
+    "10-K",
+    "10-K",
+    "10-K",
+    "10-K",
+    "10-K",
+    "10-K",
+    "10-K",
+    "10-K"
+   ]
+  }
+ }
+}

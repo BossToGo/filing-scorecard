@@ -23,21 +23,21 @@ Status values: `todo`, `in progress`, `done (<date>, commit <short hash>)`, `blo
 | S0.2 | Product documents: product, architecture, acceptance, plan (this file) | A | S0.1 | Pull request reviewed by a teammate | – | in progress |
 | S0.3 | Walking skeleton: pinned requirements, `app/main.py` shows one page, one passing test, layering test, `app/.env.example`, `app/settings.yaml` (one section per owner), `app/src/contracts.py` (§11), `.github/workflows/tests.yml`, pull request template, `CODEOWNERS`, `docs/team.md`, team rules in `AGENTS.md`; SPEC §11–12 amended for the `app/` layout (separate pull request) | A | S0.2 | Tests pass locally and in the workflow; the app starts and the first page loads | V1 (partly) | in progress |
 | S0.4 | Branch protection on `main` (1 approval, test check required, no bypassing) and one `docs/team.md` pull request per member | A, then everyone | S0.3 | Five merged team pull requests; red-then-green demonstration recorded in the progress log | – | todo |
-| S0b | Sample data on day one: saved company facts and submissions for the five demo companies in `app/evidence/demo/` | A | S0.3 | Files load in a test with the network off | AC7 (partly) | todo |
+| S0b | Sample data on day one: saved company facts and submissions for the five demo companies in `app/evidence/demo/` | A | S0.3 | Files load in a test with the network off | AC7 (partly) | in progress: data saved and tested; pull request open |
 | S0c | Synthetic company of SPEC Appendix A as `app/tests/fixtures/synthetic_co.yaml`; each owner recalculates their rows by hand | All, collected by A | S0.3 | Merged with five sign-offs in the pull request; CALC rows in `docs/acceptance.md` marked signed off | CALC-* | todo |
 
 ### Tier 1: release v0.1 "Filing scorecard" (target Sun 22 November)
 
 | # | Slice | Owner | Depends on | Done when (evidence) | Acceptance | Status |
 |---|---|---|---|---|---|---|
-| S1 | SEC client and cache: ticker lookup, submissions, company facts, declared User-Agent, ≤ 5 requests per second, three retries | A | S0 | Tests run without network on saved files; a real download works from A's laptop | E4 | todo |
-| S2 | Line-item resolver with sources (§5, §6) | A | S1, S0b | Tests for every rule in §5.3 and every planted mistake in §5.4 | E5–E8, PE1–PE6 | todo |
+| S1 | SEC client and cache: ticker lookup, submissions, company facts, declared User-Agent, ≤ 5 requests per second, three retries | A | S0 | Tests run without network on saved files; a real download works from A's laptop | E4 (client part) | in progress: client done, reviewed and tested; pull request open |
+| S2 | Line-item resolver with sources (§5, §6) | A | S1, S0b | Tests for every rule in §5.3 and every planted mistake in §5.4 | E5–E8, PE1–PE6 | in progress: resolver done, reviewed and tested; pull request open |
 | S3 | Coverage report over about 100 non-financial companies from at least 8 industries → `docs/coverage.md`; the 30 companies of the verified universe → `app/data/universe.csv` | A | S2 | Table exists; go/no-go decided at office hours Fri 20 (§13.4) | E16 | todo |
 | S5 | Past performance checks P1–P6 (P4, P5 "not assessed" until S4) | B | S0c | Appendix A values reproduced; edge cases tested | AC3, CALC-P* | todo |
 | S6 | Financial health checks H1–H6 | B | S0c | Same | AC3, AC6, CALC-H*, E9, E12 | todo |
 | S7 | Dividend checks D1–D6 (D2 "not assessed" until S4 and a share price) | C | S0c | Same | AC3, CALC-D*, E10, E11 | todo |
 | S10 | Interface: input bar, header, score chart, expandable checks, sources page, overrides | D | S0c, then S2 | `streamlit run` works; app test opens the synthetic company and finds a known score | AC1, AC3–AC6, V1, V3, V4 | todo |
-| S11 | Gates (§10) and error messages | D | S2 | One test per stop and warn case | AC2, E1–E3, E15, V2 | todo |
+| S11 | Gates (§10) and error messages | D | S2 | One test per stop and warn case | AC2, E1–E4, E15, V2 | todo |
 | S14 | Demo mode on the five saved companies | A with D | S2, S10 | App runs with the network switched off | AC7 | todo |
 | S15 | Reconciliation: six figures (revenue, operating income, net income, total assets, operating cash flow, dividends paid) per member for one demo company, read from the 10-K with page and accession number | All, coordinated by E | S2 | 30 figures match the resolver within USD 0.5 million | – | todo |
 | S16a | Plain-language texts for the 18 tier 1 checks | E | S10 | Each check shows its text; reviewed by the check's owner | AC4 | todo |
@@ -77,8 +77,12 @@ export. The tier 1 scorecard and the sources page are never cut. Everything on `
 |---|---|---|---|---|
 | 2026-11-18 | S0.1 | Public repo `BossToGo/filing-scorecard` created; starter 0.3.0 and `SPEC.md` v2 committed to `main` (149180c); `Greg3334444` and `florian-spitzer` invited with write access | Commit linked to A's GitHub account; SPEC structure checked (21 sections, 24 checks, 25 slices); starter scanned for secrets: none | Two members not yet known; invitations expire after 7 days |
 | 2026-11-18 | S0.2 | Product interview run from `SPEC.md`, asking only §16; four documents drafted on branch `a/S0-product-docs` | SPEC Appendix A recomputed by an independent script: all values agree within rounding | Q1–Q8 below |
+| 2026-11-18 | S2 | Resolver `app/src/data/resolver.py`, tag map `app/src/data/tag_map.yaml`, entry point `app/src/data/company.py` (`load_company(ticker, demo=...)`), `CompanyData.latest()` for shares; Q11 tag gaps resolved from the real files; McDonald's debt and depreciation checked in its 10-Ks and written as cited overrides | Tests first: one per §5.3 rule and §5.4 planted mistake, plus cited known answers (session 5 slides 29, 30, 33; McDonald's 10-Ks); two reviewer agents found a blocker in the first debt rule (McDonald's FY2023 37,501 instead of 39,345) and about 15 other problems, all fixed with tests first; eight planted bugs each caught; pytest: 286 passed | Finance leases in debt (Q5) and the share-count source (Q12) for the group |
+| 2026-11-18 | S1 | SEC client `app/src/data/sec_client.py` (ticker lookup, submissions, company facts; declared User-Agent never stored or shown; one rate limiter for the whole app, 5 per second from `settings.yaml`; retries 1, 2, 4 s; atomic cache checked by SHA-256; clear error types for S2) and settings loader `app/src/settings.py`; download script now uses the client | Tests first on the saved files with a fake connection and clock; two reviewer agents (code, tests) found 3 major and about 10 minor problems, all fixed with tests first; three planted bugs each caught; pytest: 207 passed; live check from A's laptop: MSFT ticker lookup and submissions downloaded, then read from the cache | S2 must turn `SourceUnreachable` into a `missing` figure (E4) |
+| 2026-11-18 | S0b | Real SEC data for KO, AAPL, NVDA, MCD, AMZN (submissions, company facts) and JPM (submissions) downloaded with A's declared User-Agent (12 requests, ≤ 4 per second), trimmed to annual reports, saved in `app/evidence/demo/` with provenance; script `app/scripts/fetch_demo_data.py`, trimming rules `app/src/data/evidence.py` | Trimming tests written first and seen failing; checksum expected value computed with `shasum`, not Python; offline tests on the saved files: 35 passed (network blocked); known answer KO FY2025 revenue = session 5 slide 30; no file contains A's name or e-mail; pytest: 147 passed | Tag gaps found (Q11): KO debt after 2023, NVDA and AMZN capex, AAPL interest after 2023 |
 | 2026-11-18 | S0.3 review | Three read-only reviewer agents (code, tests, security): no blocker, about 20 findings. Fixed: `CompanyData` picklable for Streamlit's cache; numpy numbers accepted; reported facts need tag, form, accession and a filed unit (no "USD m"); a check with a missing input cannot pass or fail; network guard switched on for the whole session, also records swallowed attempts; layering test reads full module names, relative and dynamic imports, and covers the interface; workflow runs on `main` never cancelled, `setup-python@v6`, no stored token, bash on Windows; `.gitignore` patterns inside `app/`; `CODEOWNERS` lines for the guardrail files; Python range stated as 3.11 to 3.14 | pytest: 100 passed; planted bypasses caught (guard switched off: 8 failed; a swallowed network error fails the test) | Skipped, with reason: pinning actions to commit hashes and a hashed lock file (more complexity for the team than the risk of a student repository with no secrets); subprocess network calls (no code uses them) |
 | 2026-11-18 | S0.3 | Walking skeleton on branch `a/S0-skeleton`: shared data shapes with built-in rules, network guard for tests, layering test, `settings.yaml` with SPEC starting values, first page, CI on Linux and Windows, pull request template, `CODEOWNERS`, `docs/team.md`, team rules in `AGENTS.md` | Tests written first and seen failing (7 failed, 1 error); then pytest: 51 passed locally (Python 3.14.6, macOS); environment rebuilt from `requirements.txt` alone: 51 passed, `pip check` clean | CI result on GitHub: see the pull request |
+| 2026-11-20 | S2 | Simon's review of #7: the interface imports `load_company` and the SEC error classes from `src.data.company` only, never `src.data.sec_client`; the errors are re-exported there and a layering test forbids the direct import | Tests first (8 failed), then pytest: 298 passed | – |
 
 ## Known problems and open questions
 
@@ -101,8 +105,11 @@ fixed by a pull request to `SPEC.md`.
   at g = +50% (USD per share). Proposal: the bisection checks the sign at both ends and does not assume a direction;
   the property test applies only to positive margins; the app says "not meaningful" when the margin is zero or
   negative. Decide by: C.
-- **Q5. Debt tags may double count** (§6). `CommercialPaper` is often part of `ShortTermBorrowings`; `DebtCurrent`
-  is not in the list. Written from memory: check on real files in S2 and S3. Decide by: A.
+- **Q5. Debt tags may double count** (§6). Decided by A in S2 (2026-11-18), rule in `app/src/data/tag_map.yaml`:
+  the reported total long-term debt is used when there is one; short-term borrowings are `ShortTermBorrowings`,
+  else commercial paper + other short-term borrowings; a cited company override says when they sit inside long-term
+  debt (McDonald's, from its 10-Ks); no long-term debt tag means debt is missing. Still open for the group: Coca-Cola's
+  tags from 2024 include finance leases, other companies' finance leases (Amazon 12,286 million) are not counted.
 - **Q6. Terminal growth barely moves the sensitivity grid** (§8.5). With return on new capital equal to the cost of
   capital, terminal value = operating profit after tax × (1 + gT) ÷ cost of capital, so ±1 point of gT moves the
   synthetic fair value only from USD 21.50 to 21.86, against 18.81 to 25.32 for ±1 point of cost of capital. Not a
@@ -110,6 +117,17 @@ fixed by a pull request to `SPEC.md`.
 - **Q7. Team letters and names.** A is Igor. Members B to E and their GitHub accounts: [to confirm at the group
   meeting]; `Greg3334444` and `florian-spitzer` invited. Product name (§16.7): [to confirm].
 - **Q8. Overlap with the session 5 demo** (§16.3): [to confirm with the instructor].
+- **Q11. Tag gaps in the real filings** (found in S0b, details in `app/evidence/demo/README.md`). With the SPEC §6
+  tags: Coca-Cola's debt is missing for FY2024–FY2025 (its debt tags stop at 2023), so the course's own running
+  example could not be valued; Nvidia's and Amazon's capital expenditure tag stops in 2012 and 2016; Apple's
+  interest expense stops after FY2023; Apple's `Revenues` stops in 2018, so fallbacks must be tried per fiscal
+  year. Resolved in S2: the KO debt and NVDA/AMZN capex tags are in the tag map, fallbacks run per fiscal year,
+  Apple's interest expense is honestly missing (H6 "insufficient data"), and McDonald's depreciation uses a cited
+  override (its 10-K's cash flow total, 2,199 million, not the SG&A part, 457). S3 measures coverage on about 100
+  companies. Q1 is confirmed: Amazon has no dividend tag at all.
+- **Q12. Share count source** (SPEC §6 "latest filing"). Decided by A for now: the cover page of the latest annual
+  report, as SPEC §5.3.1 allows only 10-K figures; a later 10-Q cover count would be more recent. Shares are stored
+  at the cover-page date: use `data.latest("shares")`. The group can change this by a pull request to SPEC §6.
 - **Q9. "Not assessed" (SPEC §2) has no status of its own in SPEC §11.** Decided by A for now: such a check has the
   status `insufficient_data` with an explanation ("not assessed: needs an industry benchmark", tier 1), which the
   display rule of §3 already counts as not assessed ("4 of 5 assessed, 1 with insufficient data"). Documented in
