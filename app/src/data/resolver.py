@@ -153,6 +153,11 @@ class _Resolver:
         if spec.get("outflow") and value < 0:
             self.warnings.append(f"SIGN: {metric} {fy_end} is negative ({_money(value)}); a payment is filed as a "
                                  "positive amount, check the filing")
+        if spec.get("positive_only") and value < 0:  # e.g. interest expense: a ratio built on it would change sign
+            self.warnings.append(f"SIGN: {metric} {fy_end} is negative ({_money(value)}); an expense is filed as a "
+                                 "positive amount, so the figure is not used; check the filing")
+            return self._missing(metric, fy_end, f"{tag} is filed as a negative amount ({_money(value)}, "
+                                 f"{latest['accn']}): its sign cannot be relied on, so the figure is not used")
         return Fact(
             metric=metric,
             value=value,
@@ -195,7 +200,16 @@ class _Resolver:
                 self.warnings.append("NO_ANNUAL_DATA: no annual 10-K figures found")
             return []
         kept: list[date] = []
+        newer: date | None = None  # the period end looked at just before, kept or left out
         for end in sorted(ends, reverse=True):
+            gap, newer = newer is not None and (newer - end).days > self.settings["flow_period_max_days"], end
+            if gap:
+                # A missing year (or a transition period filed on another form): "four years earlier" would span
+                # more than four years, so the window ends at the gap (audit of 21 November 2026). The period left
+                # out at a change of year end is not a gap: that case keeps its older years, flagged FY_CHANGE.
+                self.warnings.append(f"FY_GAP: no annual 10-K figures between the fiscal years ending {end} and "
+                                     f"{kept[-1]}: only the years after the gap are used")
+                break
             if kept and (kept[-1] - end).days < self.settings["flow_period_min_days"]:
                 self.warnings.append(f"FY_CHANGE: the 12-month period ending {end} overlaps the fiscal year ending "
                                      f"{kept[-1]}: the company changed its fiscal year end, so that period is left out")
@@ -231,7 +245,7 @@ class _Resolver:
             self.warnings.append(f"DERIVED: {metric} is calculated, not reported, for {', '.join(map(str, ends))}")
         self.tag_switches()
         if fy_ends:
-            self.bridge_items(fy_ends[-1])
+            self.bridge_items(fy_ends[-1], fy_ends[-2] if len(fy_ends) > 1 else None)
             self.shares(fy_ends[-1])
         return self.company_data()
 
@@ -457,15 +471,34 @@ class _Resolver:
                                  f"total debt {_money(debt.value)}; check the 10-K")
         return debt, current_debt
 
-    def bridge_items(self, fy0: date) -> None:
+    def bridge_items(self, fy0: date, previous: date | None = None) -> None:
         for metric in self.map["line_items"]:
             spec = self.spec(metric)
             if not spec.get("bridge"):
                 continue
-            fact = self.reported(metric, spec, fy0) or Fact(
+            fact = self.reported(metric, spec, fy0)
+            if fact is None and metric == "minority_interest":
+                fact = self._minority_gap(spec, fy0, previous)
+            self.items.setdefault(metric, {})[fy0] = fact or Fact(
                 metric, 0, "USD", None, fy0, "assumption", None, None, None, None, self.retrieved,
                 f"not reported under {', '.join(spec['tags'])}, treated as nil (SPEC §8.3)")
-            self.items.setdefault(metric, {})[fy0] = fact
+
+    def _minority_gap(self, spec: dict, fy0: date, previous: date | None) -> Fact | None:
+        """SPEC v2.3 §8.3, when no minority interest is reported for FY0: missing if it was reported for FY-1 (it
+        cannot be assumed to have vanished); a record if total equity shows one; else None (treated as nil)."""
+        for tag in spec["tags"]:
+            before = self._annual(tag, "instant").get(previous) if previous else None
+            if before:
+                last = max(before, key=_order)
+                return self._missing("minority_interest", fy0, f"{tag} {_money(last['val'])} ({last['accn']}) is "
+                                     f"reported for {previous} but nothing for {fy0}: not treated as nil (SPEC §8.3)")
+        total, equity = (self.items.get(name, {}).get(fy0) for name in ("total_equity", "equity"))
+        if (total is not None and equity is not None and total.kind == equity.kind == "reported"
+                and total.value - equity.value > self.settings["minority_untagged_warning"] * abs(equity.value)):
+            self.warnings.append(
+                f"MINORITY_UNTAGGED: {fy0}: total equity {_money(total.value)} is above equity {_money(equity.value)} "
+                f"but no {', '.join(spec['tags'])} is reported, so none is subtracted in the valuation (SPEC §8.3)")
+        return None
 
     def shares(self, fy0: date) -> None:
         tags = self.map["shares"]
