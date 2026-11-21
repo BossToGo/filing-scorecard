@@ -18,8 +18,8 @@ Amounts stay in USD exactly as filed. Missing figures are never zero and say why
 input stays missing.
 
 Warnings in `CompanyData.warnings` start with a code, so the gates (slice S11) can act on them:
-RESTATED, TAG_CONFLICT, NON_USD, FY_CHANGE, DERIVED, DEBT_CHECK, DEBT_INCOMPLETE, AVERAGE_SHARES, SIGN,
-NO_ANNUAL_DATA.
+RESTATED, TAG_CONFLICT, TAG_SWITCH, NON_USD, FY_CHANGE, DERIVED, DEBT_CHECK, DEBT_INCOMPLETE, AVERAGE_SHARES,
+SIGN, NO_ANNUAL_DATA.
 
 Shares are stored at their own date (the cover page of the latest annual report): use `data.latest("shares")`.
 """
@@ -143,8 +143,11 @@ class _Resolver:
         for other_tag, other, _ in candidates[1:]:
             if other["val"] != value:
                 notes.append(f"also filed under {other_tag}: {_money(other['val'])}")
-                if (_relative_difference(value, other["val"]) > self.settings["tag_conflict_warning"]
-                        and not spec.get("override")):  # an override documents a known difference
+                differs = (_relative_difference(value, other["val"]) > self.settings["tag_conflict_warning"]
+                           and spec.get("same_definition", True))  # fallbacks of another definition: noted only
+                much_larger = ("later_larger_warning" in spec and value > 0
+                               and other["val"] > value * (1 + spec["later_larger_warning"]))
+                if (differs or much_larger) and not spec.get("override"):  # an override documents a difference
                     self.warnings.append(f"TAG_CONFLICT: {metric} {fy_end}: {tag} {_money(value)} used, "
                                          f"{other_tag} gives {_money(other['val'])}")
         if spec.get("outflow") and value < 0:
@@ -215,7 +218,8 @@ class _Resolver:
                 fact, why_not = self.reported(metric, spec, fy_end), ""
                 if fact is None:
                     fact, why_not = self.derive(metric, fy_end)
-                    if fact is not None and metric in ("gross_profit", "total_liabilities"):
+                    if fact is not None and metric in ("gross_profit", "total_liabilities", "equity",
+                                                       "depreciation_amortization"):
                         derived_used.setdefault(metric, []).append(fy_end)
                 if fact is None:
                     fact = self.reported_or_missing(metric, spec, fy_end, why_not)
@@ -225,6 +229,7 @@ class _Resolver:
             self.items.setdefault("current_financial_debt", {})[fy_end] = current
         for metric, ends in derived_used.items():
             self.warnings.append(f"DERIVED: {metric} is calculated, not reported, for {', '.join(map(str, ends))}")
+        self.tag_switches()
         if fy_ends:
             self.bridge_items(fy_ends[-1])
             self.shares(fy_ends[-1])
@@ -246,6 +251,20 @@ class _Resolver:
             if revenue is None or cost is None:
                 return not_derivable("revenue", "cost_of_revenue")
             return self._derived(metric, revenue - cost, fy_end, "revenue − cost_of_revenue"), ""
+        if metric == "equity":
+            total = self.reported("total_equity", self.spec("total_equity"), fy_end)
+            if total is None:
+                return None, "not derivable: no total equity reported either"
+            minority = self.reported("minority_interest", self.spec("minority_interest"), fy_end)
+            if minority is not None:
+                return self._derived(metric, total.value - minority.value, fy_end,
+                                     f"total_equity ({_source(total)}) − minority_interest ({_source(minority)})"), ""
+            sign = self._minority_sign(fy_end)
+            if sign:
+                return None, f"not derivable: total equity includes non-controlling interests ({sign}) that are " \
+                             "not reported for this year"
+            return self._derived(metric, total.value, fy_end, f"total_equity ({_source(total)}); it includes any "
+                                 "non-controlling interests, none reported separately"), ""
         if metric == "total_equity":
             equity = value("equity")
             if equity is None:
@@ -260,16 +279,65 @@ class _Resolver:
             assets, total_equity = value("total_assets"), value("total_equity")
             if assets is None or total_equity is None:
                 return not_derivable("total_assets", "total_equity")
+            less = self.spec(metric).get("less")
+            temporary = self.reported(f"{metric} (temporary equity)", {"kind": "instant", "tags": less,
+                                                                        "same_definition": False}, fy_end) if less else None
+            if temporary is not None:
+                return self._derived(metric, assets - total_equity - temporary.value, fy_end,
+                                     f"total_assets − total_equity − temporary equity ({_source(temporary)})"), ""
             return self._derived(metric, assets - total_equity, fy_end, "total_assets − total_equity"), ""
+        parts = self.spec(metric).get("parts")
+        if parts:  # e.g. depreciation and amortisation: the sum of its parts when no combined tag is reported
+            kind = self.spec(metric)["kind"]
+            found = {tag: self.reported(f"{metric} ({tag})", {"kind": kind, "tags": [tag]}, fy_end) for tag in parts}
+            if found[parts[0]] is None:
+                return None, f"not derivable: {parts[0]} not reported either"
+            notes = []
+            for tag, fact in found.items():
+                if fact is not None:
+                    notes.append(_source(fact))
+                    continue
+                other_years = [end for end, entries in self._annual(tag, kind).items()
+                               if end != fy_end and any(e["val"] for e in entries)]
+                if other_years:  # a part that exists in other years is not assumed to be zero in this one
+                    return None, f"not derivable: {tag} is reported for {max(other_years)} but not for this year"
+                notes.append(f"{tag} not reported, counted as nil")
+            total = sum(fact.value for fact in found.values() if fact is not None)
+            return self._derived(metric, total, fy_end, " + ".join(notes) + "; the sum of these parts may be below "
+                                 "the cash flow statement's line, which can hold other items"), ""
         return None, ""
+
+    def _minority_sign(self, fy_end: date) -> str:
+        """Why non-controlling interests seem to exist although none is reported at fy_end ("" if no sign)."""
+        for tag in self.map["line_items"]["minority_interest"]["tags"]:
+            other_years = [end for end in self._annual(tag, "instant") if end != fy_end]
+            if other_years:
+                return f"{tag} is reported for {max(other_years)}"
+        profit = self._annual("ProfitLoss", "flow").get(fy_end)
+        net = self._annual("NetIncomeLoss", "flow").get(fy_end)
+        if profit and net and max(profit, key=_order)["val"] != max(net, key=_order)["val"]:
+            return "ProfitLoss differs from NetIncomeLoss"
+        return ""
+
+    def tag_switches(self) -> None:
+        """Warn when a line item's tag changes within the window: the definition may change between years."""
+        for metric, by_year in self.items.items():
+            parts = self.map["line_items"].get(metric, {}).get("parts")
+            pseudo = " + ".join(parts) if parts else None  # a figure built from parts counts as its own "tag"
+            used = [(end, fact.tag if fact.kind == "reported" else pseudo) for end, fact in sorted(by_year.items())
+                    if fact.kind == "reported" or (pseudo and fact.kind == "derived")]
+            if len({tag for _, tag in used}) > 1:
+                parts = ", ".join(f"{tag} for {end}" for end, tag in used)
+                self.warnings.append(f"TAG_SWITCH: {metric}: {parts}; the definition may differ between years")
 
     def debt(self, fy_end: date) -> tuple[Fact, Fact]:
         """Financial debt and its current part (SPEC §6; plan Q5; rules in tag_map.yaml). Operating leases out."""
         parts, override = self.map["debt"], self.overrides.get("debt", {})
         inside = override.get("short_term_inside_long_term_debt", False)
 
-        def part(label, tags):
-            return self.reported(f"financial_debt ({label})", {"kind": "instant", "tags": tags}, fy_end)
+        def part(label, tags):  # the fallbacks differ by finance leases: noted, not warned (plan Q5)
+            return self.reported(f"financial_debt ({label})",
+                                 {"kind": "instant", "tags": tags, "same_definition": False}, fy_end)
 
         noncurrent = part("non-current", parts["long_term_noncurrent"])
         current = part("current maturities", parts["long_term_current"])
@@ -306,9 +374,43 @@ class _Resolver:
             maturities, maturities_note = total.value - noncurrent.value, f"{total.tag} − {noncurrent.tag}"
         else:
             maturities, maturities_note = None, ""
+        # Only a long-term total and no current maturities: DebtCurrent (all current debt) gives the current part,
+        # and the principal (DebtInstrumentCarryingAmount) tells whether the total already includes it (Tesla's
+        # LongTermDebt does not). Without a principal that settles it, the debt is flagged.
+        all_current = None
+        if maturities is None and total is not None and noncurrent is None and not inside:
+            all_current = part("all current debt", parts.get("current_total", []))
+        total_is_noncurrent = False
+        if all_current is not None:
+            principal = part("principal", parts.get("principal_check", []))
+            tolerance = self.settings["debt_check_warning"]
 
+            def close(value):
+                return principal is not None and principal.value and \
+                    _relative_difference(value, principal.value) <= tolerance
+
+            if close(total.value + all_current.value) and not close(total.value):
+                total_is_noncurrent = True
+                long_term = total.value + all_current.value
+                notes.append(f"{_source(all_current)} ({total.tag} is only the non-current part: the sum is within "
+                             f"{tolerance:.0%} of the principal {_source(principal)})")
+            elif not close(total.value):
+                self.warnings.append(f"DEBT_CHECK: {fy_end}: cannot tell whether {total.tag} {_money(total.value)} "
+                                     f"includes the current debt {_source(all_current)}; check the 10-K")
+
+        # Short-term borrowings equal to total − non-current, with no current-maturities tag, are the current part of
+        # long-term debt filed under another name (Marvell): already inside the total.
+        short_is_current_part = (not inside and total is not None and noncurrent is not None and current is None
+                                 and short_total is not None and short_total.value > 0
+                                 and _relative_difference(total.value - noncurrent.value, short_total.value)
+                                 <= self.settings["debt_check_warning"])
         if inside:
             short_term, short_notes = 0, ["short-term borrowings classified inside long-term debt"]
+        elif short_is_current_part:
+            short_term, short_notes = 0, [f"nothing added for {_source(short_total)}: it is the current part of "
+                                          f"{total.tag}, already inside it"]
+        elif total_is_noncurrent:
+            short_term, short_notes = 0, ["short-term borrowings are inside DebtCurrent"]
         elif short_total is not None:
             short_term, short_notes = short_total.value, [_source(short_total)]
         elif short_parts:
@@ -323,11 +425,19 @@ class _Resolver:
             return (self._missing("financial_debt", fy_end, reason),
                     self._missing("current_financial_debt", fy_end, reason))
         debt = self._derived("financial_debt", long_term + short_term, fy_end, " + ".join(notes + short_notes))
-        if maturities is None:
+        if all_current is not None:
+            current_debt = self._derived("current_financial_debt", all_current.value, fy_end,
+                                         f"{_source(all_current)}: all current debt, short-term borrowings included")
+        elif maturities is not None:
+            current_debt = self._derived("current_financial_debt", maturities + short_term, fy_end,
+                                         " + ".join([maturities_note, *short_notes]))
+        else:
             return debt, self._missing("current_financial_debt", fy_end,
                                        "current maturities of long-term debt not reported")
-        return debt, self._derived("current_financial_debt", maturities + short_term, fy_end,
-                                   " + ".join([maturities_note, *short_notes]))
+        if current_debt.value > debt.value:
+            self.warnings.append(f"DEBT_CHECK: {fy_end}: current debt {_money(current_debt.value)} is larger than "
+                                 f"total debt {_money(debt.value)}; check the 10-K")
+        return debt, current_debt
 
     def bridge_items(self, fy0: date) -> None:
         for metric in self.map["line_items"]:
@@ -341,7 +451,14 @@ class _Resolver:
 
     def shares(self, fy0: date) -> None:
         tags = self.map["shares"]
-        cover = [e for entries in self._annual(tags["cover_tag"], "instant", "shares", "dei").values() for e in entries]
+        every_cover = [e for entries in self._annual(tags["cover_tag"], "instant", "shares", "dei").values()
+                       for e in entries]
+        # Only the cover page of the latest annual report counts: dated after the fiscal year end, within a window.
+        cover = [e for e in every_cover
+                 if 0 < (date.fromisoformat(e["end"]) - fy0).days <= self.settings["cover_page_max_days"]]
+        stale = (f"; the latest cover-page count ({max(every_cover, key=_order)['end']}, "
+                 f"{max(every_cover, key=_order)['accn']}) is not from the latest annual report"
+                 if every_cover and not cover else "")
         if cover:
             latest = max(cover, key=_order)
             when = date.fromisoformat(latest["end"])
@@ -351,15 +468,20 @@ class _Resolver:
                 "cover page of the latest annual report")}
             return
         average = self.reported("shares", {"kind": "flow", "tags": [tags["average_tag"]]}, fy0, unit="shares")
+        if average is not None and average.value < self.settings["min_plausible_shares"]:
+            self.items["shares"] = {fy0: self._missing(
+                "shares", fy0, f"{tags['average_tag']} is {average.value:,} shares, implausibly few: probably filed in "
+                f"millions{stale}", unit="shares")}
+            return
         if average is not None:
             self.items["shares"] = {fy0: self._derived(
                 "shares", average.value, fy0, f"diluted weighted average of the fiscal year ({_source(average)}), "
-                "not a period-end count", unit="shares")}
+                f"not a period-end count{stale}", unit="shares")}
             self.warnings.append("AVERAGE_SHARES: the share count is the diluted average of the fiscal year, not a "
                                  "period-end figure")
             return
         self.items["shares"] = {fy0: self._missing("shares", fy0, f"no {tags['cover_tag']} on the cover page and no "
-                                                                  f"{tags['average_tag']}", unit="shares")}
+                                                                  f"{tags['average_tag']}{stale}", unit="shares")}
 
     def company_data(self) -> CompanyData:
         recent = self.submissions.get("filings", {}).get("recent", {})
