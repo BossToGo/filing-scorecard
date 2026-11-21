@@ -21,7 +21,7 @@ forces); the group confirms it by approving the SPEC v2.3 pull request.
 
 ## Main user journey
 
-1. The user opens the app and sees the input bar: ticker, share price (USD; the only required input), demo mode.
+1. The user opens the app and sees the input bar: ticker, share price (USD; the only figure the user types; without it the valuation area and the dividend yield check show "insufficient data"), demo mode.
 2. They type a ticker and the share price (in a bank, the price would come from the bank's own quote).
 3. The app fetches the company's SEC filings (or reads saved data in demo mode), runs the data-quality gates
    (§10), and shows the header, the score chart, the strengths and points to watch and the 24 checks (§3, §7, §9).
@@ -97,7 +97,7 @@ F1 to F3 are never cut.
 | Ticker → company number | SEC `company_tickers.json` | Downloaded once, cached | SEC fair access: declared User-Agent; we stay at or below 5 requests per second (SEC limit 10) (§4) |
 | Company name, industry code, fiscal year end, filings | SEC `submissions` API | Per company, cached with retrieval time | Same |
 | Financial statement figures | SEC `companyfacts` API (10-K and 10-K/A only) | Per company, cached with retrieval time | Same |
-| Risk-free rate | FRED series `DGS10` | Latest value; or typed into `settings.yaml` | FRED terms [to confirm in slice S8] |
+| Risk-free rate | FRED series `DGS10` | Average of the last five years of daily values, downloaded when needed; a dated fallback in `settings.yaml` for demo mode, a missing key or no network (SPEC §4) | FRED terms [to confirm in slice S2b] |
 | Industry benchmarks and company → industry | Damodaran US datasets, January 2026 edition, extracted once to CSV (§4) | Fixed for the project | Allowed by the instructor (reported by Igor, 2026-11-18); attribution in the README; the full `indname.xls` is not committed |
 | Share price | Typed in by the user (USD) | At the moment of use | – |
 | Saved SEC data for the demo | Trimmed company facts for five companies in the repository | Snapshot date recorded | Committing a demo version: allowed for now (Igor, 2026-11-18) |

@@ -49,7 +49,7 @@ data:  # owner A (SPEC §4, §5.3)
     reason: "Go as planned only if each core line item resolves for at least 90% of the companies (SPEC §13.4)"
   coverage_secondary_threshold:
     value: 0.70
-    reason: "Debt, interest expense and depreciation must resolve for at least 70% (SPEC §13.4)"
+    reason: "Debt and interest expense must resolve for at least 70% (SPEC v2.3 §13.4; depreciation, in this group until version 2.3, is no longer used by any check)"
   universe_size:
     value: 30
     reason: "The verified universe: 30 companies whose tier 1 figures all resolve and pass the checks (SPEC §13.4)"

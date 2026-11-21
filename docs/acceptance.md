@@ -17,7 +17,7 @@ Each criterion is checkable: a starting state, an action, an expected result. St
 | AC8 | F6 | Tier 2 build, synthetic company with the synthetic benchmarks | The scorecard opens | P4 pass, P5 fail, D2 pass (share price USD 30.00); each benchmark shows the industry group, the route used, the number of firms and the source file | open |
 | AC9 | F7 | Tier 2 build, synthetic company, share price USD 30.00 | The scorecard opens | Fair value USD 20.13 per share (equity method); scores 5 of 6, 4 of 6, 6 of 6, 3 of 6 (SPEC v2.3 Appendix A; C's recalculation pending) | open |
 | AC10 | F7 | Any company, no share price | The scorecard opens | The valuation area shows "insufficient data" and asks for a share price; the other areas still show | open |
-| AC11 | F8 | Synthetic company loaded | The user downloads the Excel file | A test reopens it: three sheets (report, figures, sources); every figure equals the screen | open |
+| AC11 | F8 | Synthetic company loaded | The user downloads the Excel file | A test reopens it: two sheets (the scorecard; the figures with their sources, §3 item 8); every figure equals the screen | open |
 | AC12 | F9 | Tier 3 build, synthetic company, share price USD 30.00 | The scorecard opens | Strengths G1, G2, G3, G5, G6; points to watch W3, W4, W8, all minor; each opens its check (SPEC v2.3 §9 and Appendix A; B's recalculation pending) | open |
 
 ## Screens (how each was checked)
@@ -39,9 +39,12 @@ P/E 20.0 (industry) and 24.0 (whole US market), P/B 4.0, market dividend yield 1
 hand or in Excel and signed off in slice S0c. If a recalculation disagrees, the recalculation wins and SPEC
 Appendix A is corrected by pull request. Tolerance: half a unit of the last digit shown.
 
-Independent cross-check (not a sign-off): on 2026-11-18 Claude recomputed every row below in a separate script
-that shares no code with the app. All agree within the rounding shown (discounted terminal value 1,842.19 against
-1,842.20, a rounding difference).
+Independent cross-checks (not sign-offs): the version 2.3 rows below were recomputed by Claude in a separate script
+that shares no code with the app (20 November), and again from the SPEC formulas alone by a reviewer agent in the
+audit of 21 November. Both agree with every value and every pass or fail shown. C's own Excel model
+(`docs/crosscheck/`, pull request #14) is the human recalculation that rule 14.5 asks for. The unrounded values
+behind the rounded working: free cash flow of year 10 166.7541; sum of discounted cash flows 911.2065; discounted
+terminal value 1,101.7463.
 
 | Id | Number | Hand working (SPEC Appendix A) | Expected | Owner | Status |
 |---|---|---|---|---|---|
@@ -57,25 +60,25 @@ that shares no code with the app. All agree within the rounding shown (discounte
 | CALC-H4 | Debt falling | 450 ÷ 820 = 54.88% against 400 ÷ 600 = 66.67% | pass | B | open, sign-off pending |
 | CALC-H5 | Debt covered by cash flow | 215 ÷ 450 | 47.78% ≥ 20% → pass | B | open, sign-off pending |
 | CALC-H6 | Interest covered | 208 ÷ 26 | 8.0 ≥ 5 → pass | B | open, sign-off pending |
-| CALC-D1 | Pays a dividend | 56 > 0 | pass | C | open, sign-off pending |
-| CALC-D2 | Yield above market | 56 ÷ (30.00 × 100) = 56 ÷ 3,000 | 1.867% > 1.5% → pass | C | open, sign-off pending |
-| CALC-D3 | No large cut | Changes: +10%, +9.09%, −6.25% (48 to 45), +24.44% | largest fall −6.25% → pass | C | open, sign-off pending |
-| CALC-D4 | Dividend grew | 56 > 40 | pass | C | open, sign-off pending |
-| CALC-D5 | Covered by earnings | 56 ÷ 140 | 40% < 90% → pass | C | open, sign-off pending |
-| CALC-D6 | Covered by cash | 56 ≤ 215 − 85 = 130 | pass | C | open, sign-off pending |
-| CALC-V1 | Below fair value | 30.00 against 20.13 | fail | C | open, v2.3 value (assistant's independent script), C's recalculation pending |
-| CALC-V2 | Well below fair value | 30.00 against 0.80 × 20.13 = 16.10 | fail | C | open, v2.3 value (assistant's independent script), C's recalculation pending |
-| CALC-V3 | P/E vs industry | 3,000 ÷ 140 | 21.43 > 20.0 → fail | C | open, sign-off pending |
-| CALC-V4 | P/E vs the whole US market (v2.3) | 3,000 ÷ 140 = 21.43 against the synthetic market P/E 24.0 | 21.43 < 24.0 → pass | C | open, v2.3 value (assistant's independent script), C's recalculation pending |
-| CALC-V5 | P/B vs industry | 3,000 ÷ 820 | 3.66 < 4.0 → pass | C | open, sign-off pending |
-| CALC-V6 | Price against the fair value at the growth cap (§7 V6) | Same valuation with g1 = 30% (growth 30%, 21.9%, 16.2%, 12.2%, 9.4%, 7.4%, 5.9%, 4.9%, 4.2%, 3.7%): USD 37.37; 30.00 ≤ 37.37 | pass | C | open, v2.3 value (assistant's independent script), C's recalculation pending |
-| CALC-W1 | Levered beta | 0.90 × (1 + 0.79 × 450 ÷ 3,000) = 0.90 × 1.1185; inside the 0.8–2.0 limits | 1.00665 | C | open, sign-off pending |
-| CALC-W2 | Cost of equity | 4.0% + 1.00665 × 5.0% | 9.0333% | C | open, sign-off pending |
-| CALC-F1 | Starting free cash flow | (75 + 115 + 130) ÷ (1,150 + 1,210 + 1,300) = 320 ÷ 3,660 = 8.7432%; × 1,300 | 113.66 | C | open, v2.3 value (assistant's independent script), C's recalculation pending |
-| CALC-F2 | Free cash flows, years 1–10 | g(t) = 2.5% + 4.2790% × 0.5^((t − 1) ÷ 2); discounted at 9.0333% | 121.37, 128.07, 134.01, 139.39, 144.37, 149.07, 153.59, 158.01, 162.39, 166.75; discounted 111.31, 107.73, 103.39, 98.63, 93.69, 88.72, 83.84, 79.11, 74.56, 70.22 (sum 911.21) | C | open, v2.3 value (assistant's independent script), C's recalculation pending |
-| CALC-F3 | Terminal value | 166.75 × 1.025 ÷ (0.0903325 − 0.025) | 2,616.20; discounted 1,101.75 (54.7% of the total) | C | open, v2.3 value (assistant's independent script), C's recalculation pending |
-| CALC-F4 | Fair value per share | Equity value 911.21 + 1,101.75 − minority interests 0 = 2,012.95; ÷ 100 | USD 20.13 | C | open, v2.3 value (assistant's independent script), C's recalculation pending |
-| CALC-S | Area scores (tier 2) | Passes per area from the rows above | 5 of 6, 4 of 6, 6 of 6, 3 of 6 (v2.3: V6 now passes) | B and C | open, sign-off pending (E's earlier check gave 2 of 6 for valuation under the old rules) |
+| CALC-D1 | Pays a dividend | 56 > 0 | pass | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
+| CALC-D2 | Yield above market | 56 ÷ (30.00 × 100) = 56 ÷ 3,000 | 1.867% > 1.5% → pass | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
+| CALC-D3 | No large cut | Changes: +10%, +9.09%, −6.25% (48 to 45), +24.44% | largest fall −6.25% → pass | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
+| CALC-D4 | Dividend grew | 56 > 40 | pass | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
+| CALC-D5 | Covered by earnings | 56 ÷ 140 | 40% < 90% → pass | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
+| CALC-D6 | Covered by cash | 56 ≤ 215 − 85 = 130 | pass | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
+| CALC-V1 | Below fair value | 30.00 against 20.13 | fail | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
+| CALC-V2 | Well below fair value | 30.00 against 0.80 × 20.13 = 16.10 | fail | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
+| CALC-V3 | P/E vs industry | 3,000 ÷ 140 | 21.43 > 20.0 → fail | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
+| CALC-V4 | P/E vs the whole US market (v2.3) | 3,000 ÷ 140 = 21.43 against the synthetic market P/E 24.0 | 21.43 < 24.0 → pass | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
+| CALC-V5 | P/B vs industry | 3,000 ÷ 820 | 3.66 < 4.0 → pass | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
+| CALC-V6 | Price against the fair value at the growth cap (§7 V6) | Same valuation with g1 = 30% (growth 30%, 21.9%, 16.25%, 12.2%, 9.4%, 7.4%, 5.9%, 4.9%, 4.2%, 3.7%): USD 37.37; 30.00 ≤ 37.37 | pass | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
+| CALC-W1 | Levered beta | 0.90 × (1 + 0.79 × 450 ÷ 3,000) = 0.90 × 1.1185; inside the 0.8–2.0 limits | 1.00665 | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
+| CALC-W2 | Cost of equity | 4.0% + 1.00665 × 5.0% | 9.03325% | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
+| CALC-F1 | Starting free cash flow | (75 + 115 + 130) ÷ (1,150 + 1,210 + 1,300) = 320 ÷ 3,660 = 8.7432%; × 1,300 | 113.66 | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
+| CALC-F2 | Free cash flows, years 1–10 | g(t) = 2.5% + 4.2790% × 0.5^((t − 1) ÷ 2); discounted at 9.03325% | 121.37, 128.07, 134.01, 139.39, 144.37, 149.07, 153.59, 158.01, 162.39, 166.75; discounted 111.31, 107.73, 103.39, 98.63, 93.69, 88.72, 83.84, 79.11, 74.56, 70.22 (sum 911.21) | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
+| CALC-F3 | Terminal value | 166.75 × 1.025 ÷ (0.0903325 − 0.025) | 2,616.20; discounted 1,101.75 (54.7% of the total) | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
+| CALC-F4 | Fair value per share | Equity value 911.21 + 1,101.75 − minority interests 0 = 2,012.95; ÷ 100 | USD 20.13 | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
+| CALC-S | Area scores (tier 2) | Passes per area from the rows above | 5 of 6, 4 of 6, 6 of 6, 3 of 6 (v2.3: V6 now passes) | B and C | signed off by E (Emma, 21 November 2026, review comment on pull request #5: 5, 4, 6, 3) |
 | CALC-G | Strengths and points to watch (tier 3) | SPEC v2.3 §9 rules on the rows above; SPEC Appendix A table | Shown: G1, G2 (8.78% a year), G3 (17.83% against 15%), G5 (8.0 times), G6; W3 (H2: 540 against 570), W4 (40.24%), W8 (49.0% above the estimate; V6 passes, so no second clause) | B | open, v2.3 value (assistant), B's recalculation pending |
 
 ## Edge cases and errors
@@ -90,17 +93,17 @@ that shares no code with the app. All agree within the rounding shown (discounte
 | E6 | Two fallback tags give different values for the same period | Figure flagged on the sources page, not chosen silently (§5.3.7) | passing (test: test_two_tags_with_different_values_are_flagged_and_the_first_in_the_list_is_used) |
 | E7 | Restated figure differs from the original by more than 1% | Latest filed value used; both shown with a warning (§5.3.4) | passing (test: test_planted_a_restated_figure_uses_the_latest_filing_and_keeps_the_original; KO 2018: test_coca_cola_2018_revenue_restatement_as_shown_in_session_5) |
 | E8 | 53-week fiscal year | Kept: flow periods of 350 to 380 days are accepted (§5.3.1) | passing (test: test_a_flow_must_cover_350_to_380_days; Apple: test_apple_has_a_53_week_fiscal_year) |
-| E9 | Negative equity | H3, P4, V5 fail with the note "negative equity"; warning in the header (§7, §10). H4: see open question in `docs/plan.md` | open |
-| E10 | Net income zero or below | V3 and D5 fail; P2 fails | open |
+| E9 | Negative equity | H3, P4, V5 fail with the note "negative equity"; recorded on the sources page, no header warning (§7, §10). H4: see open question in `docs/plan.md` | open |
+| E10 | Net income zero or below | V3, V4 and D5 fail; P2 fails | open |
 | E11 | No dividend | D1 fails; D2 to D6 `not applicable`; area shows "no dividend paid", score 0 | open |
-| E12 | Zero debt | H4 (no debt in both years), H5, H6 (no debt and no interest) pass; the levered beta equals the unlevered beta | open |
+| E12 | Zero debt | H4 (no debt in both years), H5, H6 (no debt and no interest) pass; the levered beta equals the unlevered beta, kept within the limits 0.8 to 2.0 | open |
 | E15 | A warning that is not for the customer (e.g. a restated or derived figure) | Not in the header; listed on the sources page next to the figure (§10) | open |
-| E16 | Ticker outside the verified universe | Report shown, marked "not verified" (§2, §10) | open |
+| E16 | Ticker outside the verified universe | Report shown with the header warning "not fully checked" (§2, §10) | open |
 | E17 | Industry not found in the lookup or the fallback table | Benchmarks `missing`; dependent checks "insufficient data"; no user override (§9.1, v2.3) | open |
 | E18 | Past revenue growth above the cap (Nvidia: 68.3% a year, FY2022 to FY2026) or below the floor | Starting growth 30% (or −10%), labelled `assumption`; the note gives the growth before the limit; the valuation detail adds the growth note (§8.2, §8.3) | open |
 | E19 | Three-year free cash flow zero or negative, or equity value ≤ 0 after minority interests | No fair value; V1, V2, V6 `not_applicable` with the reason in plain words; V3 to V5 still assessed (§8.6) | open |
 | E20 | Levered beta outside 0.8 to 2.0 | Beta set to the limit, labelled `assumption`, the note gives the value before the limit; warning (§8.1, §10) | open |
-| E22 | A valuation input is missing (e.g. depreciation) or fewer than five fiscal years resolve | No fair value; V1, V2, V6 `insufficient_data` naming the missing input; checked before the cases of E19 (§8.6) | open |
+| E22 | A valuation input is missing (e.g. the operating cash flow of one of the last three years, or the debt) or fewer than five fiscal years resolve | No fair value; V1, V2, V6 `insufficient_data` naming the missing input; checked before the cases of E19 (§8.6) | open |
 
 ## Planted errors (each one a test that must catch it, §5.4)
 
