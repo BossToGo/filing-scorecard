@@ -66,7 +66,7 @@ Status values: `todo`, `in progress`, `done (<date>, commit <short hash>)`, `blo
 |---|---|---|---|---|---|
 | S18 | Break-it round: independent read-only review of each area; a deliberate break of every formula | Each owner; reviewer from another area | v0.2 | `docs/testing.md` lists each break and the test that caught it; every finding is a failing test or a written dismissal | todo |
 | S19 | README and fresh-clone test on one Windows and one Mac laptop, by a member who did not write the README | E writes, two members test | v0.3 | Works from the README alone on both | todo |
-| S20 | Business plan (Markdown → PDF), slides, recorded fallback demo, question bank | E leads, all contribute (from Sat 21) | – | Files on `main` before the deadline | todo |
+| S20 | Business plan (Markdown → PDF), slides, recorded fallback demo, question bank | E leads, all contribute (from Sat 21) | – | Files on `main` before the deadline | in progress |
 
 Cut list if a release slips by more than a day (§2): watchlist → five forces panel → sensitivity table → Excel
 export. The tier 1 scorecard and the sources page are never cut. Everything on `main` by Tue 1 December, 12:00.
@@ -88,6 +88,7 @@ export. The tier 1 scorecard and the sources page are never cut. Everything on `
 | 2026-11-20 | S3 (lean v2.3) | The verified universe no longer needs current financial debt (equity method); it still needs the share count and the latest depreciation (for V4) | Test first (seen failing); pytest: 373 passed; coverage regenerated: still 31 verified, the same 30 chosen | – |
 | 2026-11-20 | S3 (lean v2.3 round 2) | The verified universe no longer needs depreciation (V4 now compares the P/E with the whole market): only tier 1 figures, the accounting checks, no blocking warning, a recent report and a share count | Test first (seen failing); pytest: 372 passed; coverage regenerated: 33 verified; Tesla and Texas Instruments back in the 30, Starbucks and CVS out; the demo candidates (KO, NVDA, MCD, AMZN, COST, PEP) all in | – |
 | 2026-11-20 | S2 | Simon's review of #7: the interface imports `load_company` and the SEC error classes from `src.data.company` only, never `src.data.sec_client`; the errors are re-exported there and a layering test forbids the direct import | Tests first (8 failed), then pytest: 298 passed | – |
+| 2026-11-21 | S20 | A's business plan section "data, risks and controls" in `docs/business-plan/sections/A-data-and-controls.md`, written by Igor | Facts checked against the app, SPEC v2.3 and the coverage report | If Q1 is accepted, "missing is never zero" needs its dividend exception; the offline demo (S14) and the FRED download (S2b) it describes are still to be built |
 
 ## Known problems and open questions
 
