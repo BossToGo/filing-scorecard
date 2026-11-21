@@ -17,10 +17,10 @@
 # /docs/benchmarks.md                            @<B>
 
 # Member C (dividend and valuation checks, valuation engine, Excel cross-check)
-/app/src/checks/dividend.py                      @florian-spitzer
-/app/src/checks/valuation.py                     @florian-spitzer
-/app/src/valuation/                              @florian-spitzer
-/docs/crosscheck/                                @florian-spitzer
+# /app/src/checks/dividend.py                    @<C>
+# /app/src/checks/valuation.py                   @<C>
+# /app/src/valuation/                            @<C>
+# /docs/crosscheck/                              @<C>
 
 # Member D (interface, five forces, gates, export, app tests)
 # /app/main.py                                   @<D>
