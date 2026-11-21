@@ -111,16 +111,21 @@ def test_the_app_reads_the_same_figure_from_the_same_filing(path, name):
 
 
 
-@pytest.mark.xfail(strict=True, reason="plan Q1 open: Amazon's dividends are still a missing figure, not a nil")
+@pytest.mark.xfail(strict=True, raises=AssertionError,
+                   reason="plan Q1 open: Amazon's dividends are still a missing figure, not a nil")
 def test_amazon_shows_no_dividend_paid():
-    """Amazon's 10-K has no dividends line (Emma's reading, page 36). SPEC §7 wants D1 to fail with "no dividend
-    paid", so the data layer must give a nil, labelled, not a missing figure (which would give "insufficient data").
-    Expected to fail until plan Q1 is decided and built; strict, so it turns red the day it starts passing: then
-    remove the marker and make the null-value branch above require the nil."""
+    """Amazon's 10-K has no dividends line (E's review of pull request #16). SPEC §7 wants D1 to fail with "no
+    dividend paid", so the data layer must give a value of 0 there, not a missing figure (which would give
+    "insufficient data"). How the nil is labelled is for plan Q1 to decide; whatever the rule, it may only apply
+    when the filing shows no dividend under any tag (Johnson & Johnson files its dividends under a third tag: audit
+    of 21 November 2026).
+
+    Expected to fail until Q1 is decided and built. Strict, so it turns red the day it starts passing: then remove
+    the marker and make the null-value branch above require the nil. Only an AssertionError counts as the expected
+    failure: a missing file or any other error is a real failure."""
     data = app_data("AMZN")
     fact = data.fact("dividends_paid", data.fiscal_years("revenue")[-1])
-    assert fact is not None and fact.value == 0 and fact.kind == "assumption"
-    assert "treated as nil" in fact.note
+    assert fact is not None and fact.value == 0
 
 GOOD = {
     "company": "KO", "read_by": "Igor (A)", "date_read": "2026-11-21", "fiscal_year_end": "2025-12-31",

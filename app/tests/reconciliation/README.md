@@ -47,7 +47,8 @@ filing, not a program. Emma (E) coordinates; the format and the test are Igor's 
 `line_in_filing: none`, and a `note` saying what the filing shows. The test then expects the app to show none too.
 Until plan Q1 is decided, "none" in the app can be a missing figure or a nil one ("not reported, treated as nil");
 for Amazon's dividends the customer should see "no dividend paid", which needs the nil (SPEC §7, D1). A separate
-test marks this as pending: once Q1 is built, it requires the nil.
+test marks this as pending: once Q1 is built, it requires the nil. The nil may only apply when the filing shows no
+dividend under any tag: a payer that uses another tag name must never be shown as paying none.
 
 ## Template
 
