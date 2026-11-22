@@ -36,7 +36,10 @@ premium 5.0%, tax 21% (beta only), terminal growth 2.5%, free cash flow margin o
 P/E 20.0 (industry) and 24.0 (whole US market), P/B 4.0, market dividend yield 1.5%).
 
 **Rule 14.5:** these values may be used in tests only after the owner named in each row has recalculated them by
-hand or in Excel and signed off in slice S0c. If a recalculation disagrees, the recalculation wins and SPEC
+hand or in Excel and signed off in slice S0c. In code: `tests.fixtures.synthetic.expected_check("P3")` refuses to
+return a value until A has recorded its owner's sign-off (a review comment on the S0c pull request) under
+`sign_off` in `app/tests/fixtures/synthetic_co.yaml`. Owners: B for P and H rows and the strengths and
+points to watch, C for D, V, W and F rows, D for AC3, E for CALC-S. If a recalculation disagrees, the recalculation wins and SPEC
 Appendix A is corrected by pull request. Tolerance: half a unit of the last digit shown.
 
 Independent cross-checks (not sign-offs): the version 2.3 rows below were recomputed by Claude in a separate script
