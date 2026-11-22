@@ -86,8 +86,7 @@ def _d1(dividends: Fact) -> CheckResult:
         # Plan Q1: the data layer's nil. Its full note (tags searched) stays with the figure for the sources page.
         why = "dividends paid are not reported in any of the five fiscal years, so they are treated as nil"
     else:
-        typed = f" ({dividends.note})" if dividends.kind == "assumption" else ""
-        why = f"dividends paid {_usd(dividends.value)}{typed}"
+        why = f"dividends paid {_usd(dividends.value)}"
     return CheckResult("D1", "fail", dividends.value, 0.0, (dividends,),
                        f"No dividend paid in the fiscal year ended {year}: {why}.")
 
@@ -193,8 +192,10 @@ def _unusable(fact: Fact) -> str:
     if fact.kind == "missing":
         return fact.note
     if fact.metric in PAYMENTS and fact.value < 0:
-        return (f"negative ({_usd(fact.value)}), but a payment is filed as a positive amount; see the sign warning "
-                "on the sources page")
+        if fact.kind == "reported":  # only a figure read from a filing has the data layer's SIGN warning
+            return (f"negative ({_usd(fact.value)}), but a payment is filed as a positive amount; see the sign "
+                    "warning on the sources page")
+        return f"negative ({_usd(fact.value)}), but a payment is a positive amount"
     return ""
 
 
@@ -231,7 +232,8 @@ def _pct(ratio: float) -> str:
 
 def _limit(ratio: float) -> str:
     """A threshold from the settings in percent, without misleading rounding: "10%", "12.5%"."""
-    return (f"{ratio * 100:.2f}".rstrip("0").rstrip(".") or "0") + "%"
+    # Two decimals, then drop trailing zeros: 10.00 → "10", 12.50 → "12.5", 0.00 → "0".
+    return f"{ratio * 100:.2f}".rstrip("0").rstrip(".") + "%"
 
 
 def _day(day: date) -> str:

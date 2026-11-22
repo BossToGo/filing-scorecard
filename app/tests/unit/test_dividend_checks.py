@@ -351,6 +351,8 @@ def test_t9_a_positive_dividend_typed_in_by_a_user_passes_d1():
                  None, None, None, None, "typed in by the user")
     d1 = results(company([30, 32, 34, 36, 36]).with_fact(typed))["D1"]
     assert d1.status == "pass"
+    # Review round 2: the 40 replaces the reported 36, so check it is the figure used.
+    assert d1.value == pytest.approx(40 * MILLION) and d1.inputs[0].kind == "assumption"
 
 
 def test_t10_a_missing_middle_year_leaves_d1_d4_d5_d6_assessed():
@@ -382,3 +384,27 @@ def test_explanations_do_not_round_in_a_misleading_way():
     assert "USD 40,000" in tiny.explanation and "USD 0 million" not in tiny.explanation
     d3 = results(company([50, 50, 50, 50, 44.9]))["D3"]
     assert "−10.20%" in d3.explanation and "-" not in d3.explanation  # one minus sign everywhere
+
+
+# --- review round 2 (22 November): findings 1 and 3, approved by Flo -------------------------------------------
+
+
+def test_a_zero_assumption_that_is_not_the_nil_is_shown_as_a_plain_zero():
+    # Only the data layer's nil (plan Q1) gets the "treated as nil" sentence; any other zero is just "USD 0".
+    other = Fact("dividends_paid", 0.0, "USD", date(2025, 1, 1), date(2025, 12, 31), "assumption", None, None,
+                 None, None, None, "set to zero for a test")
+    r = results(company([30, 32, 34, 36, 36]).with_fact(other))
+    assert r["D1"].status == "fail"
+    assert "treated as nil" not in r["D1"].explanation and "set to zero" not in r["D1"].explanation
+    assert "USD 0" in r["D1"].explanation
+    assert statuses(r, LATER) == ["not_applicable"] * 5
+
+
+def test_the_sign_warning_is_named_only_for_a_figure_read_from_a_filing():
+    # The data layer raises its SIGN warning only for reported figures (resolver.py).
+    negative = Fact("capital_expenditure", -50 * MILLION, "USD", date(2025, 1, 1), date(2025, 12, 31),
+                    "assumption", None, None, None, None, None, "set for a test")
+    d6 = results(company([120, 122, 124, 126, 130]).with_fact(negative))["D6"]
+    assert d6.status == "insufficient_data"
+    assert "positive amount" in d6.explanation and "sign warning" not in d6.explanation
+
