@@ -36,7 +36,10 @@ premium 5.0%, tax 21%, terminal growth 2.5%; benchmarks: unlevered beta 0.90, RO
 P/E 20.0, EV/EBITDA 13.0, P/B 4.0, market dividend yield 1.5%).
 
 **Rule 14.5:** these values may be used in tests only after the owner named in each row has recalculated them by
-hand or in Excel and signed off in slice S0c. If a recalculation disagrees, the recalculation wins and SPEC
+hand or in Excel and signed off in slice S0c. In code: `tests.fixtures.synthetic.expected_check("P3")` refuses to
+return a value until A has recorded its owner's sign-off (a review comment on the S0c pull request) under
+`sign_off` in `app/tests/fixtures/synthetic_co.yaml`. Owners: B for P and H rows and the strengths and
+points to watch, C for D, V, W and F rows, D for AC3, E for CALC-S. If a recalculation disagrees, the recalculation wins and SPEC
 Appendix A is corrected by pull request. Tolerance: half a unit of the last digit shown.
 
 Independent cross-check (not a sign-off): on 2026-11-18 Claude recomputed every row below in a separate script
@@ -110,5 +113,5 @@ that shares no code with the app. All agree within the rounding shown (discounte
 | PE2 | Thousands read as millions (or dollars as millions) | Caught by the unit rule and a reconciliation figure | passing (tests: test_planted_amounts_are_kept_in_dollars_exactly_as_filed, test_only_units_as_filed_are_accepted); reconciliation: S15, Coca-Cola 6 of 6 match (`app/tests/reconciliation/KO.yaml`), 4 companies to do |
 | PE3 | Wrong fiscal-year label (prior-year comparative carrying the filing's `fy`) | Fiscal year taken from the period end date (§5.3.2) | passing (tests: test_planted_a_wrong_fiscal_year_label_is_ignored, test_a_comparative_labelled_with_a_later_fiscal_year_lands_in_its_own_year) |
 | PE4 | Restated figure | Latest filed value, original kept (§5.3.4) | passing (test: test_planted_a_restated_figure_uses_the_latest_filing_and_keeps_the_original) |
-| PE5 | Sign flipped (e.g. capital expenditure positive vs negative) | Caught by a test on the sign convention | passing (tests: test_planted_a_negative_capital_expenditure_is_kept_as_filed_and_flagged, test_a_positive_payment_raises_no_sign_warning) |
+| PE5 | Sign flipped (e.g. capital expenditure positive vs negative) | Caught by a test on the sign convention | passing (tests: test_planted_a_negative_capital_expenditure_is_kept_as_filed_and_flagged, test_a_positive_payment_raises_no_sign_warning); a negative interest expense is flagged and not used (test: test_planted_a_negative_interest_expense_is_flagged_and_not_used) |
 | PE6 | Percent against decimal | Ratios stored as decimals; a test fails on 40 instead of 0.40 | passing for settings (test: test_rates_are_decimals_not_percentages); the checks: S5–S9 |

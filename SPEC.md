@@ -145,6 +145,7 @@ Each figure is stored with: company, metric, value, unit, period start and end, 
 6. The app never adds up segment figures to make a total. No company-wide figure means `missing`.
 7. A tag fallback list is tried in order (section 6). If two tags give different values for the same period, the figure is flagged, not chosen silently.
 8. Per-share history is unreliable across share splits, because old filings are not restated. All multi-year growth checks therefore use totals (net income, total dividends paid), never per-share figures.
+9. The fiscal years used are consecutive. A gap of more than 380 days between two year ends (a year not filed, or a transition period on another form) ends the five-year window there and is flagged (`FY_GAP`): "four years earlier" must be four years. The period left out at a change of fiscal year end is flagged `FY_CHANGE`.
 
 ### 5.4 Mistakes we test for on purpose
 
@@ -163,20 +164,20 @@ These tags are a starting list written from memory of the US accounting taxonomy
 | Gross profit | `GrossProfit`, else revenue − cost of revenue (derived) |
 | Operating income | `OperatingIncomeLoss` |
 | Net income | `NetIncomeLoss` → `ProfitLoss` |
-| Interest expense | `InterestExpense` → `InterestExpenseNonoperating` → `InterestExpenseDebt` |
+| Interest expense | `InterestExpense` → `InterestExpenseNonoperating` → `InterestExpenseDebt`. An expense is filed as a positive amount: a negative value is flagged (`SIGN`) and not used (`missing`), because an interest cover built on it would change sign (Disney) |
 | Depreciation and amortisation | `DepreciationDepletionAndAmortization` → `DepreciationAndAmortization` → `DepreciationAmortizationAndAccretionNet`, else `Depreciation` + `AmortizationOfIntangibleAssets` (derived, and labelled as possibly below the cash flow line; an amortisation not reported counts as nil and is noted, unless it is reported for another year, then the figure is missing; no `Depreciation` means missing). Not used by any check since version 2.3; shown on the sources page |
 | Total assets | `Assets` |
 | Current assets, current liabilities | `AssetsCurrent`, `LiabilitiesCurrent` |
 | Total liabilities | `Liabilities`, else total assets − total equity including non-controlling interests − temporary equity if reported (redeemable stakes between liabilities and equity; derived) |
 | Equity | `StockholdersEquity`; total equity: `StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest` |
 | Cash | `CashAndCashEquivalentsAtCarryingValue` |
-| Financial debt | `LongTermDebtNoncurrent` + `LongTermDebtCurrent` + `ShortTermBorrowings` (+ `CommercialPaper`), else `LongTermDebt` + short-term items (derived). Short-term borrowings equal to total − non-current, with no current-maturities tag, are the current part of long-term debt and are not added again (Marvell). Operating leases are excluded. The full rules, with cited cases, are in `src/data/tag_map.yaml`. |
-| Current financial debt | Current maturities of long-term debt + short-term borrowings, derived from the debt parts above. When only a long-term total is reported, `DebtCurrent` (all current debt, short-term borrowings included) gives the current part, and the principal `DebtInstrumentCarryingAmount` decides whether the total already includes it: total + `DebtCurrent` within 1% of the principal means the total was only the non-current part (Tesla), otherwise the debt is flagged (section 10). Not used by any check since version 2.3 (equity method); shown on the sources page |
+| Financial debt | `LongTermDebtNoncurrent` + `LongTermDebtCurrent` + `ShortTermBorrowings` (+ `CommercialPaper`), else `LongTermDebt` + short-term items (derived). Short-term borrowings equal (within 1%) to the current maturities of long-term debt, whether those are tagged or are total − non-current, are that same balance-sheet line under a second tag and are not added again (Marvell, AMD, IBM, T-Mobile). A reported total below its own non-current part is not a total: it is flagged and the parts are used (Seagate). Operating leases are excluded. The full rules, with cited cases, are in `src/data/tag_map.yaml`. |
+| Current financial debt | Current maturities of long-term debt + short-term borrowings, derived from the debt parts above. When only a long-term total is reported, `DebtCurrent` (all current debt, short-term borrowings included) gives the current part, and the principal `DebtInstrumentCarryingAmount` decides whether the total already includes it: total + `DebtCurrent` within 1% of the principal means the total was only the non-current part (Tesla), otherwise the debt is flagged (section 10). Not used by any check since version 2.3 (equity method); shown on the sources page Never the difference of two tags of which only one includes finance leases (Micron): then the current part is `missing`. |
 | Receivables, inventory, payables | `AccountsReceivableNetCurrent`, `InventoryNet`, `AccountsPayableCurrent` (not used by any check since version 2.3; shown on the sources page) |
 | Net property, plant and equipment | `PropertyPlantAndEquipmentNet` (likewise) |
 | Operating cash flow | `NetCashProvidedByUsedInOperatingActivities` |
 | Capital expenditure | `PaymentsToAcquirePropertyPlantAndEquipment` |
-| Dividends paid | `PaymentsOfDividends` → `PaymentsOfDividendsCommonStock` |
+| Dividends paid | `PaymentsOfDividends` → `PaymentsOfDividendsCommonStock` → `PaymentsOfOrdinaryDividends` (Johnson & Johnson, Pfizer, Qualcomm, GE and Accenture file only the last one) |
 | Shares | `dei:EntityCommonStockSharesOutstanding` from the cover page of the latest annual report (dated within 200 days after the end of FY0; Mastercard's last single total is from 2010), else `WeightedAverageNumberOfDilutedSharesOutstanding` of the latest year (derived, with a warning). Fewer than 100,000 shares is a filing in the wrong scale and counts as missing |
 | Minority interests | `MinorityInterest` (absent: "not reported, treated as nil", labelled; see section 8.3). `PreferredStockValue` and `EquityMethodInvestments` are still read for the sources page but not used since version 2.3 |
 

@@ -153,6 +153,11 @@ class _Resolver:
         if spec.get("outflow") and value < 0:
             self.warnings.append(f"SIGN: {metric} {fy_end} is negative ({_money(value)}); a payment is filed as a "
                                  "positive amount, check the filing")
+        if spec.get("positive_only") and value < 0:  # e.g. interest expense: a ratio built on it would change sign
+            self.warnings.append(f"SIGN: {metric} {fy_end} is negative ({_money(value)}); an expense is filed as a "
+                                 "positive amount, so the figure is not used; check the filing")
+            return self._missing(metric, fy_end, f"{tag} is filed as a negative amount ({_money(value)}, "
+                                 f"{latest['accn']}): its sign cannot be relied on, so the figure is not used")
         return Fact(
             metric=metric,
             value=value,
@@ -195,7 +200,16 @@ class _Resolver:
                 self.warnings.append("NO_ANNUAL_DATA: no annual 10-K figures found")
             return []
         kept: list[date] = []
+        newer: date | None = None  # the period end looked at just before, kept or left out
         for end in sorted(ends, reverse=True):
+            gap, newer = newer is not None and (newer - end).days > self.settings["flow_period_max_days"], end
+            if gap:
+                # A missing year (or a transition period filed on another form): "four years earlier" would span
+                # more than four years, so the window ends at the gap (audit of 21 November 2026). The period left
+                # out at a change of year end is not a gap: that case keeps its older years, flagged FY_CHANGE.
+                self.warnings.append(f"FY_GAP: no annual 10-K figures between the fiscal years ending {end} and "
+                                     f"{kept[-1]}: only the years after the gap are used")
+                break
             if kept and (kept[-1] - end).days < self.settings["flow_period_min_days"]:
                 self.warnings.append(f"FY_CHANGE: the 12-month period ending {end} overlaps the fiscal year ending "
                                      f"{kept[-1]}: the company changed its fiscal year end, so that period is left out")
@@ -232,7 +246,7 @@ class _Resolver:
             self.warnings.append(f"DERIVED: {metric} is calculated, not reported, for {', '.join(map(str, ends))}")
         self.tag_switches()
         if fy_ends:
-            self.bridge_items(fy_ends[-1])
+            self.bridge_items(fy_ends[-1], fy_ends[-2] if len(fy_ends) > 1 else None)
             self.shares(fy_ends[-1])
         return self.company_data()
 
@@ -368,13 +382,27 @@ class _Resolver:
         short_total = part("short-term borrowings", parts["short_term_total"])
         short_parts = [f for tag in parts["short_term_parts"] if (f := part(tag, [tag])) is not None]
 
+        tolerance = self.settings["debt_check_warning"]
+
+        def same_definition(a, b):  # the newer tag names include finance leases, the older ones do not (plan Q5)
+            return ("CapitalLeaseObligations" in a.tag) == ("CapitalLeaseObligations" in b.tag)
+
+        # A "total" smaller than its own non-current part is not a total (Seagate 2022: 964 against 5,062, audit of
+        # 21 November 2026): it is flagged and left out, and the parts below are used.
+        if (total is not None and noncurrent is not None and not inside and same_definition(total, noncurrent)
+                and total.value < noncurrent.value * (1 - tolerance)):
+            self.warnings.append(f"DEBT_CHECK: {fy_end}: {total.tag} {_money(total.value)} is below its non-current "
+                                 f"part {_money(noncurrent.value)}, so it is not used as the total; check the 10-K")
+            total = None
+        comparable = total is not None and noncurrent is not None and same_definition(total, noncurrent)
+
         notes = [f"company-specific: {override['reason']}"] if inside else []
         if total is not None:
             long_term = total.value
             notes.append(_source(total))
             if noncurrent is not None and current is not None and not inside:
                 parts_sum = noncurrent.value + current.value
-                if _relative_difference(total.value, parts_sum) > self.settings["debt_check_warning"]:
+                if _relative_difference(total.value, parts_sum) > tolerance:
                     self.warnings.append(f"DEBT_CHECK: {fy_end}: total long-term debt {_money(total.value)} differs "
                                          f"from non-current + current {_money(parts_sum)}; check the 10-K")
         elif noncurrent is not None and current is not None:
@@ -393,10 +421,16 @@ class _Resolver:
                 f"current debt on the balance sheet = {total.tag} − {noncurrent.tag}"
         elif current is not None:
             maturities, maturities_note = current.value, _source(current)
-        elif total is not None and noncurrent is not None:
+        elif comparable:
             maturities, maturities_note = total.value - noncurrent.value, f"{total.tag} − {noncurrent.tag}"
         else:
             maturities, maturities_note = None, ""
+        why_no_current = "current maturities of long-term debt not reported"
+        if maturities is None and total is not None and noncurrent is not None and not comparable:
+            # Micron: LongTermDebt (without finance leases) minus LongTermDebtAndCapitalLeaseObligations (with them)
+            # would be negative. The difference of two definitions is not a current part.
+            why_no_current = (f"not derivable: of {total.tag} and {noncurrent.tag} only one includes finance leases, "
+                              "so their difference is not the current part of the debt")
         # Only a long-term total and no current maturities: DebtCurrent (all current debt) gives the current part,
         # and the principal (DebtInstrumentCarryingAmount) tells whether the total already includes it (Tesla's
         # LongTermDebt does not). Without a principal that settles it, the debt is flagged.
@@ -406,7 +440,6 @@ class _Resolver:
         total_is_noncurrent = False
         if all_current is not None:
             principal = part("principal", parts.get("principal_check", []))
-            tolerance = self.settings["debt_check_warning"]
 
             def close(value):
                 return principal is not None and principal.value and \
@@ -421,17 +454,17 @@ class _Resolver:
                 self.warnings.append(f"DEBT_CHECK: {fy_end}: cannot tell whether {total.tag} {_money(total.value)} "
                                      f"includes the current debt {_source(all_current)}; check the 10-K")
 
-        # Short-term borrowings equal to total − non-current, with no current-maturities tag, are the current part of
-        # long-term debt filed under another name (Marvell): already inside the total.
-        short_is_current_part = (not inside and total is not None and noncurrent is not None and current is None
-                                 and short_total is not None and short_total.value > 0
-                                 and _relative_difference(total.value - noncurrent.value, short_total.value)
-                                 <= self.settings["debt_check_warning"])
+        # Short-term borrowings equal (within the tolerance) to the current maturities of long-term debt are that same
+        # balance-sheet line filed under a second name, whether the maturities are tagged (AMD, IBM, T-Mobile: audit of
+        # 21 November 2026) or are total − non-current (Marvell). They are already counted, so nothing is added.
+        short_is_current_part = (not inside and short_total is not None and short_total.value > 0
+                                 and maturities is not None and maturities > 0
+                                 and _relative_difference(maturities, short_total.value) <= tolerance)
         if inside:
             short_term, short_notes = 0, ["short-term borrowings classified inside long-term debt"]
         elif short_is_current_part:
             short_term, short_notes = 0, [f"nothing added for {_source(short_total)}: it is the current part of "
-                                          f"{total.tag}, already inside it"]
+                                          f"long-term debt ({maturities_note}), already counted inside it"]
         elif total_is_noncurrent:
             short_term, short_notes = 0, ["short-term borrowings are inside DebtCurrent"]
         elif short_total is not None:
@@ -455,22 +488,40 @@ class _Resolver:
             current_debt = self._derived("current_financial_debt", maturities + short_term, fy_end,
                                          " + ".join([maturities_note, *short_notes]))
         else:
-            return debt, self._missing("current_financial_debt", fy_end,
-                                       "current maturities of long-term debt not reported")
+            return debt, self._missing("current_financial_debt", fy_end, why_no_current)
         if current_debt.value > debt.value:
             self.warnings.append(f"DEBT_CHECK: {fy_end}: current debt {_money(current_debt.value)} is larger than "
                                  f"total debt {_money(debt.value)}; check the 10-K")
         return debt, current_debt
 
-    def bridge_items(self, fy0: date) -> None:
+    def bridge_items(self, fy0: date, previous: date | None = None) -> None:
         for metric in self.map["line_items"]:
             spec = self.spec(metric)
             if not spec.get("bridge"):
                 continue
-            fact = self.reported(metric, spec, fy0) or Fact(
+            fact = self.reported(metric, spec, fy0)
+            if fact is None and metric == "minority_interest":
+                fact = self._minority_gap(spec, fy0, previous)
+            self.items.setdefault(metric, {})[fy0] = fact or Fact(
                 metric, 0, "USD", None, fy0, "assumption", None, None, None, None, self.retrieved,
                 f"not reported under {', '.join(spec['tags'])}, treated as nil (SPEC §8.3)")
-            self.items.setdefault(metric, {})[fy0] = fact
+
+    def _minority_gap(self, spec: dict, fy0: date, previous: date | None) -> Fact | None:
+        """SPEC v2.3 §8.3, when no minority interest is reported for FY0: missing if it was reported for FY-1 (it
+        cannot be assumed to have vanished); a record if total equity shows one; else None (treated as nil)."""
+        for tag in spec["tags"]:
+            before = self._annual(tag, "instant").get(previous) if previous else None
+            if before:
+                last = max(before, key=_order)
+                return self._missing("minority_interest", fy0, f"{tag} {_money(last['val'])} ({last['accn']}) is "
+                                     f"reported for {previous} but nothing for {fy0}: not treated as nil (SPEC §8.3)")
+        total, equity = (self.items.get(name, {}).get(fy0) for name in ("total_equity", "equity"))
+        if (total is not None and equity is not None and total.kind == equity.kind == "reported"
+                and total.value - equity.value > self.settings["minority_untagged_warning"] * abs(equity.value)):
+            self.warnings.append(
+                f"MINORITY_UNTAGGED: {fy0}: total equity {_money(total.value)} is above equity {_money(equity.value)} "
+                f"but no {', '.join(spec['tags'])} is reported, so none is subtracted in the valuation (SPEC §8.3)")
+        return None
 
     def shares(self, fy0: date) -> None:
         tags = self.map["shares"]
