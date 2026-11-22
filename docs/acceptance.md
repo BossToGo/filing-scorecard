@@ -85,7 +85,7 @@ that shares no code with the app. All agree within the rounding shown (discounte
 
 ### S7 edge cases (test companies)
 
-Hand working by Flo (C), 22 November 2026, given in his S7 session; written down here by Claude Code, **to be checked by Flo before the pull request**. Test companies in `app/tests/unit/test_dividend_checks.py`: dividends paid in USD millions, FY-4 → FY0; every figure not listed is net income 500, operating cash flow 600 and capital expenditure 100 in every year. Rules and decisions: `app/src/checks/dividend.py`.
+Hand working by Flo (C), 22 November 2026, given in his S7 session; written down here by Claude Code and checked by Flo on 22 November 2026 (one wording corrected, S7-A). Test companies in `app/tests/unit/test_dividend_checks.py`: dividends paid in USD millions, FY-4 → FY0; every figure not listed is net income 500, operating cash flow 600 and capital expenditure 100 in every year. Rules and decisions: `app/src/checks/dividend.py`.
 
 | Id | Test company | Hand working | Expected | Test |
 |---|---|---|---|---|
@@ -101,7 +101,7 @@ Hand working by Flo (C), 22 November 2026, given in his S7 session; written down
 | S7-9 | 80, 82, 84, 86, 90; net income FY0 100, then 0, then −50 | 90 ÷ 100 = 90.00%, not < 90%; net income ≤ 0: fail, no ratio | D5 fail (90.00%); fail; fail | `test_9_d5_fails_at_exactly_90_percent_and_when_net_income_is_zero_or_negative` |
 | S7-10 | 120, 122, 124, 126, 130; FY0 (a) cash flow 215, capex 85; (b) capex missing; (c) 100, 150 | (a) 130 ≤ 215 − 85 = 130; (b) capex missing; (c) 130 ≤ 100 − 150 = −50 is false | D6 (a) pass, 130 against 130; (b) insufficient data; (c) fail, 130 against −50 | `test_10_d6_dividends_against_operating_cash_flow_minus_capex` |
 | S7-11 | 30, 32, 34, 36, 40; net income FY0 100; payout limit 30% | 40 ÷ 100 = 40% < 30% is false | D5 fail, 40% against 30% | `test_11_a_changed_payout_limit_changes_d5` |
-| S7-A | 30, 32, 34, 36, −10 | Negative FY0 payment: sign error; every check uses FY0 | all six insufficient data | `test_a_negative_fy0_dividend_is_insufficient_data_everywhere` |
+| S7-A | 30, 32, 34, 36, −10 | Negative FY0 payment: sign error. The negative FY0 dividend makes D1 and D3–D6 insufficient data because each uses that figure. D2 is already insufficient data because it is unassessed in S7 | all six insufficient data | `test_a_negative_fy0_dividend_is_insufficient_data_everywhere` |
 | S7-B | 30, 32, −34, 36, 38 | Only D3 uses FY-2; 38 > 0; 38 > 30; 38 ÷ 500 = 7.60%; 38 ≤ 500 | D1 pass; D2, D3 insufficient data; D4, D5, D6 pass | `test_b_a_negative_dividend_in_fy_minus_2_blocks_only_d3` |
 | S7-C | 0, 0, 0, 0, 5 | Every step starts at 0, so none is counted; no cut | D3 pass, no value | `test_c_d3_passes_with_no_value_when_every_step_starts_from_zero` |
 | S7-T1 | 120, 122, 124, 126, 130; FY0 cash flow 100, capex −50 | Negative capex: sign error, used by D6 only; 130 > 0; four rises; 130 > 120; 130 ÷ 500 = 26% | D1, D3, D4, D5 pass; D6 insufficient data | `test_t1_a_negative_capex_is_a_sign_error_and_d6_is_insufficient_data` |
