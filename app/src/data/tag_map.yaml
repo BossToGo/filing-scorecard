@@ -2,16 +2,20 @@
 #
 # For every fiscal year, the tags of a line item are tried in order and the first one with an annual 10-K value is
 # used (Apple's `Revenues` stops in 2018, so a per-company choice would lose years). If a later tag in the list has
-# a different value for the same period, the figure is flagged (SPEC §5.3.7).
+# a different value for the same period, the difference is written in the figure's note (SPEC §5.3.7: flagged, not
+# chosen silently). It is also raised as a TAG_CONFLICT warning only when the tags should agree; lists marked
+# `same_definition: false` hold fallbacks that measure something slightly different (S3, docs/coverage.md).
 # kind: flow = covers a fiscal year (350 to 380 days); instant = a balance at the fiscal year end date.
 # Change a list only with a reason (a real file looked at, or docs/coverage.md), written next to it.
 
 line_items:
   revenue:
     kind: flow
+    same_definition: false  # Revenues may include revenue outside contracts with customers
     tags: [Revenues, RevenueFromContractWithCustomerExcludingAssessedTax, SalesRevenueNet]
   cost_of_revenue:
     kind: flow
+    same_definition: false  # CostOfGoodsAndServicesSold can be a part of CostOfRevenue
     tags: [CostOfRevenue, CostOfGoodsAndServicesSold]
   gross_profit:
     kind: flow
@@ -21,14 +25,27 @@ line_items:
     tags: [OperatingIncomeLoss]
   net_income:
     kind: flow
+    same_definition: false  # ProfitLoss includes the non-controlling interests' share
     tags: [NetIncomeLoss, ProfitLoss]
   interest_expense:
     kind: flow
     # Apple reports no interest expense tag after FY2023 (S0b): its interest expense is then missing, not guessed.
-    tags: [InterestExpense, InterestExpenseNonoperating, InterestExpenseDebt]
+    same_definition: false  # InterestExpenseDebt covers interest on debt only, so it may be a little smaller
+    # ... but a later tag more than 50% larger means the figure used is net of interest income or partial (Linde,
+    # S3 review): that is raised as a TAG_CONFLICT.
+    later_larger_warning: 0.5
+    # InterestAndDebtExpense fills gaps only, last (7 companies of the S3 sample report it; for some it is net).
+    tags: [InterestExpense, InterestExpenseNonoperating, InterestExpenseDebt, InterestAndDebtExpense]
   depreciation_amortization:
     kind: flow
     tags: [DepreciationDepletionAndAmortization, DepreciationAndAmortization, DepreciationAmortizationAndAccretionNet]
+    # Else derived: Depreciation + AmortizationOfIntangibleAssets. An amortisation absent this year counts as nil
+    # (noted) unless it is reported for another year, then the figure is missing; no Depreciation means missing.
+    # 11 of the 30 verified companies of the S3 sample (e.g. Microsoft, AbbVie, Intel, Union Pacific) have no
+    # combined tag for their latest year; their cash flow line uses a company-specific tag that the SEC company
+    # facts do not carry (S3 cache, 2026-11-19). The sum can be below that line, which can also hold e.g. the
+    # amortisation of finance-lease assets or other non-cash items; the figure is labelled derived and says so.
+    parts: [Depreciation, AmortizationOfIntangibleAssets]
   total_assets:
     kind: instant
     tags: [Assets]
@@ -40,6 +57,8 @@ line_items:
     tags: [LiabilitiesCurrent]
   equity:
     kind: instant
+    # else total equity − minority interest (derived): 9 companies of the S3 sample (e.g. Broadcom, Visa, P&G)
+    # report only total equity including non-controlling interests.
     tags: [StockholdersEquity]
   total_equity:
     kind: instant
@@ -47,9 +66,15 @@ line_items:
   total_liabilities:
     kind: instant
     tags: [Liabilities]  # else total assets − total equity (derived); KO, MCD and AMZN have no `Liabilities`
+    # ... minus temporary equity (redeemable stakes between liabilities and equity), if reported: Walmart and Thermo
+    # Fisher (second-source audit, 2026-11-19). The first tag found is used.
+    less: [TemporaryEquityCarryingAmountIncludingPortionAttributableToNoncontrollingInterests,
+           TemporaryEquityCarryingAmountAttributableToParent, RedeemableNoncontrollingInterestEquityCarryingAmount]
   cash:
     kind: instant
-    tags: [CashAndCashEquivalentsAtCarryingValue]
+    same_definition: false  # the fallback includes restricted cash
+    # 7 companies of the S3 sample (e.g. Chevron, P&G, GE) report only cash including restricted cash.
+    tags: [CashAndCashEquivalentsAtCarryingValue, CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents]
   receivables:
     kind: instant
     tags: [AccountsReceivableNetCurrent]
@@ -67,11 +92,13 @@ line_items:
     tags: [NetCashProvidedByUsedInOperatingActivities]
   capital_expenditure:
     kind: flow
+    same_definition: false  # ProductiveAssets can include intangible assets
     outflow: true  # filed as a positive payment; a negative value is flagged (SPEC §5.4, sign error)
     # Nvidia (from 2012) and Amazon (from 2016) file capital expenditure as PaymentsToAcquireProductiveAssets (S0b).
     tags: [PaymentsToAcquirePropertyPlantAndEquipment, PaymentsToAcquireProductiveAssets]
   dividends_paid:
     kind: flow
+    same_definition: false  # PaymentsOfDividends can include preferred dividends
     outflow: true
     tags: [PaymentsOfDividends, PaymentsOfDividendsCommonStock]
   minority_interest:
@@ -103,6 +130,13 @@ debt:
   long_term_total: [LongTermDebt, LongTermDebtAndCapitalLeaseObligationsIncludingCurrentMaturities]
   short_term_total: [ShortTermBorrowings]  # when present, commercial paper is assumed to be inside it
   short_term_parts: [CommercialPaper, OtherShortTermBorrowings]
+  # When the long-term total is the only long-term tag and no current maturities are reported: DebtCurrent is all
+  # current debt (short-term borrowings included), and the principal tells whether the total already includes it.
+  # Tesla's LongTermDebt is only the non-current part: 6,584 + DebtCurrent 1,569 = 8,153 against the principal
+  # 8,177 (USD m, 10-K 0001628280-26-003952). Within 1% (debt_check_warning) of the principal: settled; otherwise
+  # DEBT_CHECK. Not used when only the non-current part is reported (non-current + DebtCurrent: a group decision).
+  current_total: [DebtCurrent]
+  principal_check: [DebtInstrumentCarryingAmount]
 
 # Company-specific tag order, only where a filing shows that the general order picks the wrong figure. Each entry
 # cites the filing. A difference explained here is recorded in the figure's note but not raised as a warning.
