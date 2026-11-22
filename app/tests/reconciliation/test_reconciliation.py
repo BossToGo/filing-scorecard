@@ -16,6 +16,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+from src.contracts import Fact
 from src.data.company import DEMO_TICKERS, load_company
 
 FOLDER = Path(__file__).parent
@@ -74,6 +75,20 @@ def problems(record: dict, ticker: str) -> list[str]:
     return found
 
 
+def none_problem(name: str, fact: Fact | None) -> str | None:
+    """Why the app does not show "none" for a line the filing does not have; None when it does. Dividends: the nil
+    of plan Q1, a value of 0 labelled "treated as nil", so D1 says "no dividend paid" (SPEC v2.4 §7). Any other
+    figure: missing, never 0 (SPEC §5.2)."""
+    shown = "no figure" if fact is None else f"{fact.value!r} ({fact.kind})"
+    if name == "dividends_paid":
+        if fact is None or fact.value != 0 or fact.kind != "assumption" or "treated as nil" not in fact.note:
+            return f"{name}: the filing shows none, so the app should show the nil (0, \"treated as nil\"); it shows {shown}"
+        return None
+    if fact is not None and fact.value is not None:
+        return f"{name}: the filing shows none, so the app should show it as missing; it shows {shown}"
+    return None
+
+
 @lru_cache(maxsize=None)
 def app_data(ticker: str):
     return load_company(ticker, demo=True)
@@ -98,10 +113,8 @@ def test_the_app_reads_the_same_figure_from_the_same_filing(path, name):
     by_hand = record["figures"][name]
     fact = app_data(path.stem).fact(name, as_date(record["fiscal_year_end"]))
     app_value = None if fact is None or fact.value is None else fact.value / 1_000_000
-    if by_hand["value"] is None:
-        # The filing has no such line (e.g. no dividends): the app must show none too. Missing or nil are both
-        # accepted until plan Q1 is decided; test_amazon_shows_no_dividend_paid below tracks the difference.
-        assert app_value in (None, 0), f"{name}: the filing shows none, the app shows {app_value:,.1f}"
+    if by_hand["value"] is None:  # the filing has no such line (e.g. no dividends): the app must show none too
+        assert none_problem(name, fact) is None, none_problem(name, fact)
         return
     assert app_value is not None, f"{name}: read by hand as {by_hand['value']:,}, missing in the app"
     assert abs(app_value - by_hand["value"]) <= TOLERANCE_MILLIONS, (
@@ -112,21 +125,32 @@ def test_the_app_reads_the_same_figure_from_the_same_filing(path, name):
 
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError,
-                   reason="plan Q1 open: Amazon's dividends are still a missing figure, not a nil")
 def test_amazon_shows_no_dividend_paid():
     """Amazon's 10-K has no dividends line (E's review of pull request #16). SPEC §7 wants D1 to fail with "no
-    dividend paid", so the data layer must give a value of 0 there, not a missing figure (which would give
-    "insufficient data"). How the nil is labelled is for plan Q1 to decide; whatever the rule, it may only apply
-    when the filing shows no dividend under any tag (Johnson & Johnson files its dividends under a third tag: audit
-    of 21 November 2026).
-
-    Expected to fail until Q1 is decided and built. Strict, so it turns red the day it starts passing: then remove
-    the marker and make the null-value branch above require the nil. Only an AssertionError counts as the expected
-    failure: a missing file or any other error is a real failure."""
+    dividend paid", so the data layer gives the nil of plan Q1 (built in pull request #21), not a missing figure
+    (which would give "insufficient data"). The nil only applies when the filing shows no dividend under any tag
+    (Johnson & Johnson files its dividends under a third tag: audit of 21 November 2026)."""
     data = app_data("AMZN")
     fact = data.fact("dividends_paid", data.fiscal_years("revenue")[-1])
-    assert fact is not None and fact.value == 0
+    assert none_problem("dividends_paid", fact) is None, none_problem("dividends_paid", fact)
+
+
+def nil_or_missing(metric: str, kind: str) -> Fact:
+    value, note = (0, "not reported, treated as nil") if kind == "assumption" else (None, "no annual 10-K figure")
+    return Fact(metric, value, "USD", None, date(2025, 12, 31), kind, None, None, None, None, None, note)
+
+
+@pytest.mark.parametrize("name, fact, ok", [
+    ("dividends_paid", nil_or_missing("dividends_paid", "assumption"), True),
+    ("dividends_paid", nil_or_missing("dividends_paid", "missing"), False),  # D1 would say "insufficient data"
+    ("dividends_paid", None, False),
+    ("operating_income", nil_or_missing("operating_income", "missing"), True),
+    ("operating_income", None, True),
+    ("operating_income", nil_or_missing("operating_income", "assumption"), False),  # missing is never 0
+], ids=["dividend-nil", "dividend-missing", "dividend-absent", "other-missing", "other-absent", "other-zero"])
+def test_a_line_the_filing_lacks_shows_as_the_nil_for_dividends_and_as_missing_otherwise(name, fact, ok):
+    assert (none_problem(name, fact) is None) is ok, none_problem(name, fact)
+
 
 GOOD = {
     "company": "KO", "read_by": "Igor (A)", "date_read": "2026-11-21", "fiscal_year_end": "2025-12-31",

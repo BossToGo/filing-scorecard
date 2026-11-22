@@ -49,10 +49,10 @@ Coca-Cola has it, for D6 (Flo's S7 review). The other files need only the six.
 **Units:** write USD millions. If a statement is in thousands, divide by 1,000 and say so in a `note`.
 **No such line** (e.g. a company that pays no dividend): `value: null`, the page of the statement you checked,
 `line_in_filing: none`, and a `note` saying what the filing shows. The test then expects the app to show none too.
-Until plan Q1 is decided, "none" in the app can be a missing figure or a nil one ("not reported, treated as nil");
-for Amazon's dividends the customer should see "no dividend paid", which needs the nil (SPEC §7, D1). A separate
-test marks this as pending: once Q1 is built, it requires the nil. The nil may only apply when the filing shows no
-dividend under any tag: a payer that uses another tag name must never be shown as paying none.
+For dividends, "none" in the app means the nil of plan Q1 (a value of 0 labelled "treated as nil", pull request
+#21), so the customer sees "no dividend paid" (SPEC §7, D1); for any other figure it means missing, never 0. The nil
+only applies when the filing shows no dividend under any tag: a payer that uses another tag name is never shown as
+paying none.
 
 ## Template
 
