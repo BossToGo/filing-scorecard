@@ -232,3 +232,30 @@ def test_a_company_without_any_fiscal_year_is_insufficient_data_everywhere():
     empty = CompanyData(ticker="NIL", cik="0000000002", name="No figures", sic=None, sic_description=None,
                         fiscal_year_end=None, latest_10k_filed=None, retrieved=None, items={})
     assert statuses(results(empty), ["D1"] + LATER) == ["insufficient_data"] * 6
+
+
+# --- negative dividends and D3 without an earlier dividend: Flo's decisions and hand results (22 November) ------
+# A negative dividends paid figure is a sign error (SPEC §5.4): the data layer keeps it as filed with a SIGN warning
+# and never flips it (§5.2: never guessed). Every check that uses that year is insufficient data, with the reason.
+
+
+def test_a_negative_fy0_dividend_is_insufficient_data_everywhere():
+    r = results(company([30, 32, 34, 36, -10]))
+    assert statuses(r, ["D1"] + LATER) == ["insufficient_data"] * 6
+    assert "sign" in r["D1"].explanation.lower()
+    assert not any("no dividend paid" in r[c].explanation.lower() for c in r)
+
+
+def test_b_a_negative_dividend_in_fy_minus_2_blocks_only_d3():
+    r = results(company([30, 32, -34, 36, 38]))
+    assert statuses(r, ["D1"] + LATER) == ["pass", "insufficient_data", "insufficient_data", "pass", "pass", "pass"]
+    assert "sign" in r["D3"].explanation.lower()
+    assert r["D4"].value == pytest.approx(38 * MILLION) and r["D4"].threshold == pytest.approx(30 * MILLION)
+    assert r["D5"].value == pytest.approx(0.0760, abs=PCT)
+    assert r["D6"].value == pytest.approx(38 * MILLION) and r["D6"].threshold == pytest.approx(500 * MILLION)
+
+
+def test_c_d3_passes_with_no_value_when_every_step_starts_from_zero():
+    d3 = results(company([0, 0, 0, 0, 5]))["D3"]
+    assert d3.status == "pass"
+    assert d3.value is None

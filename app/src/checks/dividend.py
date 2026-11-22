@@ -7,11 +7,12 @@ A pure function: `CompanyData` and the settings in, six `CheckResult`s out. No n
     results = dividend_checks(data, load_settings())     # D1, D2, D3, D4, D5, D6
 
 The rules, in order:
-1. D1: dividends paid in FY0 > 0. A missing figure gives "insufficient data"; a labelled nil (plan Q1, Amazon)
-   or a reported zero is a fail: "no dividend paid".
+1. D1: dividends paid in FY0 > 0. A missing or negative figure gives "insufficient data"; a labelled nil (plan Q1,
+   Amazon) or a reported zero is a fail: "no dividend paid".
 2. If D1 fails, D2 to D6 are "not applicable" and the area shows "no dividend paid", score 0 (SPEC §7). This
    applies only when D1 fails, never when its figure is missing: a payer is never shown as paying none.
-3. Otherwise each of D2 to D6 is assessed on its own; any input it needs that is missing gives "insufficient data".
+3. Otherwise each of D2 to D6 is assessed on its own; any input it needs that is missing, not in the data, or a
+   negative dividends paid figure gives "insufficient data".
 
 Decisions (Flo, 22 November 2026):
 - D2 is "not assessed" (status insufficient_data, plan Q9) until slice S9 adds the share price and the market yield.
@@ -19,6 +20,9 @@ Decisions (Flo, 22 November 2026):
   never a cut. Its value is the lowest year-on-year change among the years whose previous year is above zero.
 - A fiscal year that is not in the data is a missing input (D3 and D4 need five fiscal years, FY-4 to FY0).
 - D5 with net income zero or negative fails with the reason in plain words and shows no payout ratio.
+- A negative dividends paid figure is a sign error (SPEC §5.4) that the data layer keeps as filed and flags; it is
+  never flipped (§5.2: never guessed). Every check that uses that year is "insufficient data", naming the sign.
+- D3 passes with no value when no step starts from a year above zero (e.g. 0, 0, 0, 0, 5): no cut happened.
 
 FY0 is the latest fiscal year of revenue and FY-4 the fifth latest, as for every other check.
 """
@@ -69,8 +73,9 @@ def dividend_checks(data: CompanyData, settings: Mapping[str, Mapping]) -> tuple
 
 
 def _d1(dividends: Fact) -> CheckResult:
-    if dividends.kind == "missing":
-        return _insufficient("D1", (dividends,), [dividends])
+    blocked = _blocked("D1", (dividends,))
+    if blocked:
+        return blocked
     year = _day(dividends.period_end)
     if dividends.value > 0:
         return CheckResult("D1", "pass", dividends.value, 0.0, (dividends,),
@@ -90,9 +95,9 @@ def _d3(data: CompanyData, years: list[date], max_cut: float) -> CheckResult:
     facts = [_figure(data, "dividends_paid", end) for end in years]
     if len(years) < YEARS:
         return _too_few_years("D3", facts, len(years))
-    missing = [f for f in facts if f.kind == "missing"]
-    if missing:
-        return _insufficient("D3", facts, missing)
+    blocked = _blocked("D3", facts)
+    if blocked:
+        return blocked
 
     changes = []  # (change, last year, this year), only where last year is above zero
     for last, this in zip(facts, facts[1:]):
@@ -118,8 +123,9 @@ def _d4(data: CompanyData, years: list[date]) -> CheckResult:
         return _too_few_years("D4", [now], len(years))
     then = _figure(data, "dividends_paid", years[0])
     inputs = (now, then)
-    if now.kind == "missing" or then.kind == "missing":
-        return _insufficient("D4", inputs, [f for f in inputs if f.kind == "missing"])
+    blocked = _blocked("D4", inputs)
+    if blocked:
+        return blocked
     status = "pass" if now.value > then.value else "fail"
     return CheckResult("D4", status, now.value, then.value, inputs,
                        f"Dividends paid {_usd(now.value)} in the fiscal year ended {_day(now.period_end)}, against "
@@ -130,8 +136,9 @@ def _d5(data: CompanyData, fy0: date, max_payout: float) -> CheckResult:
     dividends = _figure(data, "dividends_paid", fy0)
     earnings = _figure(data, "net_income", fy0)
     inputs = (dividends, earnings)
-    if dividends.kind == "missing" or earnings.kind == "missing":
-        return _insufficient("D5", inputs, [f for f in inputs if f.kind == "missing"])
+    blocked = _blocked("D5", inputs)
+    if blocked:
+        return blocked
     if earnings.value <= 0:
         return CheckResult("D5", "fail", None, max_payout, inputs,
                            f"Net income is zero or negative ({_usd(earnings.value)} in the fiscal year ended "
@@ -148,9 +155,9 @@ def _d6(data: CompanyData, fy0: date) -> CheckResult:
     cash_flow = _figure(data, "operating_cash_flow", fy0)
     capex = _figure(data, "capital_expenditure", fy0)
     inputs = (dividends, cash_flow, capex)
-    missing = [f for f in inputs if f.kind == "missing"]
-    if missing:
-        return _insufficient("D6", inputs, missing)
+    blocked = _blocked("D6", inputs)
+    if blocked:
+        return blocked
     free_cash_flow = cash_flow.value - capex.value
     status = "pass" if dividends.value <= free_cash_flow else "fail"
     return CheckResult("D6", status, dividends.value, free_cash_flow, inputs,
@@ -172,10 +179,25 @@ def _figure(data: CompanyData, metric: str, fy_end: date) -> Fact:
                 f"no {LABELS[metric]} figure for the fiscal year ended {_day(fy_end)}")
 
 
-def _insufficient(check_id: str, inputs, missing: list[Fact]) -> CheckResult:
-    gaps = "; ".join(f"{LABELS.get(f.metric, f.metric)} for the fiscal year ended {_day(f.period_end)}: {f.note}"
-                     for f in missing)
-    return CheckResult(check_id, "insufficient_data", None, None, tuple(inputs), f"Insufficient data: {gaps}.")
+def _unusable(fact: Fact) -> str:
+    """Why a figure cannot be used, or "" if it can: it is missing (SPEC §5.2), or it is a negative dividends paid
+    figure, a sign error the data layer keeps as filed and flags (SPEC §5.4)."""
+    if fact.kind == "missing":
+        return fact.note
+    if fact.metric == "dividends_paid" and fact.value < 0:
+        return (f"negative ({_usd(fact.value)}), but a payment is filed as a positive amount; see the sign warning "
+                "on the sources page")
+    return ""
+
+
+def _blocked(check_id: str, inputs) -> CheckResult | None:
+    """"Insufficient data" naming each input that cannot be used, or None when all of them can."""
+    gaps = [f"{LABELS.get(f.metric, f.metric)} for the fiscal year ended {_day(f.period_end)}: {why}"
+            for f in inputs if (why := _unusable(f))]
+    if not gaps:
+        return None
+    return CheckResult(check_id, "insufficient_data", None, None, tuple(inputs),
+                       f"Insufficient data: {'; '.join(gaps)}.")
 
 
 def _too_few_years(check_id: str, inputs, found: int) -> CheckResult:
