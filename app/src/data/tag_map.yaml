@@ -34,6 +34,10 @@ line_items:
     # ... but a later tag more than 50% larger means the figure used is net of interest income or partial (Linde,
     # S3 review): that is raised as a TAG_CONFLICT.
     later_larger_warning: 0.5
+    # An expense is filed as a positive amount. Disney files InterestExpense as −1,906 (USD m, fiscal 2026); divided
+    # into operating income that would turn an interest cover of 10 into −10. A negative value is flagged (SIGN) and
+    # not used: missing, never a guess at the sign (audit of 21 November 2026).
+    positive_only: true
     # InterestAndDebtExpense fills gaps only, last (7 companies of the S3 sample report it; for some it is net).
     tags: [InterestExpense, InterestExpenseNonoperating, InterestExpenseDebt, InterestAndDebtExpense]
   depreciation_amortization:
@@ -100,7 +104,9 @@ line_items:
     kind: flow
     same_definition: false  # PaymentsOfDividends can include preferred dividends
     outflow: true
-    tags: [PaymentsOfDividends, PaymentsOfDividendsCommonStock]
+    # PaymentsOfOrdinaryDividends: Johnson & Johnson, Pfizer, Qualcomm, GE and Accenture file their dividends only
+    # under this tag (J&J 12,381, USD m, fiscal 2025; S3 cache, audit of 21 November 2026); they were "missing".
+    tags: [PaymentsOfDividends, PaymentsOfDividendsCommonStock, PaymentsOfOrdinaryDividends]
   minority_interest:
     kind: instant
     bridge: true  # absent: "not reported, treated as nil" (SPEC §8.3)
