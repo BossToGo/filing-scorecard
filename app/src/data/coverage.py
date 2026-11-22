@@ -30,7 +30,7 @@ TIER1 = ("revenue", "operating_income", "net_income", "interest_expense", "total
          "capital_expenditure", "dividends_paid")
 # Resolver warnings that put a tier 1 figure in doubt (src/data/resolver.py). A restatement alone does not; an
 # average share count matters only from tier 2 on; a TAG_CONFLICT counts only when it is about a tier 1 figure.
-BLOCKING = ("NON_USD", "FY_CHANGE", "DEBT_CHECK", "DEBT_INCOMPLETE", "SIGN", "NO_ANNUAL_DATA")
+BLOCKING = ("NON_USD", "FY_CHANGE", "FY_GAP", "DEBT_CHECK", "DEBT_INCOMPLETE", "SIGN", "NO_ANNUAL_DATA")
 # Valuation inputs that are not tier 1 figures (lean SPEC v2.3 §8.6, §13.4, PR #10): none any more. Revenue, operating
 # cash flow, capex and debt are tier 1 figures already, in every year; depreciation and current debt are no longer used
 # by any check. Shares are checked separately: they are keyed at the cover-page date (CompanyData.latest).

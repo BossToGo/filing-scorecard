@@ -97,6 +97,21 @@ def test_the_number_of_years_is_a_setting():
     assert run(years=3).fiscal_years("revenue") == [fy(2023), fy(2024), fy(2025)]
 
 
+def test_a_gap_between_fiscal_years_ends_the_window_and_is_flagged():
+    # 2020 to 2022 and 2024 to 2025 are filed, 2023 is not: "four years earlier" would really be five and a half.
+    # Only the years after the gap are kept (audit of 21 November 2026).
+    data = run({"Revenues": [flow(1000 * M, y) for y in (2020, 2021, 2022, 2024, 2025)]}, with_revenue=False)
+    assert data.fiscal_years("revenue") == [fy(2024), fy(2025)]
+    assert "FY_GAP" in codes(data)
+
+
+def test_52_and_53_week_years_are_not_a_gap():
+    ends = ["2021-09-25", "2022-09-24", "2023-09-30", "2024-09-28", "2025-09-27"]  # Apple's year ends
+    starts = ["2020-09-27", "2021-09-26", "2022-09-25", "2023-10-01", "2024-09-29"]
+    data = run({"Revenues": [entry(1000 * M, e, start=s) for e, s in zip(ends, starts)]}, with_revenue=False)
+    assert len(data.fiscal_years("revenue")) == 5 and "FY_GAP" not in codes(data)
+
+
 def test_a_change_of_fiscal_year_end_does_not_create_overlapping_years():
     # June year ends until 2023-06-30, then December. 2023-06-30 is only 184 days before 2023-12-31: dropped.
     revenue = [entry(v * M, end, start=start) for v, start, end in [
@@ -525,6 +540,55 @@ def test_short_term_borrowings_that_differ_from_the_current_part_are_added():
     assert d.value == (900 + 30) * M and c.value == (100 + 30) * M
 
 
+def test_short_term_borrowings_equal_to_the_tagged_current_maturities_are_one_line_not_two():
+    # AMD, fiscal year ended 2025-12-27 (SEC company facts, USD m): non-current 2,348 + current maturities 874, and the
+    # same 874 again under ShortTermBorrowings. AMD's own total, DebtLongtermAndShorttermCombinedAmount, is 3,222
+    # = 2,348 + 874 (principal 3,250), not 2,348 + 874 + 874 = 4,096 (audit of 21 November 2026).
+    d, c, data = debt({"LongTermDebtNoncurrent": [instant(2_348 * M, 2025)],
+                       "LongTermDebtCurrent": [instant(874 * M, 2025)],
+                       "ShortTermBorrowings": [instant(874 * M, 2025)]})
+    assert d.value == 3_222 * M and c.value == 874 * M
+    assert "already counted" in d.note and "DEBT_CHECK" not in codes(data)
+
+
+def test_tagged_current_maturities_filed_again_as_short_term_borrowings_are_inside_a_reported_total():
+    # Marvell, fiscal year ended 2022-01-29 (USD m): LongTermDebt 4,548.0 = non-current 4,484.8 + current 63.2, and
+    # ShortTermBorrowings 63.2 is that current part again (principal 4,588.0). Not 4,548.0 + 63.2 = 4,611.2.
+    d, c, _ = debt({"LongTermDebt": [instant(4_548_000_000, 2025)],
+                    "LongTermDebtNoncurrent": [instant(4_484_800_000, 2025)],
+                    "LongTermDebtCurrent": [instant(63_200_000, 2025)],
+                    "ShortTermBorrowings": [instant(63_200_000, 2025)]})
+    assert d.value == 4_548_000_000 and c.value == 63_200_000
+
+
+def test_short_term_borrowings_within_1_percent_of_the_current_maturities_are_the_same_line():
+    # IBM at 2021-12-31 (USD m): current maturities 6,764, "short-term debt" 6,787 (0.3% apart, within
+    # debt_check_warning). IBM's own total including current maturities is 51,681 = 44,917 + 6,764.
+    d, c, _ = debt({"LongTermDebtNoncurrent": [instant(44_917 * M, 2025)],
+                    "LongTermDebtCurrent": [instant(6_764 * M, 2025)],
+                    "ShortTermBorrowings": [instant(6_787 * M, 2025)]})
+    assert d.value == 51_681 * M and c.value == 6_764 * M
+
+
+def test_a_reported_total_below_its_own_non_current_part_is_not_used_as_the_total():
+    # Seagate, fiscal year ended 2022-07-01 (USD m): LongTermDebt 964 against non-current 5,062 and current 584. A
+    # total cannot be smaller than one of its parts, so the parts are used (5,646) and the debt stays flagged.
+    d, c, data = debt({"LongTermDebt": [instant(964 * M, 2025)], "LongTermDebtNoncurrent": [instant(5_062 * M, 2025)],
+                       "LongTermDebtCurrent": [instant(584 * M, 2025)]})
+    assert d.value == (5_062 + 584) * M and c.value == 584 * M
+    assert "DEBT_CHECK" in codes(data)
+
+
+def test_current_debt_is_not_the_difference_of_two_tags_with_different_definitions():
+    # Micron, fiscal year ended 2025-08-28 (USD m): LongTermDebt 11,533 leaves out finance leases; its only
+    # non-current tag, LongTermDebtAndCapitalLeaseObligations 14,017, includes them. 11,533 − 14,017 = −2,484 is not
+    # a current debt: the total is kept, the current part is missing.
+    d, c, _ = debt({"LongTermDebt": [instant(11_533 * M, 2025)],
+                    "LongTermDebtAndCapitalLeaseObligations": [instant(14_017 * M, 2025)]})
+    assert d.value == 11_533 * M
+    assert c.kind == "missing" and c.value is None and "finance leases" in c.note
+
+
 def test_a_cited_override_says_short_term_items_are_inside_long_term_debt():
     # The McDonald's case (2025): current maturities are tagged, yet classified inside long-term debt.
     d, c, data = debt({"LongTermDebt": [instant(400 * M, 2025)], "LongTermDebtNoncurrent": [instant(400 * M, 2025)],
@@ -650,6 +714,35 @@ def test_a_reported_bridge_item_is_used():
     assert run({"MinorityInterest": [instant(20 * M, 2025)]}).fact("minority_interest", fy(2025)).value == 20 * M
 
 
+def test_a_minority_interest_reported_for_the_year_before_but_not_this_year_is_missing_not_nil():
+    # SPEC v2.3 §8.3: "a tag reported for FY-1 but not for FY0 makes the fair value insufficient_data". Eli Lilly:
+    # 79.5 (USD m) at 2024-12-31, nothing for 2025 (audit of 21 November 2026).
+    data = run({"MinorityInterest": [instant(80 * M, 2024)]})
+    fact = data.fact("minority_interest", fy(2025))
+    assert fact.kind == "missing" and fact.value is None and "2024-12-31" in fact.note
+
+
+def test_a_minority_interest_last_reported_long_ago_is_still_treated_as_nil():
+    fact = run({"MinorityInterest": [instant(80 * M, 2022)]}).fact("minority_interest", fy(2025))
+    assert fact.kind == "assumption" and fact.value == 0
+
+
+def test_total_equity_above_equity_without_a_minority_interest_tag_is_recorded():
+    # SPEC v2.3 §8.3: more than 1% and no tag: a record for the sources page. Uber at 2025-12-31 (USD m): 27,918
+    # against 27,041, 3.2%.
+    data = run({"StockholdersEquity": [instant(27_041 * M, 2025)],
+                "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest": [instant(27_918 * M, 2025)]})
+    fact = data.fact("minority_interest", fy(2025))
+    assert fact.kind == "assumption" and fact.value == 0
+    assert "MINORITY_UNTAGGED" in codes(data)
+
+
+def test_total_equity_within_1_percent_of_equity_is_not_recorded():
+    data = run({"StockholdersEquity": [instant(1_000 * M, 2025)],
+                "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest": [instant(1_009 * M, 2025)]})
+    assert "MINORITY_UNTAGGED" not in codes(data)
+
+
 def test_shares_come_from_the_cover_page_of_the_latest_annual_report():
     dei = {"EntityCommonStockSharesOutstanding": {"units": {"shares": [
         entry(4_310_000_000, "2025-02-18", form="10-K", filed="2025-02-21"),
@@ -705,6 +798,27 @@ def test_a_positive_payment_raises_no_sign_warning():
     data = run({"PaymentsToAcquirePropertyPlantAndEquipment": [flow(85 * M, 2025)],
                 "PaymentsOfDividends": [flow(56 * M, 2025)]})
     assert "SIGN" not in codes(data)
+
+
+def test_planted_a_negative_interest_expense_is_flagged_and_not_used():
+    # Disney files InterestExpense as −1,906 (USD m, fiscal year ended 2026-10-03). Divided into operating income it
+    # would turn an interest cover of 10 times into −10: an expense with the wrong sign is flagged and left out.
+    data = run({"InterestExpense": [flow(-1_906 * M, 2025)]})
+    fact = data.fact("interest_expense", fy(2025))
+    assert fact.kind == "missing" and fact.value is None and "negative" in fact.note
+    assert "SIGN" in codes(data)
+
+
+def test_a_positive_interest_expense_raises_no_sign_warning():
+    data = run({"InterestExpense": [flow(26 * M, 2025)]})
+    assert data.fact("interest_expense", fy(2025)).value == 26 * M and "SIGN" not in codes(data)
+
+
+def test_dividends_filed_as_payments_of_ordinary_dividends_are_found():
+    # Johnson & Johnson, Pfizer, Qualcomm, GE and Accenture file their dividends only under this tag (SEC company
+    # facts retrieved 2026-11-18): J&J, 12,381 (USD m) for fiscal 2025. They resolved as "missing" before.
+    fact = run({"PaymentsOfOrdinaryDividends": [flow(12_381 * M, 2025)]}).fact("dividends_paid", fy(2025))
+    assert fact.value == 12_381 * M and fact.kind == "reported" and fact.tag == "PaymentsOfOrdinaryDividends"
 
 
 def test_a_company_without_company_facts_still_has_its_header():

@@ -5,9 +5,13 @@ Each member reads six figures of one demo company **by hand** from its latest 10
 within USD 0.5 million (SPEC §13.2, S15). This is the independent check of the data layer: a person reading the
 filing, not a program. Emma (E) coordinates; the format and the test are Igor's (A).
 
+**Optional seventh figure:** `capital_expenditure` ("Purchases of property, plant and equipment" on the cash flow
+statement, written as the positive amount) when a check owner needs it, compared with the app in the same way.
+Coca-Cola has it, for D6 (Flo's S7 review). The other files need only the six.
+
 | Member | Company | File | Status |
 |---|---|---|---|
-| A, Igor | Coca-Cola | `KO.yaml` | done, 6 of 6 match |
+| A, Igor | Coca-Cola | `KO.yaml` | done, 6 of 6 match, plus capital expenditure (7 of 7) |
 | B, Greg | Apple | `AAPL.yaml` | to do |
 | C, Flo | Nvidia | `NVDA.yaml` | to do |
 | D, Simon | McDonald's | `MCD.yaml` | to do |
