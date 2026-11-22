@@ -259,3 +259,41 @@ def test_c_d3_passes_with_no_value_when_every_step_starts_from_zero():
     d3 = results(company([0, 0, 0, 0, 5]))["D3"]
     assert d3.status == "pass"
     assert d3.value is None
+
+
+# --- SPEC Appendix A: the synthetic company (CALC-D, AC3), signed off by Flo and Simon on PR #5 ------------------
+
+from tests.fixtures import synthetic  # noqa: E402  (kept next to the tests that use it)
+
+
+def as_shown(value: float, unit: str) -> float:
+    """A result in the unit Appendix A shows: USD millions, or percent."""
+    return {"USD m": value / MILLION, "%": value * 100}[unit]
+
+
+@pytest.mark.parametrize("check_id", ["D1", "D3", "D4", "D5", "D6"])
+def test_appendix_a_synthetic_company(check_id):
+    expected = synthetic.expected_check(check_id)
+    result = results(synthetic.company_data())[check_id]
+    assert result.status == expected["result"]
+    assert as_shown(result.value, expected["unit"]) == pytest.approx(expected["value"],
+                                                                      abs=synthetic.tolerance(expected))
+    if "compared_with" in expected:
+        assert as_shown(result.threshold, expected["unit"]) == pytest.approx(expected["compared_with"],
+                                                                              abs=synthetic.tolerance(expected))
+
+
+def test_appendix_a_d2_is_not_assessed_without_share_price_and_benchmark():
+    # CALC-D2 (1.867% > 1.5%) needs the share price and the market yield: slice S9. In S7 it is not assessed.
+    d2 = results(synthetic.company_data())["D2"]
+    assert d2.status == "insufficient_data" and d2.value is None
+
+
+def test_ac3_tier_1_dividend_score_of_the_synthetic_company():
+    expected = synthetic.expected_tier1()
+    checks = dividend_checks(synthetic.company_data(), SETTINGS)
+    assessed = [r for r in checks if r.status in ("pass", "fail")]
+    assert len(assessed) == expected["scores"]["dividend"]["assessed"]
+    assert sum(r.status == "pass" for r in assessed) == expected["scores"]["dividend"]["passed"]
+    assert [r.check_id for r in checks if r.status == "insufficient_data"] == \
+        [c for c in expected["not_assessed"] if c.startswith("D")]
