@@ -3,7 +3,8 @@
 Status: agreed on 2026-11-18 by Igor (member A) on the basis of `SPEC.md` version 2; confirmed by the group
 through the review of the pull request that adds this file. Updated on 2026-11-19 for `SPEC.md` version 2.3
 (Igor's product direction: retail bank customers, fully automatic, strengths and points to watch instead of five
-forces); the group confirms it by approving the SPEC v2.3 pull request.
+forces); the group confirms it by approving the SPEC v2.3 pull request. Updated on 2026-11-22 for `SPEC.md`
+version 2.4 (the MVP is the five demo companies, one workflow end to end), approved by the group in pull request #20.
 
 **`SPEC.md` has the final say.** This file summarises it for the assistant and the team. If the two disagree,
 `SPEC.md` wins and this file is corrected by pull request. Section numbers below (§) point to `SPEC.md`.
@@ -63,6 +64,11 @@ message says how to fix the problem.
 
 ## MVP features (must have)
 
+**The MVP (SPEC v2.4 §2):** the customer picks one of five companies (Coca-Cola, Apple, Nvidia, McDonald's,
+Amazon), types the share price and gets the scorecard; every check opens to its rule, its figures and the filing
+they come from. Order of work: the screen and the 18 checks (v0.1), then the fair value (v0.2); F8 and F9 only if
+v0.2 is released before the feature freeze.
+
 | Id | Feature | Tier | Why the customer needs it |
 |---|---|---|---|
 | F1 | Ticker in → header with industry, warnings and the stop rules of §10 | 1 | Knows at once whether the company is supported and what to watch |
@@ -70,10 +76,10 @@ message says how to fix the problem.
 | F3 | Sources page: every figure with tag, filing, filing date, retrieval time, kind (§5) | 1 | The trail from number to filing that Excel copying lacks; never cut |
 | F4 | Fully automatic: no figure is typed or corrected by the user; a figure that does not resolve or pass the checks is "not assessed" (§1) | 1 | The user can trust the page without checking it |
 | F5 | Offline demo mode on saved data for five companies | 1 | Reliable demo; no network needed |
-| F6 | Industry lookup and benchmarks; P4, P5, D2 switch on (§4, §9.1) | 2 | Company compared with its industry |
+| F6 | Benchmarks for the industry groups of the five demo companies and for the whole US market; P4, P5, D2 switch on (§4, §9.1) | 2 | Company compared with its industry |
 | F7 | Valuation: 6 checks, equity-method DCF (operating cash flow − capex from the three-year margin, cost of equity) with growth limited to 30% and decaying over 10 years, "model does not fit" rules; V4 compares the P/E with the whole US market (§7, §8) | 2 | Is the price demanding? |
-| F8 | Excel export, two sheets: scorecard; figures and sources | 2 | Take the result away |
-| F9 | Strengths and points to watch: plain-language statements from fixed rules (§9) | 3 | What the numbers mean, in words a retail customer understands |
+| F8 | Excel export, two sheets: scorecard; figures and sources | 2, only if v0.2 is released before the freeze | Take the result away |
+| F9 | Strengths and points to watch: plain-language statements from fixed rules (§9) | 3, only if v0.2 is released before the freeze | What the numbers mean, in words a retail customer understands |
 
 Cut list if time runs short, in this order (§2): strengths and points to watch → Excel export.
 F1 to F3 are never cut.
@@ -82,6 +88,8 @@ F1 to F3 are never cut.
 
 - Watchlist comparing several companies, sensitivity table, user-adjustable growth or tax rate: dropped in SPEC
   v2.3 to keep the product simple (§2, §8.5, §8.7).
+- Companies other than the five demo companies (SPEC v2.4 §2): they can be looked up and are marked as §10 says,
+  but no further work goes into them; their known problems are listed as limitations in the README.
 - Buy or sell recommendations, analyst forecasts, live share prices, news (§1, §2).
 - Manual correction of figures or of the industry, and Porter's five forces (§2, version 2.3).
 - Automatic share price from Yahoo Finance: decided 2026-11-18, typed in only (§16.2).
@@ -129,7 +137,7 @@ Known-answer examples: `docs/acceptance.md` (from SPEC Appendix A).
   (`Simonarmengaud`), E Emma (`EmmaRiggi`). Each member adds their own line to `docs/team.md` in their first pull
   request (§12 rule 1).
 - Experience: finance students; most build through an AI coding assistant (Claude Code or Cline).
-- Time: tier releases on Sun 22, Wed 25 and Thu 26 November (feature freeze 20:00); deadline Tue 1 December 2026,
-  23:59, state of `main`; presentation Wed 2 December (§13.3).
+- Time: release v0.1 on Tue 24 November, v0.2 with the feature freeze on Thu 26 November at 20:00 (SPEC v2.4);
+  deadline Tue 1 December 2026, 23:59, state of `main`; presentation Wed 2 December (§13.3).
 - Budget: 0. Free data only; public GitHub repository (free tests and branch protection).
 - Rules: `AGENTS.md`, then `SPEC.md` (hard rules §14), course AI-use disclosure in `AI-USAGE.md`, SEC fair access.

@@ -6,15 +6,17 @@ tests. **Backup:** B, Greg (you review Greg's PRs first, Greg reviews yours). **
 
 ## Your slices, in order
 
+**Timeline (SPEC v2.4, 22 November):** the MVP is the five demo companies, one workflow end to end. Release v0.1 on **Tuesday 24** (the screen and the 18 checks), v0.2 with the feature freeze on **Thursday 26 at 20:00** (the fair value). The strengths and points to watch (S12) and the Excel export (S13) are built only if v0.2 is released before the freeze.
+
 | When | Slice | Done when (SPEC §13.2) |
 |---|---|---|
-| Wed 18 | Accept the invitation; your `docs/team.md` PR (steps in `docs/team.md`) | Merged |
-| Thu 19 | **Excel cross-check model** of the valuation (SPEC §8, version 2.3, **equity method**: operating cash flow − capex from the three-year margin, cost of equity, growth that decays towards terminal growth over 10 years, minus minority interests) for the synthetic company, built by you from the SPEC formulas, **not** from the code. Save it in `docs/crosscheck/` | Matches SPEC Appendix A (fair value USD 20.13; USD 37.37 at the 30% cap, so V6 passes), or you report the difference |
-| Thu 19 | **Sign-off for S0c:** recalculate rows CALC-D1–D6, CALC-V1–V6, CALC-W1–W2 and CALC-F1–F4 of `docs/acceptance.md` (your Excel model counts) | Your sign-off comment on PR #5 |
-| Thu 19 → Wed 25 | S8: the equity method (SPEC §8): cost of equity (beta limited to 0.8–2.0), starting free cash flow from the three-year margin, starting growth capped at −10% to +30% and decaying towards terminal growth (half-life 2 years, 10 years), terminal value at year 10, minus reported minority interests, "model does not fit" (§8.6), the growth note when the growth limit applies. No cost of debt, no sensitivity table, no implied growth, no user inputs. Branch `c/S8-valuation-engine` | Matches your Excel model and Appendix A; property tests pass; one test per case of §8.6 |
-| Sat 21–Sun 22 | S7: dividend checks D1–D6 (D2 "not assessed" until S4 and a share price), branch `c/S7-dividend-checks` | Appendix A values reproduced; edge cases tested |
-| Mon 23–Wed 25 | S9 with B: valuation checks V1–V6; switch on D2, branch `c/S9-valuation-checks` | Appendix A values reproduced |
-| Sat 21–Sun 29 | **Business plan section:** business model, in `docs/business-plan/sections/C-business-model.md` (Emma, E, assembles the plan; prompt in `docs/members/README.md`) | Draft by Sun 22; final by Sun 29 |
+| Thu 19–Sun 22 | **Excel cross-check model** of the valuation (SPEC §8, equity method) for the synthetic company, built from the SPEC formulas, not from the code | Done: PR #14 (fair value USD 20.13; USD 37.37 at the 30% cap) |
+| Thu 19–Sun 22 | **Sign-off for S0c:** rows CALC-D1–D6, CALC-V1–V6, CALC-W1–W2 and CALC-F1–F4 | Done: recorded in PR #5 |
+| Sun 22–Tue 24 | S7: dividend checks D1–D6 (D2 "not assessed" until S4 and a share price), branch `c/S7-dividend-checks` | Appendix A values reproduced; edge cases tested; Amazon shows "no dividend paid" once #21 is merged |
+| Sun 22–Tue 24 | S15, reconciliation of Nvidia: six figures read by hand from the latest 10-K ("Only you" below; format in `app/tests/reconciliation/README.md`) | `app/tests/reconciliation/NVDA.yaml` merged; 6 of 6 match |
+| Now → Thu 26 | S8: the equity method (SPEC §8): cost of equity (beta limited to 0.8–2.0), starting free cash flow from the three-year margin, starting growth capped at −10% to +30% and decaying towards terminal growth (half-life 2 years, 10 years), terminal value at year 10, minus reported minority interests, "model does not fit" (§8.6), the growth note when the growth limit applies. No cost of debt, no sensitivity table, no implied growth, no user inputs. Branch `c/S8-valuation-engine` | Matches your Excel model and Appendix A; property tests pass; one test per case of §8.6 |
+| Wed 25–Thu 26 | S9 with B: valuation checks V1–V6; switch on D2, branch `c/S9-valuation-checks` | Appendix A values reproduced |
+| Sat 21–Sun 29 | **Business plan section:** business model, in `docs/business-plan/sections/C-business-model.md` (Emma, E, assembles the plan; prompt in `docs/members/README.md`) | Draft now (first planned for Sun 22); final by Sun 29 |
 | Fri 27–Sun 29 | S18, break-it round: a member from another area reviews your code read-only; you break each of your formulas once on purpose and record each break and the test that caught it in `docs/testing.md` | Every finding is a failing test or a written dismissal |
 
 **Slice prompt** (replace the slice, sections and branch):
@@ -46,8 +48,9 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
   KO, AAPL, NVDA, MCD, AMZN). The latest fiscal year is `data.fiscal_years("revenue")[-1]`. Shares come from
   `data.latest("shares")`, never `data.fact("shares", fy0)`, which is None by design (plan Q12). A `missing`
   figure has value None and its reason in `.note`; a `derived` one has its formula and sources in `.note`.
-- **Real cases for your edge-case tests:** Amazon's dividends paid are `missing` (no tag at all; Q1 decides what
-  D1 shows); McDonald's equity is negative (USD −1,791 million at FY2025), so V5 fails with "negative equity".
+- **Real cases for your edge-case tests:** Amazon pays no dividend: once #21 is merged, its `dividends_paid` is 0
+  in every year, kind `assumption`, note "not reported, treated as nil", warning `NIL_DIVIDEND` (SPEC v2.4 §7,
+  plan Q1), so D1 fails and the area shows "no dividend paid"; McDonald's equity is negative (USD −1,791 million at FY2025), so V5 fails with "negative equity".
 - Use the line-item names in `LINE_ITEMS` and the units in `UNITS` from `app/src/contracts.py` (e.g.
   `net_income`; amounts stay in USD as filed, never millions).
 - "Not assessed" (D2 until S4 and a share price) is the status `insufficient_data` with the reason in the explanation
@@ -88,7 +91,8 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
    you have a better one).
 3. **Reconciliation (S15), Nvidia:** revenue, operating income, net income, total assets, operating cash flow,
    dividends paid, read by hand from the latest 10-K with page and accession number. Not by the assistant.
-4. **Decide** Q1 (missing versus nil, with Greg and Igor, before S7: Amazon has no dividend tag at all (confirmed in the saved SEC files), so Q1 decides whether its D1 shows "no dividend paid" or "insufficient data").
+4. **Q1 is decided** (SPEC v2.4 §7, approved by you in #20): a company with no dividend under any dividend entry in
+   the five years pays none (Amazon); any sign of a dividend keeps the years `missing`.
 5. **Explain-back** on each PR; at least two reviews a week, Greg's (B) first.
 6. **Before the presentation:** five likely questions and answers on your area to E (Sun 29); walk-through (Mon 30).
 

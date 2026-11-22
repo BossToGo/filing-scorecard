@@ -8,17 +8,17 @@ pull requests, like everyone else (SPEC §12). The Excel export is your code fea
 
 ## Your tasks, in order
 
+**Timeline (SPEC v2.4, 22 November):** the MVP is the five demo companies, one workflow end to end. Release v0.1 on **Tuesday 24** (the screen and the 18 checks), v0.2 with the feature freeze on **Thursday 26 at 20:00** (the fair value). The strengths and points to watch (S12) and the Excel export (S13) are built only if v0.2 is released before the freeze.
+
 | When | Task | Done when |
 |---|---|---|
-| Wed 18 | Accept the invitation; your `docs/team.md` PR (steps in `docs/team.md`) | Merged |
 | Thu 19 → Sun 22 | **Sources for the problem evidence:** read the published studies listed under "Problem evidence" below (and any you add), and note each figure you will use with its source, date and unit. No user interviews (decided by Igor, 21 November): the course brief does not require them | Each figure in the problem section has a source you have read |
-| Thu 19 | **Sign-off for S0c:** recalculate CALC-S (the four area scores) in `docs/acceptance.md`; since SPEC v2.3 the valuation score is 3 of 6 (V6 passes), so please check it again | Your sign-off comment on PR #5 (it unlocks `synthetic.expected_scores()` for the app tests) |
-| Sat 21 → | **Business plan:** write problem and evidence, how roles and decisions change in a firm (the bank that offers the add-on to its customers), SDG 9 and next steps; assemble everyone's sections from `docs/business-plan/sections/` into `docs/business-plan/business-plan.md` and the PDF (contents: SPEC §17) | Draft by Sun 22; final by Sun 29; PDF on `main` |
-| Sat 21–Sun 22 | S16a: texts for the 18 tier 1 checks in `app/ui/texts.yaml` (agree the key names with Simon, D), plus a test in `app/tests/unit/test_texts.py` that every check has a text | Each check shows its text; reviewed by the check's owner |
-| Sat 21–Sun 22 | S15: collect the five reconciliation files (A: KO, B: AAPL, C: NVDA, D: MCD, you: AMZN) | 30 figures match the app within USD 0.5 million |
-| Mon 23–Wed 25 | S16b: texts for the valuation checks and the industry explanations | Reviewed by C |
-| Thu 26 | Within S12: texts for the 15 strengths and points to watch (SPEC §9, G1–G7 and W1–W8; agree the key names with Greg and Simon) | Reviewed by B |
-| Mon 23–Wed 25 | **S13: Excel export, your code feature.** `app/src/export.py` writes one Excel file with **two sheets**: the scorecard (scores, checks, strengths and points to watch, valuation) and the figures with their sources (SPEC §3 item 8); a test reopens it and compares every figure. Branch `e/S13-excel-export`; Simon (D) adds the download button | AC11: export reopened by a test; figures equal the screen |
+| Thu 19 | **Sign-off for S0c:** CALC-S (the four area scores) | Done: recorded in PR #5 |
+| Sun 22–Tue 24 | S16a: texts for the 18 tier 1 checks in `app/ui/texts.yaml` (key names agreed with Simon, D), plus a test in `app/tests/unit/test_texts.py` that every check has a text (PR #17) | Each check shows its text; reviewed by the check's owner |
+| Sun 22–Tue 24 | S15: collect the five reconciliation files (A: KO, done in #16; B: AAPL; C: NVDA; D: MCD; you: AMZN) | 30 figures match the app within USD 0.5 million |
+| Sat 21 → Tue 24 | **Business plan:** write problem and evidence, how roles and decisions change in a firm (the bank that offers the add-on to its customers), SDG 9 and next steps; assemble everyone's sections from `docs/business-plan/sections/` into `docs/business-plan/business-plan.md` and the PDF (contents: SPEC §17) | Draft by Tue 24 (SPEC v2.4 §13.3); final by Sun 29; PDF on `main` |
+| Wed 25–Thu 26 | S16b: texts for the valuation checks, the industry explanations and the growth note | Reviewed by C |
+| Thu 26, only if v0.2 is released before the freeze | **S13: Excel export, your code feature.** `app/src/export.py` writes one Excel file with **two sheets**: the scorecard (scores, checks, strengths and points to watch, valuation) and the figures with their sources (SPEC §3 item 8); a test reopens it and compares every figure. Branch `e/S13-excel-export`; Simon (D) adds the download button. Within S12: texts for the 15 strengths and points to watch (agree the key names with Greg and Simon) | AC11: export reopened by a test; figures equal the screen. Statement texts reviewed by B |
 | Fri 27–Sun 29 | **README** final; S19: two members who did not write it install the app from the README alone, one on Windows, one on Mac | Works on both |
 | Fri 27–Sun 29 | **Slides** in `docs/slides/` (SPEC §17: problem 1 min, live demo 3–4, how we built and checked it 1–2, transformation and SDG 9 2, next steps); **question bank** `docs/qa-bank.md` (five questions and answers per area, sent by each owner) | On `main` |
 | Fri 27–Sun 29 | S18, break-it round: review one code area read-only (A assigns it), with the break-it prompt in `docs/members/README.md` | Each finding is a failing test or a written dismissal in `docs/testing.md` |
@@ -60,7 +60,8 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
 
 What it does and for whom; install and run in a few commands (copy from `app/README.md`); data and interfaces
 used; assumptions (currency, units, fiscal-year convention, 21% tax rate, 5.0% equity risk premium); known
-limitations; which data is saved or synthetic; who it is for (retail bank customers, as an add-on a bank offers;
+limitations (SPEC v2.4: the MVP is the five demo companies; other tickers can be looked up, and their known
+problems from `docs/plan.md` are listed here); which data is saved or synthetic; who it is for (retail bank customers, as an add-on a bank offers;
 SPEC v2.3 §1). **Citations:** the scoring idea follows the publicly documented
 Simply Wall St analysis model, including the strengths and points to watch and the "model does not fit" rule
 (`https://github.com/SimplyWallSt/Company-Analysis-Model`; never their name in the app, the word "snowflake",

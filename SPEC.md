@@ -493,7 +493,7 @@ Names agreed on 18 November 2026. If the group has four members, the work of E i
 
 **Slice:** plan → go-ahead → failing test → code → all tests → review by the backup → commit approved by the person → pull request → merge.
 
-**Release:** when every slice of a tier is merged, A (or the backup D) runs the release check: all tests green in the workflow, the app started in demo mode with the network off, the five demo companies open without an error, the README run commands still work. Then the commit on `main` is tagged (`v0.1`, `v0.2`, `v0.3`) and `docs/plan.md` records the date. The presentation always uses the latest tag.
+**Release:** when every slice of a tier is merged, A (or the backup D) runs the release check: all tests green in the workflow, the app started in demo mode with the network off, the five demo companies open without an error, the README run commands still work. Then the commit on `main` is tagged (`v0.1`, `v0.2`; no `v0.3` since version 2.4) and `docs/plan.md` records the date. The presentation always uses the latest tag.
 
 ### 13.2 Slices by tier
 
@@ -530,22 +530,22 @@ Names agreed on 18 November 2026. If the group has four members, the work of E i
 | S2b | Before S12: the `Statement` shape in `src/contracts.py` (section 11); the FRED `DGS10` download of the last five years, its average, the cache and the settings fallback (section 4) | A | S0 | Contract tests pass; the FRED client and the average are tested on a saved response, with the network off; the fallback is used when the key or the network is missing |
 | S9 | Valuation checks V1 to V6; switch on P4, P5, D2 | C with B | S8, S4 | Appendix A values reproduced; the `insufficient_data` and `not_applicable` cases of section 8.6 tested |
 | S10b | Interface: share price input, valuation detail (cost of equity build-up with each assumption and its source, free cash flow table, fair value against the price, the growth note when the growth limit applies), the reasons of section 8.6, industry shown with route and number of firms | D | S8, S4 | App test finds the fair value of the synthetic company |
-| S13 | Excel export, two sheets: scorecard; figures and sources (section 3) | E | S10 | Export reopened by a test; figures equal the screen |
 | S16b | Texts for the valuation checks, the industry explanations and the growth note (section 8.3) | E | S10b | Reviewed by C |
+| S17 | End-to-end app test: type a demo ticker, check a known score, a known figure and a known fair value | D | S14 | Passes twice in a row in the workflow |
 
 **Tier 3 — "Strengths and points to watch", and the export S13 (only if v0.2 is released before the freeze; S17 belongs to v0.2 since version 2.4)**
 
 | ID | Slice | Owner | Depends on | Done when (evidence) |
 |---|---|---|---|---|
 | S12 | Strengths and points to watch (section 9) | B (rules, `src/highlights.py`) with D (on screen) and E (texts in `app/ui/texts.yaml`, reviewed by B) | S2b, S4, S5 to S9 | One test per statement (shown, not shown, input missing); the synthetic company's statements match Appendix A |
-| S17 | End-to-end app test: type a demo ticker, check a known score, a known figure and a known fair value | D | S14 | Passes twice in a row in the workflow |
+| S13 | Excel export, two sheets: scorecard; figures and sources (section 3) | E | S10 | Export reopened by a test; figures equal the screen |
 
 **After the freeze (fixes only)**
 
 | ID | Slice | Owner | Depends on | Done when (evidence) |
 |---|---|---|---|---|
 | S18 | Break-it round: an independent read-only review of each area, and a deliberate break of every formula | Each owner; reviewer from another area | v0.2 | `docs/testing.md` lists each break and the test that caught it; every finding is a failing test or a written dismissal |
-| S19 | README and fresh-clone test on one Windows and one Mac laptop by a member who did not write the README | E writes, two members test | v0.3 | Works from the README alone on both |
+| S19 | README and fresh-clone test on one Windows and one Mac laptop by a member who did not write the README | E writes, two members test | the last release before the freeze | Works from the README alone on both |
 | S20 | Business plan (Markdown → PDF), slides, recorded fallback demo, question bank | E leads and edits; each member writes one business plan section (§17) (started Saturday 21) | — | Files on `main` before the deadline |
 
 **Proposed demo companies (traits to be confirmed in S3, not assumed):** Coca-Cola (the course's running example; session 5 gives figures to check against), Apple (a 53-week fiscal year), Nvidia (a share split, to test rule 5.3.8), McDonald's (negative equity expected), Amazon (no dividend expected). JPMorgan is the test that an unsupported company is refused. If a company turns out to lack the trait, swap it for one that has it.
@@ -594,7 +594,7 @@ Reviewed at every group meeting. "Trigger" is the signal that the fallback start
 | R8 | Demo fails in class (network, SEC, laptop) | Low | High | Demo mode offline; recorded video; second laptop with the repository cloned | Anything unexpected in the first 30 seconds → switch to the recording | D |
 | R9 | Fresh clone fails on another operating system | Medium | Medium | Pinned requirements; no browser or database dependency | S19 fails → fix before any other post-freeze work | E |
 | R10 | Merge conflicts on shared files (`contracts.py`, `settings.yaml`, `app/`) | Medium | Low | One owner per file; `settings.yaml` split into one section per owner; small pull requests | Conflict → the two owners resolve it together, the assistant explains both versions first | Owners |
-| R11 | Scope creep | High | Medium | Tiers, freeze, stretch only after v0.3 | New idea after Tuesday 24 → written into "next steps" of the business plan, not built | E |
+| R11 | Scope creep | High | Medium | Tiers, freeze; S12 and S13 only if v0.2 is released before the freeze | New idea after Tuesday 24 → written into "next steps" of the business plan, not built | E |
 | R12 | Private repository cannot protect `main` without GitHub Pro | Low | Low | Decide in section 16 | Private and no Pro → make it public or claim the Student Developer Pack | A |
 
 ## 14. Hard rules for the AI coding assistant
@@ -787,7 +787,7 @@ Overview: strengths G1, G2, G3, G5, G6; points to watch W3, W4, W8 (all minor).
 
 **If the benchmark datasets are not allowed (the low-risk default).** Remove the six checks that use the benchmark file (P4, P5, D2, V3, V4, V5): past performance is scored out of 4, dividend out of 5, valuation out of 3 (V1, V2, V6). Beta becomes a setting (default 1.0, stated as an assumption). The strengths G3 and G4, which compare with an industry, are dropped. Nothing else changes, because the benchmarks live in one CSV and one module.
 
-**Optional, only if time allows after v0.3:** compute our own industry medians for margins and return on equity from the SEC "frames" interface (one request returns one tag for all companies for a year), grouped by the first two digits of the industry code, and switch P4 and P5 back on.
+**Optional, only if time allows after v0.2:** compute our own industry medians for margins and return on equity from the SEC "frames" interface (one request returns one tag for all companies for a year), grouped by the first two digits of the industry code, and switch P4 and P5 back on.
 
 **If coverage is weak.** See 13.4.
 

@@ -9,17 +9,19 @@ sections of `app/settings.yaml`, and your tests.
 
 ## Your slices, in order
 
+**Timeline (SPEC v2.4, 22 November):** the MVP is the five demo companies, one workflow end to end. Release v0.1 on **Tuesday 24** (the screen and the 18 checks), v0.2 with the feature freeze on **Thursday 26 at 20:00** (the fair value). The strengths and points to watch (S12) and the Excel export (S13) are built only if v0.2 is released before the freeze.
+
 | When | Slice | Done when (SPEC §13.2) |
 |---|---|---|
-| Wed 18 | Accept the invitation; your `docs/team.md` PR (steps in `docs/team.md`) | Merged |
-| Thu 19 | **Day-one task (30 min, no code):** open Damodaran's `indname.xls`; write its sheet and column names in `docs/benchmarks.md`; say whether it has a ticker column (in which format, e.g. `NasdaqGS:AAPL`) and SEC industry codes (SPEC §9.1) | `docs/benchmarks.md` merged |
-| Thu 19 | **Sign-off for S0c:** recalculate rows CALC-P1 to CALC-P6 and CALC-H1 to CALC-H6 of `docs/acceptance.md` by hand or in Excel | Your sign-off comment on PR #5 |
-| Sat 21–Sun 22 | S5: past performance checks P1–P6 (P4, P5 "not assessed" until S4), branch `b/S5-past-checks` | SPEC Appendix A values reproduced; edge cases tested |
-| Sat 21–Sun 22 | S6: financial health checks H1–H6, branch `b/S6-health-checks` | Same |
-| Thu 19 → Wed 25 | S4: extraction script, benchmark CSV, industry lookup, and the fallback table **only if it can be generated** from SEC codes in his file (no hand-built table, SPEC v2.3 §9.1), branch `b/S4-benchmarks` | Loader tests; three benchmark values and three company-to-group matches compared by hand with the source files; every verified company has a match, or the gap is reported |
-| Mon 23–Wed 25 | S9 with C: switch on P4 and P5 | SPEC Appendix A values reproduced |
-| Thu 26 | S12: strengths and points to watch in `app/src/highlights.py` (SPEC §9: 15 rules, G1–G7 and W1–W8, threshold `margin_drop_min` in the `highlights` section of `app/settings.yaml`), branch `b/S12-highlights`; Simon (D) shows them, Emma (E) writes the texts | One test per statement (shown, not shown, input missing); the synthetic company's statements match SPEC Appendix A |
-| Sat 21–Sun 29 | **Business plan section:** users, market and alternatives, in `docs/business-plan/sections/B-market.md` (Emma, E, assembles the plan; prompt in `docs/members/README.md`) | Draft by Sun 22; final by Sun 29 |
+| Sun 22 | Your `docs/team.md` PR (#22): write your Explain-back | Merged |
+| As soon as possible, before S5 | **Sign-off for S0c:** recalculate rows CALC-P1 to CALC-P6 and CALC-H1 to CALC-H6 of `docs/acceptance.md`, and the "Strengths and points to watch" table of SPEC Appendix A, by hand or in Excel | Your sign-off comment on PR #5 (merged on 22 November; comments still work); A records it in a follow-up PR, which unlocks your rows |
+| Sun 22–Tue 24 | S5: past performance checks P1–P6 (P4, P5 "not assessed" until S4), branch `b/S5-past-checks` | SPEC Appendix A values reproduced; edge cases tested |
+| Sun 22–Tue 24 | S6: financial health checks H1–H6, branch `b/S6-health-checks` | Same |
+| Sun 22–Tue 24 | S15, reconciliation of Apple: six figures read by hand from the latest 10-K ("Only you" below; format in `app/tests/reconciliation/README.md`) | `app/tests/reconciliation/AAPL.yaml` merged; 6 of 6 match |
+| Wed 25–Thu 26 | S4, smaller since SPEC v2.4: the benchmark table `app/data/benchmarks_us_2026.csv` for the industry groups of the five demo companies and the whole-market row, each value with its source file, sheet and row; each company's group read from Damodaran's `indname.xls` (write the file's sheet and column names in `docs/benchmarks.md`). The extraction script, the lookup for other tickers and the fallback table are optional, after v0.2. Branch `b/S4-benchmarks` | Loader tests; three benchmark values and the five company-to-group matches re-read from the source files by a second member |
+| Wed 25–Thu 26 | S9 with C: switch on P4 and P5 | SPEC Appendix A values reproduced |
+| Thu 26, only if v0.2 is released before the freeze | S12: strengths and points to watch in `app/src/highlights.py` (SPEC §9: 15 rules, G1–G7 and W1–W8, threshold `margin_drop_min` in the `highlights` section of `app/settings.yaml`), branch `b/S12-highlights`; Simon (D) shows them, Emma (E) writes the texts | One test per statement (shown, not shown, input missing); the synthetic company's statements match SPEC Appendix A |
+| Sat 21–Sun 29 | **Business plan section:** users, market and alternatives, in `docs/business-plan/sections/B-market.md` (Emma, E, assembles the plan; prompt in `docs/members/README.md`) | Draft now (first planned for Sun 22); final by Sun 29 |
 | Fri 27–Sun 29 | S18, break-it round: a member from another area reviews your code read-only; you break each of your formulas once on purpose and record each break and the test that caught it in `docs/testing.md` | Every finding is a failing test or a written dismissal |
 
 **Slice prompt** (replace the slice, sections and branch):
@@ -65,8 +67,9 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
 - A missing input gives "insufficient data", never a guess. Equity ≤ 0 fails P4 and H3 with the note "negative
   equity" (SPEC §7).
 - The app reads only your CSV files, never Damodaran's `.xls` (SPEC §4). The full `indname.xls` is never committed.
-- For each benchmark, write the column you chose and why in the `benchmarks` section of `app/settings.yaml`.
-  S4 also extracts the **whole-US-market price to earnings** from `pedata.xls` (for V4, SPEC v2.3: trailing or current,
+- **S4 since SPEC v2.4:** no script is needed for the five demo companies. Read each value from Damodaran's files
+  and write it in the CSV with its source file, sheet and row. For each benchmark, write the column you chose and
+  why in the `benchmarks` section of `app/settings.yaml`. S4 also records the **whole-US-market price to earnings** from `pedata.xls` (for V4, SPEC v2.3: trailing or current,
   never forward), from the whole-market row without financial companies, the same column as V3; record the row and
   column in `settings.yaml`. Check the market P/E and the market dividend yield by hand too. `vebitda.xls` is no
   longer needed.
@@ -82,19 +85,20 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
 ## Only you
 
 1. **Expected values:** your own hand working for every check (Appendix A rows first, then edge cases).
-2. **Benchmark check:** compare three benchmark values and three company-to-group matches with the source files
-   yourself (S4).
+2. **Benchmark table (S4):** read every value and the five company groups from Damodaran's files yourself; a
+   second member re-reads three values and the five groups.
 3. **Reconciliation (S15), Apple:** revenue, operating income, net income, total assets, operating cash flow,
    dividends paid, read by hand from the latest 10-K with page and accession number. Not by the assistant.
 4. **Recalculate** the "Strengths and points to watch" table of SPEC Appendix A (v2.3) before S12, and post it
    with your S0c sign-off or in the S12 pull request.
-5. **Decide** Q3 (H4 when equity is negative) and Q1 (missing versus nil, with Flo and Igor; Amazon has no dividend tag at all (confirmed in the saved SEC files)): see `docs/plan.md`.
+5. **Decide** Q3 (H4 when equity is negative; McDonald's is a demo company): see `docs/plan.md`. Q1 is decided
+   (SPEC v2.4 §7: Amazon shows "no dividend paid").
 6. **Explain-back** on each PR; at least two reviews a week, Flo's (C) first.
 7. **Before the presentation:** five likely questions and answers on your area to E (Sun 29); walk-through (Mon 30).
 
 ## If you are blocked
 
-- No data layer yet? Work on the synthetic company fixture (`app/tests/fixtures/`, from S0c). Your checks need
-  nothing else.
+- Everything you need is on `main`: the synthetic company fixture (`app/tests/fixtures/`, S0c) for the Appendix A
+  values, and `load_company(..., demo=True)` for the five real companies.
 - Damodaran's file differs from the SPEC: write what it really contains in `docs/benchmarks.md` and follow the
   fallback in SPEC §9.1 (risk R3).

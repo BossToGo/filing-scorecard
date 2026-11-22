@@ -3,12 +3,14 @@
 Source: `SPEC.md` §13 (slices, owners, timeline) and §2 (tiers, cut list). One slice at a time, one branch per
 slice named `<member>/<slice-id>-<short-name>` (e.g. `b/S5-past-checks`), one pull request reviewed by a teammate
 (first reviewer: the backup, §12). A tier starts only when the previous one is released, except S4 and S8, which
-the SPEC timetable starts on Thursday 19 (see open question Q2). After every slice: update the status and the
-progress log below, and append to `AI-USAGE.md`.
+the SPEC timetable starts on Thursday 19 (see open question Q2). **Since SPEC v2.4 (22 November)** the MVP is the
+five demo companies, one workflow end to end (§2): v0.1 on Tuesday 24, v0.2 with the feature freeze on Thursday 26
+at 20:00; the strengths and points to watch (S12) and the Excel export (S13) only if v0.2 is released before the
+freeze. After every slice: update the status and the progress log below, and append to `AI-USAGE.md`.
 
 **Release check (§13.1, run by A or the backup D):** all tests green in the workflow; the app starts in demo mode
 with the network off; the five demo companies open without an error; the README run commands still work. Then tag
-`main` (`v0.1`, `v0.2`, `v0.3`) and record the date here.
+`main` (`v0.1`, `v0.2`; no `v0.3` since SPEC v2.4) and record the date here.
 
 ## Slices
 
@@ -18,55 +20,59 @@ Status values: `todo`, `in progress`, `done (<date>, commit <short hash>)`, `blo
 
 | # | Slice | Owner | Depends on | Done when (evidence) | Acceptance | Status |
 |---|---|---|---|---|---|---|
-| S0 | Repository bootstrap, in four steps below | A, agreed by all | – | Five merged pull requests from five accounts (each adds a line to `docs/team.md`); a deliberately failing test turns the check red, then green | – | in progress |
+| S0 | Repository bootstrap, in four steps below | A, agreed by all | – | Five merged pull requests from five accounts (each adds a line to `docs/team.md`); a deliberately failing test turns the check red, then green | – | in progress: S0.1 to S0.3 done; S0.4 open |
 | S0.1 | Repository created from the starter, `SPEC.md` v2 added, teammates invited | A | – | Public repo on GitHub; commit linked to A's account | – | done (2026-11-18, commit 149180c) |
-| S0.2 | Product documents: product, architecture, acceptance, plan (this file) | A | S0.1 | Pull request reviewed by a teammate | – | in progress |
-| S0.3 | Walking skeleton: pinned requirements, `app/main.py` shows one page, one passing test, layering test, `app/.env.example`, `app/settings.yaml` (one section per owner), `app/src/contracts.py` (§11), `.github/workflows/tests.yml`, pull request template, `CODEOWNERS`, `docs/team.md`, team rules in `AGENTS.md`; SPEC §11–12 amended for the `app/` layout (separate pull request) | A | S0.2 | Tests pass locally and in the workflow; the app starts and the first page loads | V1 (partly) | in progress |
-| S0.4 | Branch protection on `main` (1 approval, test check required, no bypassing) and one `docs/team.md` pull request per member | A, then everyone | S0.3 | Five merged team pull requests; red-then-green demonstration recorded in the progress log | – | todo |
+| S0.2 | Product documents: product, architecture, acceptance, plan (this file) | A | S0.1 | Pull request reviewed by a teammate | – | done (2026-11-19, PR #1, merge 136cef0) |
+| S0.3 | Walking skeleton: pinned requirements, `app/main.py` shows one page, one passing test, layering test, `app/.env.example`, `app/settings.yaml` (one section per owner), `app/src/contracts.py` (§11), `.github/workflows/tests.yml`, pull request template, `CODEOWNERS`, `docs/team.md`, team rules in `AGENTS.md`; SPEC §11–12 amended for the `app/` layout (separate pull request) | A | S0.2 | Tests pass locally and in the workflow; the app starts and the first page loads | V1 (partly) | done (2026-11-19, PR #2, merge 809fc76; SPEC layout PR #3, merge 51221a5) |
+| S0.4 | Branch protection on `main` (1 approval, test check required, no bypassing) and one `docs/team.md` pull request per member | A, then everyone | S0.3 | Five merged team pull requests; red-then-green demonstration recorded in the progress log | – | in progress: protection on (1 approval, required check `test`, administrators included); team pull requests merged for D (#11), E (#12) and C (#13); B's #22 open; red-then-green demonstration not recorded yet |
 | S0b | Sample data on day one: saved company facts and submissions for the five demo companies in `app/evidence/demo/` | A | S0.3 | Files load in a test with the network off | AC7 (partly) | done (2026-11-20, PR #6, merge 787a9d9) |
-| S0c | Synthetic company of SPEC Appendix A (version 2.3) as `app/tests/fixtures/synthetic_co.yaml`, loader `app/tests/fixtures/synthetic.py`; each owner recalculates their rows by hand and posts the result as a review comment on the S0c pull request; A records it in the file (B: P and H rows and the statements; C: D, V, W, F rows; D: AC3; E: CALC-S) | All, collected by A | S0.3 | Merged with five sign-offs in the pull request; CALC rows in `docs/acceptance.md` marked signed off | CALC-*, AC3 | in progress: fixture on version 2.3; C, D and E signed off and recorded; B's sign-off missing (his rows stay locked); pull request #5 open |
+| S0c | Synthetic company of SPEC Appendix A (version 2.3) as `app/tests/fixtures/synthetic_co.yaml`, loader `app/tests/fixtures/synthetic.py`; each owner recalculates their rows by hand and posts the result as a review comment on the S0c pull request; A records it in the file (B: P and H rows and the statements; C: D, V, W, F rows; D: AC3; E: CALC-S) | All, collected by A | S0.3 | Merged with five sign-offs in the pull request; CALC rows in `docs/acceptance.md` marked signed off | CALC-*, AC3 | done (2026-11-22, PR #5, merge 3838296) with four sign-offs (C, D, E; A collects them): B's rows stay locked (`NotSignedOff`) until Greg's sign-off is recorded in a follow-up pull request (decision log, 2026-11-22) |
 
-### Tier 1: release v0.1 "Filing scorecard" (target Sun 22 November)
+### Tier 1: release v0.1 "Filing scorecard" (target Tue 24 November; first planned for Sun 22)
+
+All on the five demo companies (SPEC v2.4 §2).
 
 | # | Slice | Owner | Depends on | Done when (evidence) | Acceptance | Status |
 |---|---|---|---|---|---|---|
-| S1 | SEC client and cache: ticker lookup, submissions, company facts, declared User-Agent, ≤ 5 requests per second, three retries | A | S0 | Tests run without network on saved files; a real download works from A's laptop | E4 (client part) | in progress: client done, reviewed and tested; pull request open |
-| S2 | Line-item resolver with sources (§5, §6) | A | S1, S0b | Tests for every rule in §5.3 and every planted mistake in §5.4 | E5–E8, PE1–PE6 | in progress: resolver done, reviewed and tested; pull request open |
-| S3 | Coverage report over about 100 non-financial companies from at least 8 industries → `docs/coverage.md`; the 30 companies of the verified universe → `app/data/universe.csv` | A | S2 | Table exists; go/no-go decided at office hours Fri 20 (§13.4) | E16 | in progress: report and universe done, pull request open; go/no-go at office hours |
+| S1 | SEC client and cache: ticker lookup, submissions, company facts, declared User-Agent, ≤ 5 requests per second, three retries | A | S0 | Tests run without network on saved files; a real download works from A's laptop | E4 (client part) | done (2026-11-20, PR #7, merge e7627db) |
+| S2 | Line-item resolver with sources (§5, §6) | A | S1, S0b | Tests for every rule in §5.3 and every planted mistake in §5.4 | E5–E8, PE1–PE6 | done (2026-11-20, PR #8, merge adc7456); audit fixes in #19 and the no-dividend rule (plan Q1) in #21, both open |
+| S3 | Coverage report over about 100 non-financial companies from at least 8 industries → `docs/coverage.md`; the 30 companies of the verified universe → `app/data/universe.csv` | A | S2 | Table exists; go/no-go decided at office hours Fri 20 (§13.4) | E16 | done (2026-11-21, PR #9, merge b5f3507); go/no-go decided in SPEC v2.4 §13.4 (Q13) |
 | S5 | Past performance checks P1–P6 (P4, P5 "not assessed" until S4) | B | S0c | Appendix A values reproduced; edge cases tested | AC3, CALC-P* | todo |
 | S6 | Financial health checks H1–H6 | B | S0c | Same | AC3, CALC-H*, E9, E12 | todo |
-| S7 | Dividend checks D1–D6 (D2 "not assessed" until S4 and a share price) | C | S0c | Same | AC3, CALC-D*, E10, E11 | todo |
-| S10 | Interface: input bar, header, score chart (six-block bars), expandable checks, sources page, theme file `app/.streamlit/config.toml` (SPEC v2.3 §3) | D | S0c, then S2 | `streamlit run` works; app test opens the synthetic company and finds a known score | AC1, AC3–AC5, V1, V3, V4 | todo |
+| S7 | Dividend checks D1–D6 (D2 "not assessed" until S4 and a share price) | C | S0c | Same | AC3, CALC-D*, E10, E11 | in progress (branch `c/S7-dividend-checks`) |
+| S10 | Interface: input bar, header, score chart (six-block bars), expandable checks, sources page, theme file `app/.streamlit/config.toml` (SPEC §3), for the five demo companies | D | S2 (merged: the screen can be built on `load_company("KO", demo=True)` today); S0c for the app test | `streamlit run` works; app test opens the synthetic company and finds a known score | AC1, AC3–AC5, V1, V3, V4 | todo |
 | S11 | Gates (§10) and error messages | D | S2 | One test per stop and warn case | AC2, E1–E3, E15, V2 | todo |
 | S14 | Demo mode on the five saved companies | A with D | S2, S10 | App runs with the network switched off | AC7 | todo |
-| S15 | Reconciliation: six figures (revenue, operating income, net income, total assets, operating cash flow, dividends paid) per member for one demo company, read from the 10-K with page and accession number | All, coordinated by E | S2 | 30 figures match the resolver within USD 0.5 million | – | in progress (KO done: 6 of 30) |
-| S16a | Plain-language texts for the 18 tier 1 checks, written for a retail reader | E | S10 | Each check shows its text; reviewed by the check's owner | AC4 | todo |
+| S15 | Reconciliation: six figures (revenue, operating income, net income, total assets, operating cash flow, dividends paid) per member for one demo company, read from the 10-K with page and accession number | All, coordinated by E | S2 | 30 figures match the resolver within USD 0.5 million | – | in progress: KO done (6 of 30, PR #16, merge 73da89a); the rule for tools in #18 |
+| S16a | Plain-language texts for the 18 tier 1 checks, written for a retail reader | E | S10 | Each check shows its text; reviewed by the check's owner | AC4 | in progress (PR #17) |
 
-### Tier 2: release v0.2 "Valuation" (target Wed 25 November)
+### Tier 2: release v0.2 "Valuation" (target Thu 26 November, 20:00: the feature freeze)
 
 | # | Slice | Owner | Depends on | Done when (evidence) | Acceptance | Status |
 |---|---|---|---|---|---|---|
-| S4 | Extraction script, benchmark CSV, industry lookup; fallback table only if generated from SEC codes in his file, never by hand (SPEC v2.3 §4, §9.1); starts Thu 19 with the day-one look at `indname.xls`, in parallel with S5 | B | S0 | Loader tests; three benchmark values and three company-to-group matches compared by hand with the source files; every verified company matched or the gap reported | AC8, E17 | todo |
+| S4 | **SPEC v2.4:** the benchmark table `app/data/benchmarks_us_2026.csv` for the industry groups of the five demo companies and the whole-market row, each value with its source file, sheet and row, and each company's group read from `indname.xls` (SPEC §4, §9.1). The extraction script, the lookup for other tickers and the generated fallback table are optional, after v0.2 | B | S0 | Loader tests; three benchmark values and the five company-to-group matches re-read from the source files by a second member | AC8, E17 | todo |
 | S2b | Before S12: the `Statement` shape in `app/src/contracts.py` and the "overrides" wording there updated; the FRED `DGS10` download of the last five years and its average, with cache and settings fallback (SPEC v2.3 §4, §11) | A | S0 | Contract tests pass; the FRED client and the average tested on a saved response with the network off; the fallback used when the key or the network is missing | – | todo |
-| S8 | Equity method (SPEC v2.3 §8): cost of equity (beta limited to 0.8–2.0), starting free cash flow from the three-year margin, starting growth capped at −10%..+30% and decaying towards terminal growth (half-life 2 years, 10 years), terminal value, reported minority interests, when the model does not fit; starts Thu 19 on the synthetic company, with C's Excel model | C | S0c | Matches C's separate Excel model and Appendix A (valuation rows recalculated by C first: they changed in v2.3); property tests pass; one test per case of §8.6 | CALC-W*, CALC-F*, E12, E18–E20, E22 | todo |
+| S8 | Equity method (SPEC v2.3 §8): cost of equity (beta limited to 0.8–2.0), starting free cash flow from the three-year margin, starting growth capped at −10%..+30% and decaying towards terminal growth (half-life 2 years, 10 years), terminal value, reported minority interests, when the model does not fit; starts Thu 19 on the synthetic company, with C's Excel model | C | S0c | Matches C's separate Excel model and Appendix A (valuation rows recalculated by C first: they changed in v2.3); property tests pass; one test per case of §8.6 | CALC-W*, CALC-F*, E12, E18–E20, E22 | in progress: C's Excel model done (PR #14, merge 062addc); engine todo |
 | S9 | Valuation checks V1–V6 (V4 against the whole US market, V6 against the fair value at the 30% growth cap, SPEC v2.3); switch on P4, P5, D2 | C with B | S8, S4 | Appendix A values reproduced; the `insufficient_data` and `not_applicable` cases of §8.6 tested | AC8, AC9, CALC-V*, CALC-S | todo |
 | S10b | Interface: share price input, valuation detail (cost of equity build-up, 10-year free cash flow table, fair value against the price, growth note when the growth limit applies), the reasons of §8.6, industry with route and number of firms; no sensitivity table, no implied growth, no user inputs | D | S8, S4 | App test finds the fair value of the synthetic company | AC6, AC9, AC10 | todo |
-| S13 | Excel export, two sheets: scorecard; figures and sources | E | S10 | Export reopened by a test; figures equal the screen | AC11 | todo |
 | S16b | Texts for the valuation checks and the industry explanations | E | S10b | Reviewed by C | – | todo |
+| S17 | End-to-end app test: demo ticker, a known score, a known figure, a known fair value | D | S14 | Passes twice in a row in the workflow | AC1, V1 | todo |
 
-### Tier 3: release v0.3 "Strengths and points to watch" (feature freeze Thu 26 November, 20:00)
+### Tier 3: strengths and points to watch, and the Excel export (only if v0.2 is released before the freeze, Thu 26 November, 20:00)
+
+Since SPEC v2.4 there is no release v0.3: these slices go into v0.2 if they are merged before the freeze, otherwise they are cut. S17 moved to v0.2.
 
 | # | Slice | Owner | Depends on | Done when (evidence) | Acceptance | Status |
 |---|---|---|---|---|---|---|
 | S12 | Strengths and points to watch (SPEC v2.3 §9: 15 statements from the checks) | B (rules, `app/src/highlights.py`) with D (on screen) and E (texts, reviewed by B) | S2b, S4, S5–S9 | One test per statement (shown, not shown, input missing); the synthetic company's statements match Appendix A | AC12, CALC-G | todo |
-| S17 | End-to-end app test: demo ticker, a known score, a known figure, a known fair value | D | S14 | Passes twice in a row in the workflow | AC1, V1 | todo |
+| S13 | Excel export, two sheets: scorecard; figures and sources | E | S10 | Export reopened by a test; figures equal the screen | AC11 | todo |
 
 ### After the freeze: fixes only (Fri 27 November – Tue 1 December)
 
 | # | Slice | Owner | Depends on | Done when (evidence) | Status |
 |---|---|---|---|---|---|
 | S18 | Break-it round: independent read-only review of each area; a deliberate break of every formula | Each owner; reviewer from another area | v0.2 | `docs/testing.md` lists each break and the test that caught it; every finding is a failing test or a written dismissal | todo |
-| S19 | README and fresh-clone test on one Windows and one Mac laptop, by a member who did not write the README | E writes, two members test | v0.3 | Works from the README alone on both | todo |
+| S19 | README and fresh-clone test on one Windows and one Mac laptop, by a member who did not write the README | E writes, two members test | the last release before the freeze | Works from the README alone on both | todo |
 | S20 | Business plan (Markdown → PDF), slides, recorded fallback demo, question bank | E leads and edits; each member writes one section (SPEC §17) | – | Files on `main` before the deadline | todo |
 
 Cut list if a release slips by more than a day (§2): strengths and points to watch → Excel export. The tier 1 scorecard and the sources page are never cut. Everything on `main` by Tue 1 December, 12:00.
@@ -102,6 +108,7 @@ Cut list if a release slips by more than a day (§2): strengths and points to wa
 | 2026-11-22 | S0c | Fixture rewritten for SPEC v2.3 (lean): valuation rows of the equity method (fair value 20.13; 37.37 at the growth cap; ten-year forecast), V4 against the market P/E, valuation score 3, the 15 strengths and points to watch with their overview, the v2.3 settings and benchmarks; the cash override of v2.2 removed (AC6 is no longer a calculation); cost of equity stored as 9.03325% so that it is not on the tolerance edge (audit). Sign-offs for the v2.3 values recorded with their links: C (Flo, 21 November), D (Simon, AC3), E (Emma, 21 November) | The v2.2 fixture failed 9 tests against the v2.3 Appendix A (seen failing); 13 copying errors planted one at a time, each caught; pytest: 455 passed. The Appendix A values were recomputed independently three times (A's script, a reviewer agent on 21 November, C's Excel model) | B's sign-off for the P and H rows and the statements; the group decides whether #5 merges with B's rows still locked |
 | 2026-11-22 | S0 | **SPEC v2.4, MVP scope (Igor):** the product is one workflow that works end to end for the five demo companies (pick a company, type the price, scorecard, check, filing); other tickers stay possible but outside the MVP, with their known problems as README limitations; benchmarks as a small cited table for the five companies' industries (S4 shrinks); plan Q1 (no dividend line: nil only without any dividend evidence) and Q13 (go with the five; Apple kept; operating income not derived) decided; new dates: v0.1 Tuesday 24, v0.2 with the feature freeze Thursday 26 at 20:00; strengths, points to watch and the export only if v0.2 is released before the freeze | Data of the five demo companies checked on 22 November: Coca-Cola, Nvidia and McDonald's complete; Apple without interest expense after fiscal 2023; Amazon without dividends. No code changed; pytest: see the pull request | The group approves the pull request; `docs/plan.md` slice dates, the member guides and `docs/product.md` follow in PR #4; A builds the Q1 rule (PR #18's pending test then passes) |
 | 2026-11-21 | S8 (Excel model) | C's separate Excel cross-check model `docs/crosscheck/valuation-crosscheck.xlsx`, built by Flo from the SPEC v2.3 formulas (equity method, version of 20 November), not from the code: inputs from Appendix A, cost of equity, three-year free cash flow margin, growth limit and decay, ten-year forecast, terminal value, a second sheet with g1 at the 30% cap, and the sign-off rows CALC-D1–D6, CALC-V1–V6, CALC-W1–W2, CALC-F1–F4 | Fair value USD 20.13 and USD 37.37 at the growth cap; every row agrees with `docs/acceptance.md` (Appendix A v2.3) | Sign-off comment on #5 by C; S8 code not started |
+| 2026-11-22 | S0 | Guides, plan and product brought to SPEC v2.4 (the five demo companies, one workflow): each guide's timeline (v0.1 Tue 24, v0.2 and freeze Thu 26, S12 and S13 only if v0.2 is released first), S4 as the small benchmark table, Q1 decided, statuses from the merged pull requests; slice table here regrouped (S17 into v0.2, S13 into the conditional tier, no v0.3); product.md MVP block, F6, F8, F9 and dates; SPEC §13.2 tables and three "v0.3" mentions corrected to match the v2.4 headings (Claude's slip in #20); decision log: #5 merged with four sign-offs | pytest: see the pull request; every date and slice checked against SPEC v2.4 §2, §13.2 and §13.3 | Greg's S0c sign-off and his team PR #22; S0.4's red-then-green demonstration |
 
 ## Known problems and open questions
 

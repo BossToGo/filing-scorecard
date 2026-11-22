@@ -6,17 +6,19 @@ review Igor's PRs first, Igor reviews yours; you run the release check if Igor c
 
 ## Your slices, in order
 
+**Timeline (SPEC v2.4, 22 November):** the MVP is the five demo companies, one workflow end to end. Release v0.1 on **Tuesday 24** (the screen and the 18 checks), v0.2 with the feature freeze on **Thursday 26 at 20:00** (the fair value). The strengths and points to watch (S12) and the Excel export (S13) are built only if v0.2 is released before the freeze.
+
 | When | Slice | Done when (SPEC §13.2) |
 |---|---|---|
-| Wed 18 | Accept the invitation; your `docs/team.md` PR (steps in `docs/team.md`) | Merged |
-| Thu 19 | **Sign-off for S0c:** recalculate AC3 of `docs/acceptance.md` (the tier 1 scores of the synthetic company) | Your sign-off comment on PR #5 |
-| Thu 19 → Sun 22 | S10: input bar, header, score chart (one bar of six blocks per area), expandable checks, sources page, theme file; start on the synthetic company, then on real data after A's S2. Branch `d/S10-interface` | `streamlit run` works; an app test opens the synthetic company and finds a known score |
-| Sat 21–Sun 22 | S11: gates (SPEC §10) and error messages, including E4 (SEC unreachable), branch `d/S11-gates` | One test per stop and warn case |
-| Sat 21–Sun 22 | S14 with A: demo mode on the five saved companies | App runs with the network off |
-| Mon 23–Wed 25 | S10b: share price input; valuation detail: cost of equity build-up with each assumption and its source, the 10-year free cash flow table, fair value against the price, the company's actual growth and, when the growth limit applies, the growth note (SPEC §8.3); the reasons when the model does not fit (§8.6); industry with route and number of firms. No sensitivity table, no implied growth, no user inputs | App test finds the fair value of the synthetic company |
-| Mon 23–Wed 25 | "Download Excel" button that calls Emma's export (S13, `app/src/export.py`) | The button downloads the file Emma's test checks |
-| Thu 26 | S12 with B: the strengths and points to watch next to the score chart, from Greg's `app/src/highlights.py` with Emma's texts (SPEC §9: up to five of each, important first); S17: end-to-end app test | The synthetic company shows the statements of SPEC Appendix A; S17 passes twice in a row on GitHub |
-| Sat 21–Sun 29 | **Business plan section:** the solution, with screenshots, in `docs/business-plan/sections/D-solution.md` (Emma, E, assembles the plan; prompt in `docs/members/README.md`) | Draft by Sun 22; final by Sun 29 |
+| Thu 19 | **Sign-off for S0c:** AC3 (the tier 1 scores of the synthetic company) | Done: recorded in PR #5 |
+| Sun 22–Tue 24 | S10: input bar, header, score chart (one bar of six blocks per area), expandable checks, sources page, theme file, for the five demo companies. A's data layer is merged: build the screen on `load_company("KO", demo=True)` today; the app test uses the synthetic company. Branch `d/S10-interface` | `streamlit run` works; an app test opens the synthetic company and finds a known score |
+| Sun 22–Tue 24 | S11: gates (SPEC §10) and error messages, including E4 (SEC unreachable), branch `d/S11-gates` | One test per stop and warn case |
+| Sun 22–Tue 24 | S14 with A: demo mode on the five saved companies | App runs with the network off |
+| Sun 22–Tue 24 | S15, reconciliation of McDonald's: six figures read by hand from the latest 10-K ("Only you" below; format in `app/tests/reconciliation/README.md`) | `app/tests/reconciliation/MCD.yaml` merged; 6 of 6 match |
+| Wed 25–Thu 26 | S10b: share price input; valuation detail: cost of equity build-up with each assumption and its source, the 10-year free cash flow table, fair value against the price, the company's actual growth and, when the growth limit applies, the growth note (SPEC §8.3); the reasons when the model does not fit (§8.6); the industry with its route and number of firms. No sensitivity table, no implied growth, no user inputs | App test finds the fair value of the synthetic company |
+| Wed 25–Thu 26 | S17: end-to-end app test (part of v0.2 since SPEC v2.4) | Passes twice in a row on GitHub |
+| Thu 26, only if v0.2 is released before the freeze | S12 with B: the strengths and points to watch next to the score chart, from Greg's `app/src/highlights.py` with Emma's texts (SPEC §9: up to five of each, important first); the "Download Excel" button for Emma's export (S13, `app/src/export.py`) | The synthetic company shows the statements of SPEC Appendix A; the button downloads the file Emma's test checks |
+| Sat 21–Sun 29 | **Business plan section:** the solution, with screenshots, in `docs/business-plan/sections/D-solution.md` (Emma, E, assembles the plan; prompt in `docs/members/README.md`) | Draft now (first planned for Sun 22); final by Sun 29 |
 | Fri 27–Sun 29 | S18, break-it round: a member from another area reviews your code read-only; you break each of your formulas once on purpose and record each break and the test that caught it in `docs/testing.md` | Every finding is a failing test or a written dismissal |
 
 **Slice prompt** (replace the slice, sections and branch):
@@ -50,7 +52,8 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
   `data.latest("shares")`, never `data.fact("shares", fy0)`, which is None by design (plan Q12). A `missing`
   figure has value None and its reason in `.note`; a `derived` one has its formula and sources in `.note`.
 - **Warnings for your gates (S11):** `data.warnings` holds strings "CODE: message", with the codes RESTATED,
-  TAG_CONFLICT, NON_USD, FY_CHANGE, DERIVED, DEBT_CHECK, DEBT_INCOMPLETE, AVERAGE_SHARES, SIGN and NO_ANNUAL_DATA.
+  TAG_CONFLICT, NON_USD, FY_CHANGE, DERIVED, DEBT_CHECK, DEBT_INCOMPLETE, AVERAGE_SHARES, SIGN and NO_ANNUAL_DATA
+  (FY_GAP and MINORITY_UNTAGGED come with #19, NIL_DIVIDEND with #21: all go on the sources page).
   JPMorgan loads with its header only (SEC industry code 6021), so your gate refuses it by industry code.
   Acceptance E4 is yours: `load_company` raises `SourceUnreachable`; show its message and suggest demo mode.
 - **SEC errors for your messages (S11)**, all subclasses of `SecError`, imported with
@@ -96,5 +99,5 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
 
 ## If you are blocked
 
-- No real data yet? Build everything on the synthetic company fixture (`app/tests/fixtures/`, from S0c); switch to
-  real data when A's S2 is merged (risk R4).
+- A's data layer (S2) and the synthetic company fixture (S0c) are on `main`: build the screen on
+  `load_company("KO", demo=True)` and write the app tests on the synthetic company.

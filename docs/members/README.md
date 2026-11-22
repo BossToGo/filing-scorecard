@@ -15,6 +15,12 @@ One page per member: what you own, what you do and when, and the exact prompts t
 only required input; nobody corrects figures by hand; five forces is replaced by strengths and points to watch
 (SPEC §9). Read SPEC §1, §3 and the sections of your slices before your next prompt.
 
+**SPEC v2.4 (22 November):** the MVP is the five demo companies (Coca-Cola, Apple, Nvidia, McDonald's, Amazon), one
+workflow end to end: pick a company, type the share price, get the scorecard, open any check to its figures and
+filing. Release v0.1 on Tuesday 24 (screen and 18 checks), v0.2 with the feature freeze on Thursday 26 at 20:00
+(fair value). The strengths and points to watch and the Excel export only if v0.2 is released before the freeze.
+Other tickers get no further work. Your guide's timeline follows these dates.
+
 ## Every work session, the same seven steps
 
 1. Open the `filing-scorecard` folder in VS Code and start your assistant (`claude` in the terminal).
