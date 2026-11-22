@@ -2,7 +2,7 @@
 
 **Course:** Programming and AI for Corporate Finance (FIN_8546), EDHEC, final group project
 **Deadline:** Tuesday 1 December 2026, 23:59, state of `main`. Presentation Wednesday 2 December 2026 (8 minutes + 4 minutes of questions).
-**Status of this file:** version 2.3 of 20 November 2026 (version 2, risk-reduced: release tiers, risk register, industry lookup, no browser dependency; 2.1: folder layout under `app/`, §11 and §12; 2.2: names and final roles, §12, §13.2, §17; 2.3: for retail bank customers, fully automatic, share price the only input, equity valuation method with growth decaying over ten years, V4 against the whole market, five forces replaced by 15 strengths and points to watch, growth limit and decay, when the valuation model does not fit, sensitivity table, growth the price implies and user inputs cut, §1 to §3, §5.2, §6, §8 to §16, Appendix A). To be agreed by the whole group in one meeting, then changed only by pull request.
+**Status of this file:** version 2.4 of 22 November 2026 (version 2, risk-reduced: release tiers, risk register, industry lookup, no browser dependency; 2.1: folder layout under `app/`, §11 and §12; 2.2: names and final roles, §12, §13.2, §17; 2.3: for retail bank customers, fully automatic, share price the only input, equity valuation method with growth decaying over ten years, V4 against the whole market, five forces replaced by 15 strengths and points to watch, growth limit and decay, when the valuation model does not fit, sensitivity table, growth the price implies and user inputs cut, §1 to §3, §5.2, §6, §8 to §16, Appendix A; 2.4: the MVP is the five demo companies and one workflow end to end, a benchmark table for their industries only, plan Q1 and Q13 decided, new release dates, §2, §4, §7, §9.1, §13.2, §13.3). To be agreed by the whole group in one meeting, then changed only by pull request.
 
 **The one principle of this version:** `main` always holds a working, demo-ready app. We build in three tiers. Each tier ends with a tagged release that runs offline and passes all tests. If time runs out, we present the last release and cut the rest; nothing half-finished is ever merged.
 
@@ -45,22 +45,30 @@
 
 Each tier is a complete product on its own. A later tier only starts when the earlier one is released (section 13).
 
-**Tier 1 — release v0.1 "Filing scorecard" (target Sunday 22 November).** Needs only SEC data.
+**The MVP (version 2.4, 22 November).** The course asks for the smallest product that proves the idea: "one core workflow that works end to end beats five half-finished features". Ours is:
 
-- One company at a time, by ticker, for a verified universe of 30 companies whose figures all resolve and pass the accounting checks (section 13.4). The app also runs on any other supported ticker, marked "not fully checked".
+> The customer picks one of **five companies** (Coca-Cola, Apple, Nvidia, McDonald's, Amazon), types the share price and gets the scorecard; every check opens to its rule, its figures and the filing they come from.
+
+- **These five are what we promise.** Each runs from saved SEC data (so the demo works offline) and is reconciled by hand against its 10-K (S15). Their data is complete, with two states we keep on purpose because they are true: Apple reports no interest expense after fiscal 2023, so H6 shows "insufficient data" (the app never guesses); Amazon pays no dividend, so the dividend area shows "no dividend paid" (section 7).
+- **Any other ticker is outside the MVP.** It can still be looked up live, because the SEC client and the resolver exist and are tested, and it is marked as section 10 says. No further work goes into other companies before the deadline: their known problems (debt filed under unusual tags, years restated after a spin-off, `docs/plan.md`) are stated as limitations in the README.
+- **Order of work.** First the screen and the 18 checks on the five companies (v0.1), then the fair value (v0.2). The strengths and points to watch and the Excel export are built only if v0.2 is released before the feature freeze.
+
+**Tier 1 — release v0.1 "Filing scorecard" (target Tuesday 24 November; first planned for Sunday 22).** Needs only SEC data.
+
+- One company at a time: the five demo companies (the MVP above). The 30 companies of `data/universe.csv`, whose figures all resolve and pass the automatic accounting checks (section 13.4), and any other supported ticker also run; the header marks a ticker outside those 30 "not fully checked".
 - Past performance, financial health and dividend: 18 checks (section 7). Checks that need an industry benchmark or the share price show "not assessed" until tier 2.
 - A sources page: every figure with its XBRL tag, filing, filing date, retrieval time and status.
 - No manual override of figures: a figure that does not resolve is `missing`, and the checks that need it show "insufficient data" (section 1).
 - Offline demo mode on saved data for five companies.
 
-**Tier 2 — release v0.2 "Valuation" (target Wednesday 25 November).** Adds the share price and the benchmarks.
+**Tier 2 — release v0.2 "Valuation" (target Thursday 26 November, 20:00, the feature freeze).** Adds the share price and the benchmarks.
 
-- Industry lookup and benchmarks (sections 4 and 9.1).
+- Benchmarks for the industry groups of the five demo companies and for the whole US market (sections 4 and 9.1).
 - The valuation area: 6 checks, the discounted cash flow value (equity method) with the growth limit and decay, and the rules for when the model does not fit (section 8).
 - The benchmark-dependent checks of tier 1 switch on (P4, P5, D2).
-- Excel export with two sheets: scorecard; figures and sources.
+- Excel export with two sheets: scorecard; figures and sources (only if v0.2 is released before the freeze).
 
-**Tier 3 — release v0.3 "Strengths and points to watch" (by the feature freeze, Thursday 26 November, 20:00).**
+**Tier 3 — "Strengths and points to watch" (only if v0.2 is released before the feature freeze, Thursday 26 November, 20:00).**
 
 - Strengths and points to watch: 15 short plain-language statements drawn from the checks, each from a fixed rule (section 9).
 
@@ -71,6 +79,7 @@ Each tier is a complete product on its own. A later tier only starts when the ea
 - Companies that do not file annual reports on Form 10-K in US dollars under US accounting rules (foreign filers, companies reporting under international standards).
 - Banks, insurers and real estate investment trusts (industry codes 6000 to 6799). The app says "not supported" and why.
 - Analyst forecasts, live share prices, news, accounts, payments, a database.
+- Companies other than the five demo companies are outside the MVP (version 2.4): they can be looked up, and their known problems are listed in `docs/plan.md`.
 - Manual correction of figures, and Porter's five forces (it needs judgement and market data that the filings do not contain; replaced in version 2.3 by the strengths and points to watch of section 9).
 - AI inside the app.
 
@@ -101,8 +110,8 @@ Look and wording: calm and light, one accent colour, no gradients, glow or emoji
 | Company name, industry code, fiscal year end, list of filings | SEC `https://data.sec.gov/submissions/CIK##########.json` | See SEC rules below |
 | Financial statement figures | SEC `https://data.sec.gov/api/xbrl/companyfacts/CIK##########.json` | See SEC rules below |
 | Risk-free rate | FRED series `DGS10` (10-year US Treasury yield), downloaded live; the app uses the **average of the last five years** of daily values | Free key in `.env` (`FRED_API_KEY`). The daily values of the five years up to the latest available day are downloaded (days marked "." are skipped), averaged, and cached with the period and the retrieval date, like every SEC response. Averaging, as in the Simply Wall St model, keeps estimates from jumping with the bond market (each half point moves a fair value by about 8%). In demo mode, without a key, or when FRED cannot be reached, the value in `settings.yaml` is used, labelled `assumption`, with its period written next to it; A refreshes it before each release (decided by Igor on 20 November) |
-| Industry benchmarks (unlevered beta, margins, return on equity, price to earnings for the industry and for the whole US market, price to book, dividend yield, number of firms) | Professor Aswath Damodaran's US industry datasets, January 2026 edition: `betas.xls`, `margin.xls`, `roe.xls`, `pedata.xls` (industry rows and the whole-market row), `pbvdata.xls`, `divfund.xls` under `https://pages.stern.nyu.edu/~adamodar/pc/datasets/` | **Downloaded once by a one-off script (`scripts/extract_benchmarks.py`), which writes the columns we use to `data/benchmarks_us_2026.csv` with source file, column name and date. The app reads only that CSV, never the `.xls` files**, so a change in his file layout cannot break the app. Attribution in the README. Columns built from analyst forecasts (for example expected growth or the forward price to earnings in `pedata.xls`) are never extracted (section 1). **Pending instructor approval (section 16).** |
-| Company to Damodaran industry | His company lookup file `indname.xls` (same folder), described on his site as listing the industries and the companies in each one | Same one-off script extracts only ticker → industry group for US companies into `data/industry_lookup_us_2026.csv`. The full file is not committed (it contains company-level data from his providers). Columns to be confirmed by opening the file on day one (section 9.1). |
+| Industry benchmarks (unlevered beta, margins, return on equity, price to earnings for the industry and for the whole US market, price to book, dividend yield, number of firms) | Professor Aswath Damodaran's US industry datasets, January 2026 edition: `betas.xls`, `margin.xls`, `roe.xls`, `pedata.xls` (industry rows and the whole-market row), `pbvdata.xls`, `divfund.xls` under `https://pages.stern.nyu.edu/~adamodar/pc/datasets/` | **Downloaded once by a one-off script (`scripts/extract_benchmarks.py`), which writes the columns we use to `data/benchmarks_us_2026.csv` with source file, column name and date. The app reads only that CSV, never the `.xls` files**, so a change in his file layout cannot break the app. Attribution in the README. Columns built from analyst forecasts (for example expected growth or the forward price to earnings in `pedata.xls`) are never extracted (section 1). **Pending instructor approval (section 16).** **Version 2.4 (MVP):** a small table, `data/benchmarks_us_2026.csv`, holds only the rows of the five demo companies' industry groups and the whole-market row, typed or extracted by B from these files, each value with its file, sheet and row; a second member re-reads three values from the source. The script for all industries is optional and comes after v0.2. |
+| Company to Damodaran industry | His company lookup file `indname.xls` (same folder), described on his site as listing the industries and the companies in each one | Same one-off script extracts only ticker → industry group for US companies into `data/industry_lookup_us_2026.csv`. The full file is not committed (it contains company-level data from his providers). Columns to be confirmed by opening the file on day one (section 9.1). **Version 2.4 (MVP):** the group of each of the five demo companies is read from this file by B and written in the benchmark table with the source; the lookup for other tickers is optional and comes after v0.2. |
 | Share price | Typed in by the user (in a bank: the bank's own quote) | Optional automatic fill from Yahoo Finance is an open decision (section 16) |
 
 **SEC rules (session 2 and session 5).** Every request carries a `User-Agent` with a name and e-mail address, read from `.env` (`SEC_USER_AGENT`). The code allows at most 5 requests per second (the SEC limit is 10). Three retries with a growing pause, then the input is marked missing. Every raw response is saved with its retrieval time and reused; nothing is downloaded twice.
@@ -206,6 +215,8 @@ These tags are a starting list written from memory of the US accounting taxonomy
 ### Dividend
 
 If D1 fails, D2 to D6 are `not applicable` and the area shows "no dividend paid", score 0.
+
+**No dividend line at all (plan Q1, decided in version 2.4).** A company whose cash flow statements show no dividend under any dividend tag in any of the five fiscal years, and no dividend per share declared, pays no dividend (Amazon): dividends paid are nil, labelled "not reported, treated as nil" and listed on the sources page, so D1 fails and the area shows "no dividend paid". A dividend missing in only some of the years, or any sign of a dividend under a tag the app does not read, stays `missing` and gives "insufficient data": a payer must never be shown as paying none (Johnson & Johnson files its dividends under a third tag; audit of 21 November). The same question for a company without any debt tag does not arise for the five demo companies and stays open.
 
 | # | Check | Rule |
 |---|---|---|
@@ -331,6 +342,8 @@ The strengths and points to watch are tier 3. They reuse data already loaded in 
 ### 9.1 Industry classification (used by sections 7, 8 and 9)
 
 The SEC gives each company a four-digit standard industrial classification code (submissions file, fields `sic` and `sicDescription`). Damodaran uses his own industry groups (about 100), which do not map one-to-one to those codes. The app picks the group in this order and always shows which route was used:
+
+**Version 2.4 (MVP).** For the five demo companies, B reads each company's group in Damodaran's `indname.xls` and writes it in the benchmark table with the source (section 4); it is shown as "Industry: [group] (Damodaran lookup)". Routes 1 and 2 below serve other tickers and are built only after v0.2. Until then another ticker has no industry benchmark: P4, P5, V3 and V5 show "insufficient data"; D2 and V4 use the whole-market row and are still assessed.
 
 1. **Damodaran's own lookup (preferred).** Match the company's ticker in `data/industry_lookup_us_2026.csv` (extracted from his `indname.xls`). This is the group he used to compute the averages, so company and benchmark are classified the same way. Shown as "Industry: [group] (Damodaran lookup)".
 2. **Fallback table, generated only.** If the ticker is not in his file and his file contains SEC codes, the extraction script generates `data/sic_to_damodaran.csv` (for each code, the group most of its companies belong to) and the app looks the company's SEC code up there. Shown as "(mapped from SEC code [code])" on the sources page. No table is built by hand (version 2.3): without a match, the benchmarks are `missing` and the checks that need them show "insufficient data". S4 checks that every ticker of `data/universe.csv` maps to a group, and names the route.
@@ -492,7 +505,7 @@ Names agreed on 18 November 2026. If the group has four members, the work of E i
 | S0b | **Sample data on day one:** saved company facts and submissions files for the five demo companies committed to `evidence/demo/`, so nobody needs the network or waits for the data layer | A | S0 | Files load in a test with the network off |
 | S0c | Synthetic company of Appendix A as a test fixture; each owner recalculates their rows by hand | All, collected by A | S0 | `tests/fixtures/synthetic_co.yaml` merged with five sign-offs in the pull request |
 
-**Tier 1 — release v0.1 "Filing scorecard" (target Sunday 22 November)**
+**Tier 1 — release v0.1 "Filing scorecard" (target Tuesday 24 November)**
 
 | ID | Slice | Owner | Depends on | Done when (evidence) |
 |---|---|---|---|---|
@@ -502,17 +515,17 @@ Names agreed on 18 November 2026. If the group has four members, the work of E i
 | S5 | Past performance checks P1 to P6 (P4 and P5 return "not assessed" until S4) | B | S0c | Appendix A values reproduced; edge cases tested |
 | S6 | Financial health checks H1 to H6 | B | S0c | Same |
 | S7 | Dividend checks D1 to D6 (D2 "not assessed" until S4 and a share price) | C | S0c | Same |
-| S10 | Interface: input bar, header, score chart (six-block bars), expandable checks, sources page, theme file (section 3) | D | S0c, then S2 | `streamlit run` works; app test (`tests/app/`) opens the synthetic company and finds a known score |
+| S10 | Interface: input bar, header, score chart (six-block bars), expandable checks, sources page, theme file (section 3) | D | S2 (merged: the screen can be built on `load_company("KO", demo=True)` today); S0c for the app test | `streamlit run` works; app test (`tests/app/`) opens the synthetic company and finds a known score |
 | S11 | Gates (section 10) and error messages | D | S2 | One test per stop and warn case |
 | S14 | Demo mode on the five saved companies | A with D | S2, S10 | App runs with the network switched off; the risk-free rate comes from the five-year average stored in `settings.yaml` |
 | S15 | Reconciliation: each member reads six figures (revenue, operating income, net income, total assets, operating cash flow, dividends paid) for one demo company from the 10-K and commits them with the page and accession number | All, coordinated by E | S2 | 30 figures match the resolver within USD 0.5 million |
 | S16a | Plain-language texts for the 18 tier 1 checks, written for a retail reader | E | S10 | Each check shows its text; reviewed by the check's owner |
 
-**Tier 2 — release v0.2 "Valuation" (target Wednesday 25 November)**
+**Tier 2 — release v0.2 "Valuation" (target Thursday 26 November, 20:00: the feature freeze)**
 
 | ID | Slice | Owner | Depends on | Done when (evidence) |
 |---|---|---|---|---|
-| S4 | Extraction script, benchmark CSV, industry lookup and the generated fallback table, no hand-built table (sections 4 and 9.1) | B (starts Thursday 19 with the day-one task, in parallel with S5) | S0 | Loader tests; three benchmark values and three company-to-group matches compared by hand with the source files; all 30 tickers of `data/universe.csv` map to a group, by route, or each gap is reported |
+| S4 | **Version 2.4:** the benchmark table `data/benchmarks_us_2026.csv` for the industry groups of the five demo companies and the whole-market row, each value with its source file, sheet and row, and each company's group (sections 4 and 9.1). The extraction script, the lookup for other tickers and the generated fallback table are optional, after v0.2 | B | S0 | Loader tests; three benchmark values and the five company-to-group matches re-read from the source files by a second member |
 | S8 | Equity method (section 8): cost of equity with the beta limits, free cash flow forecast from the three-year margin with the growth limit and the exponential decay over ten years, terminal value, minority interests, when the model does not fit | C (starts Thursday 19 on the synthetic company, with the Excel model) | S0c | Matches C's separate Excel model and Appendix A (valuation rows recalculated by C first: they changed in version 2.3); property tests pass; one test per case of section 8.6 |
 | S2b | Before S12: the `Statement` shape in `src/contracts.py` (section 11); the FRED `DGS10` download of the last five years, its average, the cache and the settings fallback (section 4) | A | S0 | Contract tests pass; the FRED client and the average are tested on a saved response, with the network off; the fallback is used when the key or the network is missing |
 | S9 | Valuation checks V1 to V6; switch on P4, P5, D2 | C with B | S8, S4 | Appendix A values reproduced; the `insufficient_data` and `not_applicable` cases of section 8.6 tested |
@@ -520,7 +533,7 @@ Names agreed on 18 November 2026. If the group has four members, the work of E i
 | S13 | Excel export, two sheets: scorecard; figures and sources (section 3) | E | S10 | Export reopened by a test; figures equal the screen |
 | S16b | Texts for the valuation checks, the industry explanations and the growth note (section 8.3) | E | S10b | Reviewed by C |
 
-**Tier 3 — release v0.3 "Strengths and points to watch" (by the feature freeze, Thursday 26 November, 20:00)**
+**Tier 3 — "Strengths and points to watch", and the export S13 (only if v0.2 is released before the freeze; S17 belongs to v0.2 since version 2.4)**
 
 | ID | Slice | Owner | Depends on | Done when (evidence) |
 |---|---|---|---|---|
@@ -544,9 +557,10 @@ Names agreed on 18 November 2026. If the group has four members, the work of E i
 | Wed 18 Nov | Project clinic: settle section 16. Group meeting: agree this file, fill in names. Start S0. |
 | Thu 19 Nov | S0, S0b, S0c merged. A starts S1. B: day-one look at `indname.xls`, then S5. C: Excel model and S8 on the synthetic company. D: S10 on the synthetic company. E: sources for the problem evidence (published studies, cited). |
 | Fri 20 Nov | S2, S3. Office hours 16:00 to 18:00: coverage table, one reconciled company, go/no-go (13.4). |
-| Sat 21 to Sun 22 Nov | S5 to S7, S10, S11, S14, S15, S16a. **Release v0.1 Sunday evening.** E: business plan draft. |
-| Mon 23 to Wed 25 Nov | S2b (A, Monday), S4, S8, S9, S10b, S13, S16b. **Release v0.2 Wednesday evening.** |
-| Thu 26 Nov | S12, S17. **Feature freeze and release v0.3 at 20:00.** Whatever is not merged is cut. |
+| Sat 21 to Sun 22 Nov | Planned: S5 to S7, S10, S11, S14, S15, S16a and release v0.1 on Sunday evening. Not reached (S15 and S16a started; the audit of 21 November); re-planned in version 2.4. |
+| Sun 22 to Tue 24 Nov | S5, S6, S7, S10, S11, S14, S15, S16a on the five demo companies. **Release v0.1 Tuesday evening:** the five companies, 18 checks, sources, demo mode. E: business plan draft. |
+| Wed 25 to Thu 26 Nov | S2b, S4 (benchmark table), S8, S9, S10b, S16b, S17. **Release v0.2 and feature freeze Thursday 20:00.** S12 and S13 only if merged by then; whatever is not merged is cut. |
+| Thu 26 Nov, 20:00 | **Feature freeze.** The latest release is what we present: v0.2, or v0.1 (the scorecard without the fair value) if the valuation is not merged. |
 | Fri 27 to Sun 29 Nov | S18, S19, interface critique and fixes. Business plan final. Slides. |
 | Mon 30 Nov | Two timed rehearsals on the latest tag. Record the fallback demo. Walk-throughs of every area. |
 | Tue 1 Dec | Checklist of handout section 11. Everything on `main` by 12:00. |
@@ -561,6 +575,8 @@ Names agreed on 18 November 2026. If the group has four members, the work of E i
 - **Change scope:** the first group fails. Tier 1 is kept with fewer line items; tiers 2 and 3 are dropped.
 
 Whatever the coverage, the verified universe is the 30 companies for which every tier 1 figure resolves and passes the accounting checks, and the inputs of section 8.6 resolve (revenue FY-4 to FY0, operating cash flow and capital expenditure FY-2 to FY0, financial debt and shares). Depreciation and current financial debt are no longer needed. Those are the companies we demo.
+
+**Decision (version 2.4, 22 November; plan Q13).** By the rule above the coverage result is "change scope": operating income resolves for 83% of the 100 companies, below 90%, because 16 large companies report no operating-income line. The group changes scope in another way than the rule foresaw: the MVP is the five demo companies (section 2), for which every figure the checks need resolves except the two states kept on purpose, so the valuation tier stays. Operating income is **not** derived from pre-tax income for companies that do not report it (they are outside the MVP and show "insufficient data"). Apple stays a demo company, as the example of "insufficient data" for one check.
 
 ### 13.5 Risk register
 
