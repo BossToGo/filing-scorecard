@@ -90,6 +90,7 @@ export. The tier 1 scorecard and the sources page are never cut. Everything on `
 | 2026-11-20 | S2 | Simon's review of #7: the interface imports `load_company` and the SEC error classes from `src.data.company` only, never `src.data.sec_client`; the errors are re-exported there and a layering test forbids the direct import | Tests first (8 failed), then pytest: 298 passed | – |
 | 2026-11-21 | S15 | Reconciliation format (`app/tests/reconciliation/README.md`, the S2 leftover) and its test: every `<TICKER>.yaml` is checked for completeness and compared with the app within USD 0.5 million and against the same accession number; Igor's Coca-Cola record added | Tests first: with no record, with the validator switched off (12 failed) and with a wrong revenue (47,900: failed); then 6 of 6 Coca-Cola figures match exactly; pytest: see the pull request | B, C, D and E add their files (Apple, Nvidia, McDonald's, Amazon) |
 | 2026-11-22 | Audit (S1–S3, S15, open PRs) | **Full audit of 21 November** with the four reviewer agents on `main` 73da89a and the open pull requests: 1 blocker, 19 major, about 23 minor findings (9 of the major ones on the design of screens not yet built). **Fixed here (data layer, A):** debt counted twice when current maturities are also filed as short-term borrowings (blocker: AMD, IBM, T-Mobile, AppLovin, Marvell FY-4 and FY-3); a total below its own non-current part (Seagate, Carvana); current debt as the difference of two definitions (Micron, Valero); negative interest expense (Disney); dividends under `PaymentsOfOrdinaryDividends` (J&J, Pfizer, Qualcomm, GE, Accenture); minority interest reported for FY-1 but not FY0, and the §8.3 record (Eli Lilly, Uber); a gap between fiscal years (`FY_GAP`); demo mode opening a folder from the typed text. SPEC §5.3 and §6 updated to match | Each finding reproduced by A's session on the 100 cached companies before fixing; one test per finding written first (13 failed), then pytest 425 passed; reproduction re-run after the fix: 0 negative current debts, 0 false totals, 0 negative interest; the corrected debts equal the companies' own totals (AMD 3,222, IBM 61,259, T-Mobile 71,960, Marvell 4,548.0); coverage regenerated: still 33 verified, the same 30 in the universe, dividends resolved 76% → 81%; the five demo companies' figures unchanged | The findings not fixed are listed under "Audit of 21 November" below |
+| 2026-11-22 | S0 | **SPEC v2.4, MVP scope (Igor):** the product is one workflow that works end to end for the five demo companies (pick a company, type the price, scorecard, check, filing); other tickers stay possible but outside the MVP, with their known problems as README limitations; benchmarks as a small cited table for the five companies' industries (S4 shrinks); plan Q1 (no dividend line: nil only without any dividend evidence) and Q13 (go with the five; Apple kept; operating income not derived) decided; new dates: v0.1 Tuesday 24, v0.2 with the feature freeze Thursday 26 at 20:00; strengths, points to watch and the export only if v0.2 is released before the freeze | Data of the five demo companies checked on 22 November: Coca-Cola, Nvidia and McDonald's complete; Apple without interest expense after fiscal 2023; Amazon without dividends. No code changed; pytest: see the pull request | The group approves the pull request; `docs/plan.md` slice dates, the member guides and `docs/product.md` follow in PR #4; A builds the Q1 rule (PR #18's pending test then passes) |
 
 ## Known problems and open questions
 
@@ -101,7 +102,9 @@ fixed by a pull request to `SPEC.md`.
   dividend paid" (Amazon, a demo company). A company with no debt may have no debt tags, so H4–H6 "no debt: pass"
   never triggers and the valuation is blocked. Proposal: extend the §8.3 rule ("not reported, treated as nil",
   labelled and listed on the sources page) to dividends paid and to debt, when the rest of that year's statement
-  resolves. Decide by: B and C with A, before S6 and S7.
+  resolves. Decide by: B and C with A, before S6 and S7. **Decided in SPEC v2.4 §7 (22 November), for the
+  group's approval:** nil only when no dividend appears under any dividend tag in any of the five years and none is
+  declared per share (Amazon); otherwise `missing`. The debt half stays open (not needed for the five demo companies).
 - **Q2. Tier rule against the timetable.** §0.6, §2 and §13.3 say a tier never starts before the previous release,
   but §13.2 starts S4 (B) and S8 (C) on Thursday 19. An assistant following §0.6 would refuse that work. Proposal:
   state the exception for S4 and S8 in §0.6. Decide by: group.
@@ -141,7 +144,9 @@ fixed by a pull request to `SPEC.md`.
   pre-tax income + interest expense for them, labelled `derived` → 97%, "go as planned". It changes what P5,
   P6, H6 and V4 measure, so the group decides. Also: Apple is not verified (no interest expense after FY2023);
   keep it as a demo of "insufficient data" or swap it for a verified 53-week company (Costco, PepsiCo, Intel...).
-  Decide by: group, with the instructor.
+  Decide by: group, with the instructor. **Decided in SPEC v2.4 §13.4 (22 November), for the group's approval:**
+  the MVP is the five demo companies; operating income is not derived; Apple stays, as the "insufficient data"
+  example.
 - **Q9. "Not assessed" (SPEC §2) has no status of its own in SPEC §11.** Decided by A for now: such a check has the
   status `insufficient_data` with an explanation ("not assessed: needs an industry benchmark", tier 1), which the
   display rule of §3 already counts as not assessed ("4 of 5 assessed, 1 with insufficient data"). Documented in
