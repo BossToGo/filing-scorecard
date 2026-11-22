@@ -93,8 +93,8 @@ that shares no code with the app. All agree within the rounding shown (discounte
 | E7 | Restated figure differs from the original by more than 1% | Latest filed value used; both shown with a warning (§5.3.4) | passing (test: test_planted_a_restated_figure_uses_the_latest_filing_and_keeps_the_original; KO 2018: test_coca_cola_2018_revenue_restatement_as_shown_in_session_5) |
 | E8 | 53-week fiscal year | Kept: flow periods of 350 to 380 days are accepted (§5.3.1) | passing (test: test_a_flow_must_cover_350_to_380_days; Apple: test_apple_has_a_53_week_fiscal_year) |
 | E9 | Negative equity | H3, P4, V5 fail with the note "negative equity"; warning in the header (§7, §10). H4: see open question in `docs/plan.md` | open |
-| E10 | Net income zero or below | V3 and D5 fail; P2 fails | open |
-| E11 | No dividend | D1 fails; D2 to D6 `not applicable`; area shows "no dividend paid", score 0 | open |
+| E10 | Net income zero or below | V3 and D5 fail; P2 fails | partly passing (D5, test: test_9_d5_fails_at_exactly_90_percent_and_when_net_income_is_zero_or_negative); V3: S9; P2: S5 |
+| E11 | No dividend | D1 fails; D2 to D6 `not applicable`; area shows "no dividend paid", score 0 | partly passing (tests: test_1_a_labelled_nil_means_no_dividend_paid, test_2_a_reported_zero_in_fy0_means_no_dividend_paid); Amazon on real data after PR #21; the area display: S10 |
 | E12 | Zero debt | H4 (no debt in both years), H5, H6 (no debt and no interest) pass; the cost of capital equals the cost of equity | open |
 | E13 | Cost of debt outside risk-free to risk-free + 8 points | Risk-free + 1.5 points used, labelled `assumption`, warning (§8.1) | open |
 | E14 | No growth in −20% to +50% matches the price | "No solution in the range"; no number reported (§8.4) | open |
