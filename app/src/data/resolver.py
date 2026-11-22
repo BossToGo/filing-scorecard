@@ -26,7 +26,7 @@ Shares are stored at their own date (the cover page of the latest annual report)
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
 
@@ -227,6 +227,7 @@ class _Resolver:
             debt, current = self.debt(fy_end)
             self.items.setdefault("financial_debt", {})[fy_end] = debt
             self.items.setdefault("current_financial_debt", {})[fy_end] = current
+        self.no_dividend_at_all(fy_ends)
         for metric, ends in derived_used.items():
             self.warnings.append(f"DERIVED: {metric} is calculated, not reported, for {', '.join(map(str, ends))}")
         self.tag_switches()
@@ -234,6 +235,28 @@ class _Resolver:
             self.bridge_items(fy_ends[-1])
             self.shares(fy_ends[-1])
         return self.company_data()
+
+    def no_dividend_at_all(self, fy_ends: list[date]) -> None:
+        """Plan Q1 (SPEC v2.4 §7): no dividend amount in any fiscal year and no sign of a dividend under any evidence
+        tag (tag_map.yaml) means the company pays none: each year becomes nil, labelled. Otherwise nothing changes."""
+        evidence = self.spec("dividends_paid").get("nil_without_evidence")
+        facts = [self.items.get("dividends_paid", {}).get(end) for end in fy_ends]
+        if not evidence or not facts or any(f is None or f.kind != "missing" or not f.note.startswith("no annual 10-K")
+                                            for f in facts):
+            return  # an amount in some year, or missing for another reason (e.g. not US dollars): left as it is
+        start = fy_ends[0] - timedelta(days=self.settings["flow_period_max_days"])
+        for tag in evidence:
+            for entries in self.us_gaap.get(tag, {}).get("units", {}).values():
+                if any(e.get("form") in self.forms and start < date.fromisoformat(e["end"]) <= fy_ends[-1]
+                       and (e.get("val") or 0) > 0 for e in entries):
+                    return  # a sign of a dividend: the years stay missing, so the checks show "insufficient data"
+        note = (f"no dividend under any of {', '.join(evidence)} in the five fiscal years: not reported, treated as "
+                "nil, so no dividend paid (SPEC §7, plan Q1)")
+        for end in fy_ends:
+            self.items["dividends_paid"][end] = Fact("dividends_paid", 0, "USD", None, end, "assumption", None, None,
+                                                     None, None, self.retrieved, note)
+        self.warnings.append("NIL_DIVIDEND: no dividend reported in the five fiscal years: treated as nil, so the "
+                             "dividend area shows \"no dividend paid\" (plan Q1)")
 
     def derive(self, metric: str, fy_end: date) -> tuple[Fact | None, str]:
         """SPEC §6 derivations, used only when the line item is not reported: (fact, "") or (None, why not)."""
