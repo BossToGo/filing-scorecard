@@ -83,9 +83,21 @@ def test_coca_cola_debt_is_found_after_its_tags_changed_in_2024():
     assert debt.kind == "derived" and "LongTermDebtAndCapitalLeaseObligations" in debt.note
 
 
-def test_amazon_dividends_are_missing_with_a_reason_not_zero():
-    fact = load_company("AMZN", demo=True).fact("dividends_paid", date(2025, 12, 31))
-    assert fact.kind == "missing" and fact.value is None and "PaymentsOfDividends" in fact.note
+def test_amazon_pays_no_dividend_labelled_as_nil_in_every_year():
+    # SPEC v2.4 §7 (plan Q1): Amazon's 10-K has no dividends line (E's hand reading, PR #16) and its company facts hold
+    # no dividend tag of any kind, so dividends paid are nil, labelled, and D1 can show "no dividend paid". Before
+    # plan Q1 was decided this test expected `missing` (rule 14.6: the SPEC changed, decided by the group in PR #20).
+    data = load_company("AMZN", demo=True)
+    facts = [data.fact("dividends_paid", y) for y in data.fiscal_years("revenue")]
+    assert len(facts) == 5
+    assert all(f.kind == "assumption" and f.value == 0 and "treated as nil" in f.note for f in facts)
+
+
+@pytest.mark.parametrize("ticker", ["KO", "AAPL", "NVDA", "MCD"])
+def test_the_four_dividend_payers_among_the_demo_companies_are_not_shown_as_paying_none(ticker):
+    data = load_company(ticker, demo=True)
+    facts = [data.fact("dividends_paid", y) for y in data.fiscal_years("revenue")]
+    assert all(f.kind == "reported" and f.value > 0 for f in facts)
 
 
 def test_nvidia_and_amazon_capital_expenditure_is_found():
