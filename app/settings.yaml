@@ -57,7 +57,37 @@ data:  # owner A (SPEC §4, §5.3)
     value: 8
     reason: "At least 8 industries among the companies (SPEC §13.2, S3)"
 
-benchmarks: {}  # owner B: one benchmark column per check, with the reason for the choice (SPEC §7, slice S4)
+benchmarks:  # owner B: fixed source selections, recorded per SPEC §7; changes require a cited re-extract
+  unlevered_beta_column:
+    value: "Unlevered beta"
+    reason: "Cost of equity uses the ordinary industry unlevered beta, not the cash-corrected column (SPEC §4)"
+  roe_column:
+    value: "ROE (unadjusted)"
+    reason: "P4 compares stated earnings and book equity without capitalising R&D"
+  operating_margin_column:
+    value: "Pre-tax Unadjusted Operating Margin"
+    reason: "P5 uses stated operating income before tax, with stock compensation included"
+  pe_column:
+    value: "Current PE"
+    reason: "V3 and V4 both use latest-fiscal-year earnings, never forward estimates (SPEC §7)"
+  pb_column:
+    value: "PBV"
+    reason: "V5 compares market equity with stated book equity"
+  dividend_yield_column:
+    value: "Dividend Yield"
+    reason: "D2 compares dividends to market equity, not dividend payout relative to earnings"
+  market_pe_group:
+    value: "Total Market (without financials)"
+    reason: "V4 excludes financial companies, matching the app's universe (SPEC §7)"
+  market_pe_source_row:
+    value: 104
+    reason: "pedata.xls, Industry Averages, January 2026, Current PE in cell D104 (SPEC §7)"
+  market_dividend_yield_group:
+    value: "Total Market"
+    reason: "D2 uses US market dividend yield, including non-dividend payers"
+  market_dividend_yield_source_row:
+    value: 103
+    reason: "divfund.xls, Industry Averages, January 2026, Dividend Yield in cell F103"
 
 past_performance:  # owner B (SPEC §7)
   p1_min_profitable_years:
