@@ -20,6 +20,7 @@ from src.data.company import DEMO_TICKERS, load_company
 
 FOLDER = Path(__file__).parent
 FIGURES = ("revenue", "operating_income", "net_income", "total_assets", "operating_cash_flow", "dividends_paid")
+OPTIONAL = ("capital_expenditure",)  # read when a check owner needs it (D6, Flo's S7 review); compared the same way
 TOLERANCE_MILLIONS = 0.5  # SPEC §13.2, S15
 MEMBER = re.compile(r"^\S.* \([A-E]\)$")  # e.g. "Igor (A)": a team member, never an assistant
 ACCESSION = re.compile(r"^\d{10}-\d{2}-\d{6}$")
@@ -57,8 +58,8 @@ def problems(record: dict, ticker: str) -> list[str]:
     if record.get("unit") != "USD millions":
         found.append("unit should be 'USD millions'")
     figures = record.get("figures") or {}
-    if sorted(figures) != sorted(FIGURES):
-        found.append(f"figures should be exactly {', '.join(FIGURES)}")
+    if not set(FIGURES) <= set(figures) <= set(FIGURES + OPTIONAL):
+        found.append(f"figures should be exactly {', '.join(FIGURES)}, plus optionally {', '.join(OPTIONAL)}")
     for name, figure in figures.items():
         figure = figure or {}
         value, page = figure.get("value"), figure.get("page")
@@ -79,7 +80,7 @@ def app_data(ticker: str):
 
 
 PATHS = record_paths()
-PAIRS = [(path, name) for path in PATHS for name in FIGURES]
+PAIRS = [(path, name) for path in PATHS for name in FIGURES + OPTIONAL if name in (load(path).get("figures") or {})]
 
 
 def test_the_folder_holds_at_least_one_reconciliation():
@@ -154,3 +155,23 @@ def test_a_figure_missing_from_the_record_is_named():
 
 def test_a_company_outside_the_demo_data_is_named():
     assert any("not a demo company" in problem for problem in problems(changed(company="TSLA"), "TSLA"))
+
+
+def test_capital_expenditure_may_be_read_as_a_seventh_figure():
+    # Flo (C) asked for Coca-Cola's capital expenditure to test D6 against a figure read by hand (S7 review).
+    record = changed()
+    record["figures"]["capital_expenditure"] = {"value": 1.0, "page": 64, "line_in_filing": "Line"}
+    assert problems(record, "KO") == []
+
+
+def test_an_unknown_figure_is_named():
+    record = changed()
+    record["figures"]["goodwill"] = {"value": 1.0, "page": 63, "line_in_filing": "Goodwill"}
+    assert any(problem.startswith("figures should be exactly") for problem in problems(record, "KO"))
+
+
+def test_every_figure_in_a_file_is_compared_with_the_app():
+    for path in PATHS:
+        compared = {name for p, name in PAIRS if p == path}
+        assert compared == set(load(path)["figures"]), path.stem
+
