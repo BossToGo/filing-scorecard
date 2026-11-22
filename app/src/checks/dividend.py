@@ -20,8 +20,9 @@ Decisions (Flo, 22 November 2026):
   never a cut. Its value is the lowest year-on-year change among the years whose previous year is above zero.
 - A fiscal year that is not in the data is a missing input (D3 and D4 need five fiscal years, FY-4 to FY0).
 - D5 with net income zero or negative fails with the reason in plain words and shows no payout ratio.
-- A negative dividends paid figure is a sign error (SPEC §5.4) that the data layer keeps as filed and flags; it is
-  never flipped (§5.2: never guessed). Every check that uses that year is "insufficient data", naming the sign.
+- A negative payment (dividends paid or capital expenditure) is a sign error (SPEC §5.4) that the data layer keeps
+  as filed and flags; it is never flipped (§5.2: never guessed). Every check that uses that figure is "insufficient
+  data", naming the sign. (Capital expenditure added after the review of 22 November.)
 - D3 passes with no value when no step starts from a year above zero (e.g. 0, 0, 0, 0, 5): no cut happened.
 
 FY0 is the latest fiscal year of revenue and FY-4 the fifth latest, as for every other check.
@@ -35,6 +36,7 @@ from typing import Mapping
 from src.contracts import CheckResult, CompanyData, Fact
 
 NO_DIVIDEND = "no dividend paid"  # what the dividend area shows when D1 fails (SPEC §7)
+PAYMENTS = ("dividends_paid", "capital_expenditure")  # filed as positive amounts; negative means a sign error
 YEARS = 5  # FY-4 to FY0
 LABELS = {
     "dividends_paid": "dividends paid",
@@ -80,10 +82,14 @@ def _d1(dividends: Fact) -> CheckResult:
     if dividends.value > 0:
         return CheckResult("D1", "pass", dividends.value, 0.0, (dividends,),
                            f"Dividends paid in the fiscal year ended {year}: {_usd(dividends.value)}.")
-    why = f" ({dividends.note})" if dividends.kind == "assumption" else ""
+    if dividends.kind == "assumption" and "treated as nil" in dividends.note:
+        # Plan Q1: the data layer's nil. Its full note (tags searched) stays with the figure for the sources page.
+        why = "dividends paid are not reported in any of the five fiscal years, so they are treated as nil"
+    else:
+        typed = f" ({dividends.note})" if dividends.kind == "assumption" else ""
+        why = f"dividends paid {_usd(dividends.value)}{typed}"
     return CheckResult("D1", "fail", dividends.value, 0.0, (dividends,),
-                       f"No dividend paid in the fiscal year ended {year}: dividends paid "
-                       f"{_usd(dividends.value)}{why}.")
+                       f"No dividend paid in the fiscal year ended {year}: {why}.")
 
 
 def _d2(dividends: Fact) -> CheckResult:
@@ -109,12 +115,13 @@ def _d3(data: CompanyData, years: list[date], max_cut: float) -> CheckResult:
                            "No cut: there is no earlier year with a dividend to compare with.")
     lowest, last, this = min(changes, key=lambda c: c[0])
     fall = (f"from {_usd(last.value)} (fiscal year ended {_day(last.period_end)}) to {_usd(this.value)} "
-            f"({_day(this.period_end)}), a change of {lowest:.2%}")
+            f"({_day(this.period_end)}), a change of {_pct(lowest)}")
     if cuts:
         return CheckResult("D3", "fail", lowest, -max_cut, facts,
-                           f"Dividends paid fell by more than {max_cut:.0%} in a year: {fall}.")
+                           f"Dividends paid fell by more than {_limit(max_cut)} in a year: {fall}.")
     return CheckResult("D3", "pass", lowest, -max_cut, facts,
-                       f"No year-on-year fall of more than {max_cut:.0%} in five years. The lowest change was {fall}.")
+                       f"No year-on-year fall of more than {_limit(max_cut)} in five years. The lowest change was "
+                       f"{fall}.")
 
 
 def _d4(data: CompanyData, years: list[date]) -> CheckResult:
@@ -146,8 +153,9 @@ def _d5(data: CompanyData, fy0: date, max_payout: float) -> CheckResult:
     payout = dividends.value / earnings.value
     status = "pass" if payout < max_payout else "fail"
     return CheckResult("D5", status, payout, max_payout, inputs,
-                       f"Dividends paid are {payout:.2%} of net income ({_usd(dividends.value)} of "
-                       f"{_usd(earnings.value)}, fiscal year ended {_day(fy0)}); the limit is below {max_payout:.0%}.")
+                       f"Dividends paid are {_pct(payout)} of net income ({_usd(dividends.value)} of "
+                       f"{_usd(earnings.value)}, fiscal year ended {_day(fy0)}); the limit is below "
+                       f"{_limit(max_payout)}.")
 
 
 def _d6(data: CompanyData, fy0: date) -> CheckResult:
@@ -180,11 +188,11 @@ def _figure(data: CompanyData, metric: str, fy_end: date) -> Fact:
 
 
 def _unusable(fact: Fact) -> str:
-    """Why a figure cannot be used, or "" if it can: it is missing (SPEC §5.2), or it is a negative dividends paid
-    figure, a sign error the data layer keeps as filed and flags (SPEC §5.4)."""
+    """Why a figure cannot be used, or "" if it can: it is missing (SPEC §5.2), or it is a negative payment, a sign
+    error the data layer keeps as filed and flags (SPEC §5.4)."""
     if fact.kind == "missing":
         return fact.note
-    if fact.metric == "dividends_paid" and fact.value < 0:
+    if fact.metric in PAYMENTS and fact.value < 0:
         return (f"negative ({_usd(fact.value)}), but a payment is filed as a positive amount; see the sign warning "
                 "on the sources page")
     return ""
@@ -207,9 +215,23 @@ def _too_few_years(check_id: str, inputs, found: int) -> CheckResult:
 
 
 def _usd(value: float) -> str:
-    """An amount in USD as text in millions, e.g. "USD 8,779 million" or "USD 44.9 million"."""
-    text = f"{value / 1_000_000:,.1f}".removesuffix(".0")
-    return f"USD {text} million".replace("-", "−")
+    """An amount in USD as text: "USD 8,779 million", "USD 44.9 million", or in dollars below one million
+    ("USD 40,000"), so that a small amount never reads as zero."""
+    if abs(value) < 1_000_000:
+        text = f"USD {value:,.0f}"
+    else:
+        text = f"USD {value / 1_000_000:,.1f}".removesuffix(".0") + " million"
+    return text.replace("-", "−")
+
+
+def _pct(ratio: float) -> str:
+    """A change or a ratio in percent with two decimals, e.g. "−10.20%"."""
+    return f"{ratio:.2%}".replace("-", "−")
+
+
+def _limit(ratio: float) -> str:
+    """A threshold from the settings in percent, without misleading rounding: "10%", "12.5%"."""
+    return (f"{ratio * 100:.2f}".rstrip("0").rstrip(".") or "0") + "%"
 
 
 def _day(day: date) -> str:

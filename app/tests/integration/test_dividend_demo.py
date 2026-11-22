@@ -27,3 +27,12 @@ def test_coca_cola_pays_a_dividend_in_fiscal_year_2025():
     (dividends,) = d1.inputs
     assert dividends.period_end == date(2025, 12, 31)
     assert dividends.accession == "0001628280-26-010047"
+
+
+def test_coca_cola_dividend_covered_by_earnings_in_fiscal_year_2025():
+    # Known answer from Igor's hand reading (KO.yaml, page 64 and the income statement): net income USD 13,107
+    # million; Flo's hand working: 8,779 ÷ 13,107 = 66.98% < 90% → pass.
+    results = {r.check_id: r for r in dividend_checks(load_company("KO", demo=True), load_settings())}
+    d5 = results["D5"]
+    assert d5.status == "pass"
+    assert d5.value == pytest.approx(0.6698, abs=0.00005)

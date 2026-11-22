@@ -1,15 +1,13 @@
 """Dividend checks D1–D6 (SPEC §7, slice S7). Owner: C (Flo).
 
 Where the expected values come from (SPEC rule 14.5, AGENTS.md rule 5):
-- Edge cases: small test companies built below, with the expected results worked out by hand by Flo.
-- Appendix A (synthetic company): `synthetic.expected_check("D1")` etc., signed off by Flo on PR #5. Those tests
-  are added once PR #5 (the fixture) is on main.
+- Edge cases: small test companies built below, with the expected results worked out by hand by Flo; his
+  working is written in docs/acceptance.md ("S7 edge cases").
+- Appendix A (synthetic company): `synthetic.expected_check("D1")` etc., signed off by Flo on PR #5 (at the
+  end of this file); Coca-Cola: tests/integration/test_dividend_demo.py.
 Never from running `src/checks/dividend.py`.
 
-Decisions for this slice (Flo, 22 November 2026):
-- D2 is "not assessed" (status insufficient_data, plan Q9) until slice S9 switches it on.
-- D3 counts a cut as "this year < (1 − max_dividend_cut) × last year": no division, so a rise from a year of zero
-  is never a cut. The value shown is the lowest year-on-year change among years whose previous year is positive.
+Flo's decisions for this slice are listed in the docstring of `src/checks/dividend.py`.
 """
 
 from __future__ import annotations
@@ -297,3 +295,90 @@ def test_ac3_tier_1_dividend_score_of_the_synthetic_company():
     assert sum(r.status == "pass" for r in assessed) == expected["scores"]["dividend"]["passed"]
     assert [r.check_id for r in checks if r.status == "insufficient_data"] == \
         [c for c in expected["not_assessed"] if c.startswith("D")]
+
+
+# --- review round 1 (22 November): Flo's hand results for T1–T11; written in docs/acceptance.md ------------------
+# Decision of 22 November: capital expenditure is a payment too, so a negative capex is a sign error and every check
+# that uses it (D6) is insufficient data, like a negative dividend.
+
+
+def test_t1_a_negative_capex_is_a_sign_error_and_d6_is_insufficient_data():
+    data = company([120, 122, 124, 126, 130], operating_cash_flow=[600, 600, 600, 600, 100],
+                   capital_expenditure=[100, 100, 100, 100, -50])
+    r = results(data)
+    assert statuses(r, ["D1", "D3", "D4", "D5", "D6"]) == ["pass", "pass", "pass", "pass", "insufficient_data"]
+    assert "sign" in r["D6"].explanation.lower()
+
+
+@pytest.mark.parametrize("dividends, status, lowest_change", [
+    ([50, 40, 45, 50, 55], "fail", -0.2000),         # T2: a cut in the first step, then recovery
+    ([30, 0, 30, 32, 34], "fail", -1.0000),          # T3: suspended for a year, then resumed
+    ([100, 92, 84.64, 90, 95], "pass", -0.0800),     # T4: two falls of 8% in a row, measured year on year
+])
+def test_t2_to_t4_d3_looks_at_every_step_year_on_year(dividends, status, lowest_change):
+    d3 = results(company(dividends))["D3"]
+    assert d3.status == status
+    assert d3.value == pytest.approx(lowest_change, abs=PCT)
+
+
+def test_t5_a_negative_fy_minus_4_dividend_blocks_only_d3_and_d4():
+    r = results(company([-30, 32, 34, 36, 38]))
+    assert statuses(r, ["D1", "D3", "D4", "D5", "D6"]) == [
+        "pass", "insufficient_data", "insufficient_data", "pass", "pass"]
+    assert "sign" in r["D3"].explanation.lower() and "sign" in r["D4"].explanation.lower()
+
+
+def test_t6_a_missing_fy_minus_4_dividend_blocks_d3_and_d4():
+    r = results(company([None, 32, 34, 36, 38]))
+    assert statuses(r, ["D3", "D4"]) == ["insufficient_data", "insufficient_data"]
+
+
+def test_t7_missing_net_income_blocks_d5_only():
+    r = results(company([30, 32, 34, 36, 38], net_income=[500, 500, 500, 500, None]))
+    assert statuses(r, ["D5", "D6"]) == ["insufficient_data", "pass"]
+
+
+def test_t8_a_changed_cut_limit_changes_d3():
+    changed = {**SETTINGS, "dividend": {"max_dividend_cut": 0.25, "max_payout_ratio": 0.90}}
+    d3 = results(company([50, 50, 50, 50, 40]), changed)["D3"]
+    assert d3.status == "pass"
+    assert d3.value == pytest.approx(-0.2000, abs=PCT)
+    assert d3.threshold == pytest.approx(-0.25)
+
+
+def test_t9_a_positive_dividend_typed_in_by_a_user_passes_d1():
+    typed = Fact("dividends_paid", 40 * MILLION, "USD", date(2025, 1, 1), date(2025, 12, 31), "assumption", None,
+                 None, None, None, None, "typed in by the user")
+    d1 = results(company([30, 32, 34, 36, 36]).with_fact(typed))["D1"]
+    assert d1.status == "pass"
+
+
+def test_t10_a_missing_middle_year_leaves_d1_d4_d5_d6_assessed():
+    r = results(company([30, 32, None, 36, 38]))
+    assert statuses(r, ["D1", "D4", "D5", "D6"]) == ["pass"] * 4
+
+
+def test_t11_with_four_fiscal_years_d1_d5_d6_are_still_assessed():
+    r = results(company([32, 34, 36, 38], years=(2022, 2023, 2024, 2025)))
+    assert statuses(r, ["D1", "D5", "D6"]) == ["pass"] * 3
+
+
+# --- review round 1: wording (findings 7, 9 and 10, approved by Flo) ---------------------------------------------
+
+
+def test_the_nil_explanation_is_one_plain_sentence_and_the_full_note_stays_with_the_figure():
+    d1 = results(company([0, 0, 0, 0, 0], nil=True))["D1"]
+    assert "treated as nil" in d1.explanation
+    assert "SPEC" not in d1.explanation and "plan Q1" not in d1.explanation
+    assert d1.inputs[0].kind == "assumption" and d1.inputs[0].note == NIL_NOTE  # for the sources page
+
+
+def test_explanations_do_not_round_in_a_misleading_way():
+    changed = {**SETTINGS, "dividend": {"max_dividend_cut": 0.125, "max_payout_ratio": 0.875}}
+    r = results(company([100, 100, 100, 100, 90]), changed)
+    assert "12.5%" in r["D3"].explanation
+    assert "87.5%" in r["D5"].explanation
+    tiny = results(company([0.04, 0.04, 0.04, 0.04, 0.04]))["D1"]    # USD 40,000
+    assert "USD 40,000" in tiny.explanation and "USD 0 million" not in tiny.explanation
+    d3 = results(company([50, 50, 50, 50, 44.9]))["D3"]
+    assert "−10.20%" in d3.explanation and "-" not in d3.explanation  # one minus sign everywhere
