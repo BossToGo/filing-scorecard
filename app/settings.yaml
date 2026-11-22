@@ -29,6 +29,9 @@ data:  # owner A (SPEC §4, §5.3)
   debt_check_warning:
     value: 0.01
     reason: "Flag debt when the reported total long-term debt differs from non-current plus current by more than 1% (plan Q5)"
+  minority_untagged_warning:
+    value: 0.01
+    reason: "Record on the sources page when total equity exceeds equity by more than 1% and no minority interest is tagged (SPEC v2.3 §8.3)"
   cover_page_max_days:
     value: 200
     reason: "A cover-page share count is used only if dated within 200 days after the latest fiscal year end, i.e. from the latest annual report (Mastercard's last single total is from 2010; second-source audit)"

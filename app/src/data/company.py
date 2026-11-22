@@ -45,7 +45,8 @@ def load_company(ticker: str, *, demo: bool = False, client: SecClient | None = 
     symbol = ticker.strip().upper()
     if demo:
         folder = DEMO_DIR / symbol
-        if not (folder / "submissions.json").exists():
+        # Only the listed names reach the file system: "KO/../AAPL" used to load Apple (security review, 21 November).
+        if symbol not in (*DEMO_TICKERS, "JPM") or not (folder / "submissions.json").exists():
             raise UnknownTicker(
                 f"{symbol!r} is not in the demo data, which has {', '.join(DEMO_TICKERS)} and JPM. Switch demo mode "
                 "off to look up other companies."
