@@ -93,9 +93,12 @@ reads the annual report, and attention-driven buying loses money.
 - FINRA Foundation, *Investors in the United States* (2024 survey, 2,861 investors; published December 2025): 5.3
   of 11 investing questions answered correctly on average; 26% use social media influencers' recommendations (61% of
   those under 35). https://www.finra.org/media-center/newsreleases/2025/new-finra-foundation-research-examines-shifting-investor-behaviors
-- FINRA Foundation and CFA Institute, *Gen Z and Investing* (survey November/December 2022, 2,872 people): social
-  media is US Gen Z investors' top source (48%); 50% have made an investment driven by fear of missing out.
+- FINRA Foundation and CFA Institute, *Gen Z and Investing* (published May 2023; survey November/December 2022,
+  2,872 people): social media is US Gen Z investors' top source (48%); 41% of US Gen Z investors cite fear of
+  missing out as a factor in starting to invest (CFA Institute press release); 50% say they have made an investment
+  driven by it (FINRA news release). Quote the one that fits your sentence, with its exact wording.
   https://www.finrafoundation.org/sites/finrafoundation/files/Gen-Z-and-Investing.pdf
+  https://www.finra.org/media-center/newsreleases/2023/finra-foundation-cfa-institute-research-focuses-gen-z-investors
 - FCA, *Understanding self-directed investors* (March 2021): newer investors are often driven by the thrill and
   status of investing. https://www.fca.org.uk/news/press-releases/fca-warns-younger-investors-are-taking-big-financial-risks
 - Loughran and McDonald (2017), "The Use of EDGAR Filings by Investors", *Journal of Behavioral Finance* 18(2):
