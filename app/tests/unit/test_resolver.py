@@ -707,6 +707,70 @@ def test_a_positive_payment_raises_no_sign_warning():
     assert "SIGN" not in codes(data)
 
 
+# --- plan Q1: no dividend at all (SPEC v2.4 §7) ------------------------------------------------------------------------
+
+
+def dividends(data):
+    return [data.fact("dividends_paid", fy(y)) for y in range(2021, 2026)]
+
+
+def test_a_company_with_no_dividend_in_any_year_pays_none_labelled():
+    # Amazon's case: no dividend tag of any kind in the five fiscal years. SPEC v2.4 §7: dividends paid are nil,
+    # labelled, so D1 fails and the area shows "no dividend paid" instead of "insufficient data".
+    data = run()
+    assert all(f.kind == "assumption" and f.value == 0 and "treated as nil" in f.note for f in dividends(data))
+    assert "NIL_DIVIDEND" in codes(data)
+
+
+def test_a_dividend_declared_per_share_is_evidence_and_the_years_stay_missing():
+    # No payment tag, but a dividend declared per share: the company pays one, filed under a tag the app does not
+    # read for the amount. It must never be shown as paying none (audit of 21 November: Johnson & Johnson).
+    tag = "CommonStockDividendsPerShareDeclared"
+    data = run({tag: [flow(0.5, 2024)]}, units={tag: "USD/shares"})
+    assert all(f.kind == "missing" and f.value is None for f in dividends(data))
+    assert "NIL_DIVIDEND" not in codes(data)
+
+
+def test_payments_of_ordinary_dividends_are_evidence_too():
+    # Johnson & Johnson files its dividends only under this tag (12,381, USD m, fiscal 2025).
+    data = run({"PaymentsOfOrdinaryDividends": [flow(12_381 * M, 2025)]})
+    assert data.fact("dividends_paid", fy(2025)).kind != "assumption"
+    assert "NIL_DIVIDEND" not in codes(data)
+
+
+def test_a_declared_dividend_of_zero_is_no_evidence():
+    # Uber reports "dividends declared per share: 0" for every year (SEC company facts, 2021 to 2025).
+    tag = "CommonStockDividendsPerShareDeclared"
+    data = run({tag: [flow(0, y) for y in range(2021, 2026)]}, units={tag: "USD/shares"})
+    assert all(f.kind == "assumption" and f.value == 0 for f in dividends(data))
+
+
+def test_a_dividend_paid_before_the_five_years_is_no_evidence():
+    # Carvana's PaymentsOfDividends entries end in 2018: it pays nothing in the five years used.
+    data = run({"PaymentsOfDividends": [flow(5 * M, y) for y in (2015, 2016, 2017, 2018)]})
+    assert all(f.kind == "assumption" and f.value == 0 for f in dividends(data))
+
+
+@pytest.mark.parametrize("tag, unit, value", [
+    ("ShareBasedCompensationArrangementByShareBasedPaymentAwardFairValueAssumptionsExpectedDividendRate", "pure", 0.03),
+    ("ProceedsFromDividendsReceived", "USD", 634 * M),          # dividends the company receives
+    ("DividendsPreferredStock", "USD", 10 * M),                 # preferred shares only
+    ("PaymentsOfDividendsMinorityInterest", "USD", 7 * M),      # paid to minority owners of subsidiaries
+])
+def test_entries_that_are_not_a_dividend_on_common_shares_are_no_evidence(tag, unit, value):
+    # Flo's review of PR #20: six companies that pay no dividend (Tesla, Netflix, Palantir, ServiceNow, Airbnb, AMD)
+    # report the expected dividend rate of their stock-option valuation; others report dividends received,
+    # preferred dividends or dividends paid to minority owners. None of these shows a dividend to shareholders.
+    data = run({tag: [flow(value, 2025)]}, units={tag: unit})
+    assert all(f.kind == "assumption" and f.value == 0 for f in dividends(data))
+
+
+def test_a_payer_with_some_years_missing_keeps_them_missing():
+    data = run({"PaymentsOfDividends": [flow(40 * M, y) for y in (2023, 2024, 2025)]})
+    assert [f.kind for f in dividends(data)] == ["missing", "missing", "reported", "reported", "reported"]
+    assert "NIL_DIVIDEND" not in codes(data)
+
+
 def test_a_company_without_company_facts_still_has_its_header():
     # JPMorgan in the demo data: only the submissions file, so the gates can refuse it by its industry code.
     data = resolve("TST", None, SUBMISSIONS, RETRIEVED)
