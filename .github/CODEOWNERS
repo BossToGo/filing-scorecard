@@ -5,15 +5,15 @@
 # Default and member A, Igor: repository setup, CI, shared shapes, data layer, evidence, coverage, product documents
 *                                              @BossToGo
 
-# Member B, Greg: benchmarks, industry files, past performance and health checks, strengths and points to watch
-/app/src/benchmarks/                           @Greg3334444
-/app/scripts/extract_benchmarks.py             @Greg3334444
-/app/scripts/requirements-scripts.txt          @Greg3334444
-/app/data/benchmarks_us_2026.csv               @Greg3334444
-/app/data/industry_lookup_us_2026.csv          @Greg3334444
-/app/data/sic_to_damodaran.csv                 @Greg3334444
-/app/src/checks/past.py                        @Greg3334444
-/app/src/checks/health.py                      @Greg3334444
+# Member B (benchmarks, industry files, past performance and health checks)
+/app/src/benchmarks/                            @Greg3334444
+/app/scripts/extract_benchmarks.py              @Greg3334444
+/app/scripts/requirements-scripts.txt           @Greg3334444
+/app/data/benchmarks_us_2026.csv                @Greg3334444
+/app/data/industry_lookup_us_2026.csv           @Greg3334444
+/app/data/sic_to_damodaran.csv                  @Greg3334444
+/app/src/checks/past.py                         @Greg3334444
+/app/src/checks/health.py                       @Greg3334444
 /app/src/highlights.py                         @Greg3334444
 /docs/benchmarks.md                            @Greg3334444
 
