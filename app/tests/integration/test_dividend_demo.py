@@ -5,7 +5,8 @@ USD 8,779 million, read by hand by Igor from the 10-K (accession 0001628280-26-0
 tests/reconciliation/KO.yaml). Tolerance USD 0.5 million, as in the reconciliation rule (figures read to the
 nearest million).
 
-Amazon (no dividend at all, SPEC v2.4 §7, plan Q1) is added once PR #21 is on main.
+Also D5 (66.98%) and D6 (fail, against 7,408 − 2,112 = 5,296, both read by hand). Amazon (no dividend at all,
+SPEC v2.4 §7, plan Q1) is added once PR #21 is on main.
 """
 
 from datetime import date
@@ -36,3 +37,13 @@ def test_coca_cola_dividend_covered_by_earnings_in_fiscal_year_2025():
     d5 = results["D5"]
     assert d5.status == "pass"
     assert d5.value == pytest.approx(0.6698, abs=0.00005)
+
+
+def test_coca_cola_dividend_not_covered_by_cash_in_fiscal_year_2025():
+    # Known answer from Igor's hand reading (KO.yaml, page 64): operating cash flow 7,408 and capital expenditure
+    # 2,112 (USD m, capex added in PR #24); Flo's hand working: 8,779 ≤ 7,408 − 2,112 = 5,296 is false → fail.
+    results = {r.check_id: r for r in dividend_checks(load_company("KO", demo=True), load_settings())}
+    d6 = results["D6"]
+    assert d6.status == "fail"
+    assert d6.value == pytest.approx(8_779 * MILLION, abs=0.5 * MILLION)
+    assert d6.threshold == pytest.approx(5_296 * MILLION, abs=1.0 * MILLION)  # two figures, each within 0.5
