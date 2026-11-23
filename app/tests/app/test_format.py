@@ -1,7 +1,8 @@
 """Display formats of the interface (`app/ui/format.py`, slice S10). Owner: D.
 
 The interface never changes a value it receives; it only chooses how many decimals to show (SPEC §11, audit
-ux #10). Expected strings are Simon's (D) display choices of 23 November 2026, not the code's output:
+ux #10). Expected strings were proposed by assistants, checked and accepted by Simon (D) on 23 November 2026; display
+formats, not calculated values:
 40.24% against 40% -> "40.2%"; 39.96% against 40% -> "39.96%"; 20% against 20% -> "20.0%";
 USD 2,112,000,000 -> "USD 2,112 m". A missing figure is "n/a" with its reason, never 0 (acceptance V4).
 """
