@@ -70,6 +70,27 @@ def test_sec_unreachable_suggests_demo_mode_e4(monkeypatch):
     assert not details(app).proto.expanded
 
 
+def test_any_other_error_while_reading_the_data_has_a_customer_message(monkeypatch):
+    """Igor's review of #36: not only SEC errors. Text proposed by a review assistant, accepted by Simon."""
+    monkeypatch.setattr(company_module, "load_company", raising(RuntimeError("unexpected failure (raw)")))
+    app = show("ZZZZ", demo=False)
+    assert not app.exception
+    assert [e.value for e in app.error] == ["Something went wrong while reading the data. Try again, or switch on "
+                                            "demo mode."]
+    assert not details(app).proto.expanded
+    assert any("unexpected failure (raw)" in c.value for c in details(app).code)
+
+
+def test_an_empty_other_ticker_asks_for_one_and_loads_nothing(monkeypatch):
+    """Igor's review of #36. Text proposed by a review assistant, accepted by Simon."""
+    calls = []
+    monkeypatch.setattr(company_module, "load_company", lambda *args, **kwargs: calls.append(args))
+    app = show("   ")
+    assert [e.value for e in app.error] == ["Type a ticker first."]
+    assert calls == []
+    assert not app.header and not app.expander
+
+
 def test_an_invalid_price_still_says_how_to_type_it_v2():
     assert [e.value for e in show("KO", price="abc").error] == ["Type the price in US dollars, e.g. 1234 or 182.50"]
 
