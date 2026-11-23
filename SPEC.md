@@ -2,7 +2,7 @@
 
 **Course:** Programming and AI for Corporate Finance (FIN_8546), EDHEC, final group project
 **Deadline:** Tuesday 1 December 2026, 23:59, state of `main`. Presentation Wednesday 2 December 2026 (8 minutes + 4 minutes of questions).
-**Status of this file:** version 2.4 of 22 November 2026 (version 2, risk-reduced: release tiers, risk register, industry lookup, no browser dependency; 2.1: folder layout under `app/`, §11 and §12; 2.2: names and final roles, §12, §13.2, §17; 2.3: for retail bank customers, fully automatic, share price the only input, equity valuation method with growth decaying over ten years, V4 against the whole market, five forces replaced by 15 strengths and points to watch, growth limit and decay, when the valuation model does not fit, sensitivity table, growth the price implies and user inputs cut, §1 to §3, §5.2, §6, §8 to §16, Appendix A; 2.4: the MVP is the five demo companies and one workflow end to end, a benchmark table for their industries only, plan Q1 and Q13 decided, new release dates, §2, §4, §7, §9.1, §13.2, §13.3). To be agreed by the whole group in one meeting, then changed only by pull request.
+**Status of this file:** version 2.4.1 of 23 November 2026 (version 2, risk-reduced: release tiers, risk register, industry lookup, no browser dependency; 2.1: folder layout under `app/`, §11 and §12; 2.2: names and final roles, §12, §13.2, §17; 2.3: for retail bank customers, fully automatic, share price the only input, equity valuation method with growth decaying over ten years, V4 against the whole market, five forces replaced by 15 strengths and points to watch, growth limit and decay, when the valuation model does not fit, sensitivity table, growth the price implies and user inputs cut, §1 to §3, §5.2, §6, §8 to §16, Appendix A; 2.4: the MVP is the five demo companies and one workflow end to end, a benchmark table for their industries only, plan Q1 and Q13 decided, new release dates, §2, §4, §7, §9.1, §13.2, §13.3; 2.4.1: "not fully checked" is for every ticker other than the five demo companies, the five are offered to pick from and another ticker can be typed, the company name is shown as the SEC lists it, the area scores are computed in `src/scores.py`, §2, §3, §7, §10 to §12, §13.4). To be agreed by the whole group in one meeting, then changed only by pull request.
 
 **The one principle of this version:** `main` always holds a working, demo-ready app. We build in three tiers. Each tier ends with a tagged release that runs offline and passes all tests. If time runs out, we present the last release and cut the rest; nothing half-finished is ever merged.
 
@@ -55,7 +55,7 @@ Each tier is a complete product on its own. A later tier only starts when the ea
 
 **Tier 1 — release v0.1 "Filing scorecard" (target Tuesday 24 November; first planned for Sunday 22).** Needs only SEC data.
 
-- One company at a time: the five demo companies (the MVP above). The 30 companies of `data/universe.csv`, whose figures all resolve and pass the automatic accounting checks (section 13.4), and any other supported ticker also run; the header marks a ticker outside those 30 "not fully checked".
+- One company at a time: the five demo companies (the MVP above). Any other supported ticker also runs, looked up live; the header marks it "not fully checked" (section 10), because only the five are reconciled by hand. The 30 companies of `data/universe.csv` are the evidence of the coverage report (section 13.4); the app does not read that file. (Until version 2.4.1 the warning was for tickers outside those 30, which would have marked Apple, a demo company.)
 - Past performance, financial health and dividend: 18 checks (section 7). Checks that need an industry benchmark or the share price show "not assessed" until tier 2.
 - A sources page: every figure with its XBRL tag, filing, filing date, retrieval time and status.
 - No manual override of figures: a figure that does not resolve is `missing`, and the checks that need it show "insufficient data" (section 1).
@@ -87,8 +87,8 @@ Each tier is a complete product on its own. A later tier only starts when the ea
 
 ## 3. What the user sees
 
-1. **Input bar.** Ticker. Share price in USD (typed in, greater than 0; the only figure the user types; without it the valuation area and the dividend yield check show "insufficient data"; an invalid entry gets a message saying how to fix it). A demo-mode switch.
-2. **Header.** Company name, industry, fiscal year end, date of the latest annual report, date the data was retrieved, and only the warnings meant for the customer: "not fully checked" and "latest annual report is old" (section 10). Every other warning is on the sources page.
+1. **Input bar.** Ticker: the five demo companies are offered to pick from, and another ticker can be typed (outside the MVP, section 2). Share price in USD (typed in, greater than 0; the only figure the user types; without it the valuation area and the dividend yield check show "insufficient data"; an invalid entry gets a message saying how to fix it). A demo-mode switch.
+2. **Header.** Company name as the SEC lists it (for example "COCA COLA CO"; no hand-made list of display names), industry, fiscal year end, date of the latest annual report, date the data was retrieved, and only the warnings meant for the customer: "not fully checked" and "latest annual report is old" (section 10). Every other warning is on the sources page.
 3. **Score chart.** Four areas, each 0 to 6, shown as "passed / assessed" (for example "4 of 5 assessed, 1 with insufficient data"). Each area is one bar of six blocks, never a radar or "snowflake" shape. A block has one of four looks: passed (filled), failed (filled in a second colour, with a cross), insufficient data (dashed outline, "not assessed") or not applicable (an empty slot marked "n/a"). Colour is never the only signal (pattern and text too). Not-applicable checks are not counted as assessed: with no dividend, the dividend bar shows D1 failed, five "n/a" slots and the label "no dividend paid, 0 of 1 assessed"; when the valuation model does not fit (section 8.6), V1, V2 and V6 are "n/a" with the reason.
 4. **Strengths and points to watch.** Next to the score chart: up to five of each, important ones first (section 9).
 5. **Checks.** Each check expands to show: result, the rule in plain words, the formula, the input figures with their fiscal years, and a link to the filing.
@@ -187,7 +187,7 @@ These tags are a starting list written from memory of the US accounting taxonomy
 
 **Notation.** FY0 is the latest fiscal year, FY-4 is four years earlier. Five fiscal years give four growth intervals; "compound annual growth" means over those four intervals.
 
-**Result of a check:** `pass`, `fail`, `insufficient data` (an input is missing) or `not applicable`. The area score is the number of passes, always shown with the number assessed. Where a rule divides by a figure that is zero or negative and does not say what happens, the result is `insufficient data` with the reason.
+**Result of a check:** `pass`, `fail`, `insufficient data` (an input is missing) or `not applicable`. The area score is the number of passes, always shown with the number assessed; it is computed in `src/scores.py` (D), and the interface only displays it (section 11). Where a rule divides by a figure that is zero or negative and does not say what happens, the result is `insufficient data` with the reason.
 
 **Thresholds** live in `settings.yaml`, each with a one-line reason. The values below are the team's starting choices.
 
@@ -364,7 +364,7 @@ Adapted from session 5, slide 33.
 | **Stop** | Bank, insurer or real estate trust; no Form 10-K data; not in US dollars; fewer than three fiscal years | No report; a message says why |
 | **Block one area** | Share price or shares missing | Valuation area "insufficient data"; the other areas still show. A missing debt blocks V1, V2, V6 (beta, section 8.6); a missing cash blocks only H3 |
 | **Block the fair value** | A valuation input is missing, or the model does not fit (section 8.6) | No fair value; V1, V2, V6 `insufficient_data` or `not_applicable` with the reason; V3 to V5 still shown |
-| **Warn the customer** (header) | Ticker outside the verified universe ("not fully checked"); latest annual report older than 15 months | Report shown with the warning in the header |
+| **Warn the customer** (header) | Any ticker other than the five demo companies ("not fully checked": only the five are reconciled by hand, section 2); latest annual report older than 15 months | Report shown with the warning in the header |
 | **Record** (sources page) | Total assets differ from liabilities plus equity by more than 1%; restated figure differs from the original by more than 1%; a required figure is derived; starting growth limited by the cap or floor; beta limited to 0.8 to 2.0; negative equity; share count is an average, not a period-end figure; industry taken from the generated fallback table; industry group with fewer than 10 firms; every resolver warning (e.g. RESTATED, TAG_SWITCH, DEBT_CHECK) | Listed on the sources page next to the figure, and counted in the verification of section 13.4; not in the header |
 | **Record** (everything else) | Any other note | Visible on the sources page |
 
@@ -410,10 +410,11 @@ repo/
     │   ├── valuation/       cost of equity, free cash flow forecast with growth decay, fair value
     │   ├── highlights.py    strengths and points to watch (section 9)
     │   ├── gates.py         stop / warn / record rules
+    │   ├── scores.py        area scores: passes and number assessed per area (section 7)
     │   └── export.py        Excel export
     ├── scripts/             extract_benchmarks.py (one-off, needs xlrd), coverage.py
     ├── data/                benchmarks_us_2026.csv, industry_lookup_us_2026.csv,
-    │                        sic_to_damodaran.csv, universe.csv (30 verified tickers)
+    │                        sic_to_damodaran.csv, universe.csv (30 verified tickers: coverage evidence, not read by the app)
     ├── evidence/            saved source data, never edited
     │   └── demo/            trimmed company facts for the demo companies
     └── tests/
@@ -466,7 +467,7 @@ Names agreed on 18 November 2026. If the group has four members, the work of E i
 | **A — Igor (@BossToGo)** | Repository setup, continuous integration, `src/contracts.py`, `src/data/`, `evidence/`, coverage report, demo snapshot | Reconciliation company 1 |
 | **B — Greg (@Greg3334444)** | `src/benchmarks/`, `scripts/extract_benchmarks.py`, the industry files in `data/`, `src/checks/past.py`, `src/checks/health.py`, `src/highlights.py` (strengths and points to watch, section 9) | Reconciliation company 2 |
 | **C — Flo (@florian-spitzer)** | `src/checks/dividend.py`, `src/checks/valuation.py`, `src/valuation/` (the equity method of section 8: cost of equity, free cash flow forecast with the growth limit and decay, the model-fit rules), the separate Excel cross-check model in `docs/crosscheck/` | Reconciliation company 3 |
-| **D — Simon (@Simonarmengaud)** | `app/main.py`, `app/ui/` (except `texts.yaml`; including the strengths and points to watch on screen), `app/.streamlit/config.toml` (theme), `src/gates.py`, `tests/app/` | Reconciliation company 4 |
+| **D — Simon (@Simonarmengaud)** | `app/main.py`, `app/ui/` (except `texts.yaml`; including the strengths and points to watch on screen), `app/.streamlit/config.toml` (theme), `src/gates.py`, `src/scores.py`, `tests/app/` | Reconciliation company 4 |
 | **E — Emma (@EmmaRiggi)** | `src/export.py` (Excel export), `docs/business-plan/`, `docs/slides/`, `README.md`, `AI-USAGE.md` (coordination), `app/ui/texts.yaml` (the plain-language text of all 24 checks and of every strength and point to watch, written for a retail reader), `docs/qa-bank.md` | Reconciliation company 5; problem evidence from published studies (no user interviews) |
 
 **Backup pairs.** A and D back each other up (data and interface), B and C back each other up (checks and valuation). The backup is the first reviewer of the partner's pull requests, so they already know the code if they have to take a slice over. E reviews every user-facing text. If a member stops contributing, the cut list in section 2 applies before anyone works nights, and the instructor is told early (handout section 6).
@@ -575,7 +576,7 @@ Names agreed on 18 November 2026. If the group has four members, the work of E i
 - **Go with gaps:** the first group passes, the second does not. Debt and interest are used where they resolve; where they do not, the checks that need them show "insufficient data". Nothing is typed in by the user (section 1, version 2.3; version 2.2 said "go with manual fields").
 - **Change scope:** the first group fails. Tier 1 is kept with fewer line items; tiers 2 and 3 are dropped.
 
-Whatever the coverage, the verified universe is the 30 companies for which every tier 1 figure resolves and passes the accounting checks, and the inputs of section 8.6 resolve (revenue FY-4 to FY0, operating cash flow and capital expenditure FY-2 to FY0, financial debt and shares). Depreciation and current financial debt are no longer needed. Those are the companies we demo.
+Whatever the coverage, the verified universe is the 30 companies for which every tier 1 figure resolves and passes the accounting checks, and the inputs of section 8.6 resolve (revenue FY-4 to FY0, operating cash flow and capital expenditure FY-2 to FY0, financial debt and shares). Depreciation and current financial debt are no longer needed. Until version 2.4 those were the companies we demo; since then the demo is the five companies of section 2 (decision below), and the 30 remain the evidence of this coverage check.
 
 **Decision (version 2.4, 22 November; plan Q13).** By the rule above the coverage result is "change scope": operating income resolves for 83% of the 100 companies, below 90%, because 16 large companies report no operating-income line. The group changes scope in another way than the rule foresaw: the MVP is the five demo companies (section 2), for which every figure the checks need resolves except the two states kept on purpose, so the valuation tier stays. Operating income is **not** derived from pre-tax income for companies that do not report it (they are outside the MVP and show "insufficient data"). Apple stays a demo company, as the example of "insufficient data" for one check.
 
