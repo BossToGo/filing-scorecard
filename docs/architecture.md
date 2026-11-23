@@ -10,7 +10,7 @@ root now lives under `app/`, as the starter's `AGENTS.md` requires (decision log
 - **Stack:** Python, pandas, requests, PyYAML, python-dotenv, openpyxl (Excel export), Streamlit and Plotly
   (interface), pytest and Hypothesis (tests). Exact versions pinned in `app/requirements.txt` (§11).
   `xlrd` only in `app/scripts/requirements-scripts.txt` for the one-off benchmark extraction.
-- **Why:** one user at a time, data and tables, a few what-if inputs and a download: the starter's dashboard path.
+- **Why:** one user at a time, data and tables, one typed input (the share price) and a download: the starter's dashboard path.
   Everything is Python, so every number comes from tested code (rule 14.7), and Streamlit's built-in `AppTest`
   runs the app in tests without a browser (§11).
 - **Alternative considered:** a hand-built web site (Django or FastAPI with HTML and JavaScript). Not now: about
@@ -36,11 +36,11 @@ filing-scorecard/
     │   ├── data/             SEC client, cache, tag_map.yaml, resolver, FRED (A)
     │   ├── benchmarks/       benchmark loader, industry map (B)
     │   ├── checks/           past.py, health.py (B); dividend.py, valuation.py (C)
-    │   ├── valuation/        cost of equity, free cash flow forecast, terminal value, growth the price implies (C)
-    │   ├── highlights.py (B)  gates.py (D)  export.py (E)
+    │   ├── valuation/        cost of equity, free cash flow forecast with growth decay, terminal value, fair value (C)
+    │   ├── highlights.py (B)  gates.py, scores.py (D)  export.py (E)
     ├── scripts/              extract_benchmarks.py (B); coverage.py (A)
     ├── data/                 benchmarks_us_2026.csv, industry_lookup_us_2026.csv, sic_to_damodaran.csv (B);
-    │                         universe.csv (A)
+    │                         universe.csv (A; coverage evidence, not read by the app)
     ├── evidence/             saved source data, never edited (A); demo/ trimmed facts for the demo companies
     └── tests/                fixtures/ (A collects), reconciliation/ (all, coordinated by E),
                               unit/ and integration/ (each owner for their code), app/ (D)
@@ -51,7 +51,7 @@ filing-scorecard/
 | Part | Folder / file | Responsibility | Must not |
 |---|---|---|---|
 | Interface | `app/main.py`, `app/ui/` | Inputs, layout, display of values it receives; charts draw prepared values | Compute, round or fill in financial numbers; call the SEC |
-| Logic (shared, tested) | `app/src/checks/`, `app/src/valuation/`, `app/src/highlights.py`, `app/src/gates.py` | The 24 checks, valuation, strengths and points to watch, gates; display-ready values with units, periods and reasons for gaps | Import from `app/ui/`; touch the network or files |
+| Logic (shared, tested) | `app/src/checks/`, `app/src/valuation/`, `app/src/highlights.py`, `app/src/gates.py`, `app/src/scores.py` | The 24 checks, valuation, strengths and points to watch, gates, area scores; display-ready values with units, periods and reasons for gaps | Import from `app/ui/`; touch the network or files |
 | Data access | `app/src/data/`, `app/src/benchmarks/` | SEC and FRED requests (rate limit, retries, cache), resolving tags into `Fact`s with sources, benchmark CSVs | Contain check or valuation rules |
 | Shared shapes | `app/src/contracts.py` | `Fact`, `CheckResult`, `CompanyData` (§11) | Change without the affected owners' approval |
 | Export | `app/src/export.py` | Excel file from prepared values | Recompute anything |
@@ -67,7 +67,7 @@ filing-scorecard/
 |---|---|---|
 | `app/.cache/` (git-ignored) | Raw SEC and FRED responses with retrieval time; nothing downloaded twice | Written by `app/src/data`; read by the app |
 | `app/evidence/demo/` | Trimmed company facts and submissions for the five demo companies | Written once by A; never edited; read in demo mode and tests |
-| `app/data/*.csv` | Benchmark extract, ticker → industry, SIC → industry, verified universe | Written by scripts (B, A); read by the app |
+| `app/data/*.csv` | Benchmark extract, ticker → industry, SIC → industry, verified universe | Written by scripts (B, A); the benchmark files are read by the app, `universe.csv` only by the coverage report |
 | `app/settings.yaml` | Thresholds and assumptions, each with a one-line reason; one section per owner | Owners of each section |
 | `app/tests/fixtures/synthetic_co.yaml` | Synthetic company of SPEC Appendix A | A collects, every owner signs off their rows |
 
@@ -137,3 +137,4 @@ filing-scorecard/
 | 2026-11-21 | No user interviews: the problem evidence comes from published studies and surveys (SEC, EU Commission, FINRA Foundation, FCA, two peer-reviewed papers), each read and cited, plus the team's own experience labelled as such | The course brief asks for evidence of the problem (A1) but not for interviews; the studies are larger and verifiable; the bank's side still needs its own sources (B's section) | Igor |
 | 2026-11-22 | **MVP scope (SPEC v2.4):** five demo companies and one workflow end to end; other tickers outside the MVP; benchmark table for the five companies' industries only; Q1 and Q13 decided; v0.1 on Tuesday 24, v0.2 with the freeze on Thursday 26 | The course brief: "one core workflow that works end to end beats five half-finished features". Nine days before the deadline no screen and no check was on `main` (audit of 21 November), while the data of the five companies was complete; the open data problems all concern other companies | Igor; the group by approving the pull request |
 | 2026-11-22 | S0c (#5) merged with four of five sign-offs (C, D, E; A collects them), a departure from SPEC S0c ("merged with five sign-offs"); B's rows (CALC-P1–P6, CALC-H1–H6, the statements) stay locked by `NotSignedOff` until Greg's sign-off is recorded in a follow-up pull request | Unblocks S7, S8 and S10 on the five demo companies; rule 14.5 still holds because no one can use an unchecked value (a test proves the lock) | Igor, as proposed by Flo in his approval of #5 |
+| 2026-11-23 | **SPEC 2.4.1, four decisions for v0.1** (Igor, in the session, after the review of 23 November): "not fully checked" is shown for every ticker other than the five demo companies; the input bar offers the five to pick from and accepts another typed ticker; the header shows the name as the SEC lists it; the area scores are computed in `app/src/scores.py` (D) | Apple, a demo company, is outside the 30 of `universe.csv` and would have carried the warning; "picks" (§2) and "types" (AC1) contradicted each other, and other tickers must stay reachable (§2, AC2); a hand-made list of display names would break "fully automatic"; the interface must not compute (§11) | Igor; the group by approving the pull request |

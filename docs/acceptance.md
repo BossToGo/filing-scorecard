@@ -7,7 +7,7 @@ Each criterion is checkable: a starting state, an action, an expected result. St
 
 | Id | Feature | Given | When | Then | Status |
 |---|---|---|---|---|---|
-| AC1 | F1 | Demo mode on | The user types `KO` | The header shows The Coca-Cola Company, its industry and how the industry was found, fiscal year end, latest 10-K date, retrieval date, and any warnings | open |
+| AC1 | F1 | Demo mode on | The user picks Coca-Cola from the five demo companies (or types `KO`) | The header shows the company's name as the SEC lists it (COCA COLA CO), its industry and how the industry was found, fiscal year end, latest 10-K date, retrieval date, and any warnings | open |
 | AC2 | F1 | Any mode | The user types `JPM` | "Not supported" with the reason (bank, SEC industry code in 6000–6799); no scores shown | open |
 | AC3 | F2 | Tier 1 build, synthetic company, no share price | The scorecard opens | Past performance 4 passed of 4 assessed (P4, P5 "not assessed": status `insufficient_data`, no benchmark yet); financial health 4 of 6; dividend 5 passed of 5 assessed (D2 "not assessed") | partly passing (dividend 5 of 5 assessed, D2 not assessed; test: test_ac3_tier_1_dividend_score_of_the_synthetic_company); past performance and financial health: S5, S6 |
 | AC4 | F2 | Any loaded company | The user opens a check | It shows the result, the rule in plain words, the formula, the input figures with units and fiscal years, and a link to the filing | open |
@@ -139,7 +139,7 @@ Hand working by Flo (C), 22 November 2026, given in his S7 session; written down
 | E11 | No dividend | D1 fails; D2 to D6 `not applicable`; area shows "no dividend paid", score 0 | passing for the checks (tests: test_1_a_labelled_nil_means_no_dividend_paid, test_2_a_reported_zero_in_fy0_means_no_dividend_paid; Amazon on real data: test_amazon_shows_no_dividend_paid); the area display: S10 |
 | E12 | Zero debt | H4 (no debt in both years), H5, H6 (no debt and no interest) pass; the levered beta equals the unlevered beta, kept within the limits 0.8 to 2.0 | open |
 | E15 | A warning that is not for the customer (e.g. a restated or derived figure) | Not in the header; listed on the sources page next to the figure (§10) | open |
-| E16 | Ticker outside the verified universe | Report shown with the header warning "not fully checked" (§2, §10) | open |
+| E16 | Any ticker other than the five demo companies | Report shown with the header warning "not fully checked" (§2, §10); the five demo companies, Apple included, never show it | open |
 | E17 | Industry not found in the lookup or the fallback table | Benchmarks `missing`; dependent checks "insufficient data"; no user override (§9.1, v2.3) | open |
 | E18 | Past revenue growth above the cap (Nvidia: 68.3% a year, FY2022 to FY2026) or below the floor | Starting growth 30% (or −10%), labelled `assumption`; the note gives the growth before the limit; the valuation detail adds the growth note (§8.2, §8.3) | open |
 | E19 | Three-year free cash flow zero or negative, or equity value ≤ 0 after minority interests | No fair value; V1, V2, V6 `not_applicable` with the reason in plain words; V3 to V5 still assessed (§8.6) | open |
