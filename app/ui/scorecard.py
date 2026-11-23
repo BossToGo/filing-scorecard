@@ -72,7 +72,7 @@ def is_synthetic(data: CompanyData) -> bool:
     return SYNTHETIC in data.name or any(w.startswith(SYNTHETIC) for w in data.warnings)
 
 
-def render_header(data: CompanyData) -> None:
+def render_header(data: CompanyData, warnings: Sequence[str] = ()) -> None:
     if is_synthetic(data):
         st.warning(f"{SYNTHETIC}: an invented company for tests (SPEC Appendix A), not a real company.")
     st.header(data.name)  # as the SEC lists it (SPEC 2.4.1 §3)
@@ -81,7 +81,8 @@ def render_header(data: CompanyData) -> None:
         f"Industry: {industry} · Fiscal year ends: {_fiscal_year_end(data.fiscal_year_end)} · "
         f"Latest annual report (10-K): {_day(data.latest_10k_filed)} · Data retrieved: {_day(data.retrieved)}"
     )
-    st.container()  # place of the two customer warnings ("not fully checked", "latest annual report is old"): S11
+    for warning in warnings:  # only "not fully checked" and "latest annual report is old" (SPEC §10, src/gates.py)
+        st.warning(warning)
 
 
 # --- score chart ------------------------------------------------------------------------------------------------
@@ -201,7 +202,7 @@ def render_checks(data: CompanyData, results: Mapping[str, Sequence[CheckResult]
 
 
 def render_scorecard(data: CompanyData, results: Mapping[str, Sequence[CheckResult] | None],
-                     price: float | None) -> None:
-    render_header(data)
+                     price: float | None, warnings: Sequence[str] = ()) -> None:
+    render_header(data, warnings)
     render_score_chart(results, price)
     render_checks(data, results)
