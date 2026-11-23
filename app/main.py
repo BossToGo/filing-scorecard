@@ -1,13 +1,17 @@
 """Streamlit entry point: `streamlit run main.py` from the `app/` folder. Owner: D (slice S10).
 
 Input bar, start screen, then the scorecard and sources pages. The interface only shows values it receives from
-`src/`; it never computes financial numbers (SPEC §11). Error messages for the customer come with S11.
+`src/`; it never computes financial numbers (SPEC §11). The data-quality gates (`src/gates.py`, S11) decide
+whether a report is shown; every message for the customer comes from `ui/messages.py`.
 """
 
 import streamlit as st
 
 from src.data.company import DEMO_TICKERS, SecError, load_company
+from src.gates import check_gates
+from src.settings import load_settings
 from ui.inputs import PriceError, parse_price
+from ui.messages import TECHNICAL_DETAILS, header_warnings, sec_error_message, stop_message
 from ui.results import check_results
 from ui.scorecard import render_scorecard
 from ui.sources import render_sources
@@ -55,12 +59,21 @@ try:
     with st.spinner("Reading the saved SEC data…" if demo else "Fetching SEC filings…"):
         data = company(ticker, demo)
 except SecError as error:
-    st.error(str(error))  # customer wording per error comes with S11
+    st.error(sec_error_message(error, ticker, demo))
+    with st.expander(TECHNICAL_DETAILS, expanded=False):
+        st.code(str(error), language=None)
+    st.stop()
+
+# --- data-quality gates (SPEC 2.4.1 §10) -------------------------------------------------------------------------
+gates = load_settings()["gates"]
+gate = check_gates(data, gates, DEMO_TICKERS)
+if gate.stop is not None:  # "Not supported": the reason, no scores (AC2, E2, E3)
+    st.error(stop_message(gate.stop, data.name))
     st.stop()
 
 results = check_results(data)
 scorecard_tab, sources_tab = st.tabs(["Scorecard", "Sources"])
 with scorecard_tab:
-    render_scorecard(data, results, price)
+    render_scorecard(data, results, price, warnings=header_warnings(gate, gates))
 with sources_tab:
     render_sources(data, results)
