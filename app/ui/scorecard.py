@@ -7,7 +7,6 @@ Colours come from the theme file `app/.streamlit/config.toml`, never from this f
 
 from __future__ import annotations
 
-import calendar
 import html
 from datetime import date, datetime
 from pathlib import Path
@@ -62,26 +61,28 @@ def _day(value: date | datetime | None) -> str:
     return f"{shown}, {value:%H:%M} UTC" if isinstance(value, datetime) else shown
 
 
-def _fiscal_year_end(mmdd: str | None) -> str:
-    if not mmdd or len(mmdd) != 4 or not mmdd.isdigit():
-        return "n/a"
-    return f"{int(mmdd[2:])} {calendar.month_name[int(mmdd[:2])]}"
+def _latest_fiscal_year_end(data: CompanyData) -> str:
+    """The latest fiscal year end in the data, the date the checks use (Igor's review of #35); not the SEC's
+    nominal year end, which is a week off for 52/53-week years (Apple, Nvidia)."""
+    years = data.fiscal_years("revenue")
+    return _day(years[-1]) if years else "n/a"
 
 
 def is_synthetic(data: CompanyData) -> bool:
     return SYNTHETIC in data.name or any(w.startswith(SYNTHETIC) for w in data.warnings)
 
 
-def render_header(data: CompanyData) -> None:
+def render_header(data: CompanyData, warnings: Sequence[str] = ()) -> None:
     if is_synthetic(data):
         st.warning(f"{SYNTHETIC}: an invented company for tests (SPEC Appendix A), not a real company.")
     st.header(data.name)  # as the SEC lists it (SPEC 2.4.1 §3)
     industry = f"{data.sic_description}, SEC code {data.sic}" if data.sic else "n/a"
     st.caption(
-        f"Industry: {industry} · Fiscal year ends: {_fiscal_year_end(data.fiscal_year_end)} · "
+        f"Industry: {industry} · Latest fiscal year ended {_latest_fiscal_year_end(data)} · "
         f"Latest annual report (10-K): {_day(data.latest_10k_filed)} · Data retrieved: {_day(data.retrieved)}"
     )
-    st.container()  # place of the two customer warnings ("not fully checked", "latest annual report is old"): S11
+    for warning in warnings:  # only "not fully checked" and "latest annual report is old" (SPEC §10, src/gates.py)
+        st.warning(warning)
 
 
 # --- score chart ------------------------------------------------------------------------------------------------
@@ -170,11 +171,13 @@ def render_check(data: CompanyData, result: CheckResult, texts: Mapping) -> None
     mark, word = LOOKS[result.status]
     with st.expander(f"{mark} {word} · {_name(result.check_id, texts)}"):
         rule = texts.get(result.check_id, {}).get("rule")
-        if result.status in ("insufficient_data", "not_applicable"):
+        not_assessed = result.status in ("insufficient_data", "not_applicable")
+        if not_assessed:  # its explanation is the reason, shown once (Igor's review of #35)
             st.markdown(f"**{word}:** {result.explanation}")
         if rule:
             st.markdown(f"**Rule:** {rule}")
-        st.markdown(f"**How it is calculated:** {result.explanation}")
+        if not not_assessed:
+            st.markdown(f"**How it is calculated:** {result.explanation}")
         if result.value is not None or result.threshold is not None:
             shown, against = check_value(result.check_id, result.value, result.threshold)
             st.markdown(f"**Value:** {shown}" + (f" · **compared with:** {against}" if against else ""))
@@ -201,7 +204,7 @@ def render_checks(data: CompanyData, results: Mapping[str, Sequence[CheckResult]
 
 
 def render_scorecard(data: CompanyData, results: Mapping[str, Sequence[CheckResult] | None],
-                     price: float | None) -> None:
-    render_header(data)
+                     price: float | None, warnings: Sequence[str] = ()) -> None:
+    render_header(data, warnings)
     render_score_chart(results, price)
     render_checks(data, results)
