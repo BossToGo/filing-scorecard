@@ -9,7 +9,7 @@ Each criterion is checkable: a starting state, an action, an expected result. St
 |---|---|---|---|---|---|
 | AC1 | F1 | Demo mode on | The user types `KO` | The header shows The Coca-Cola Company, its industry and how the industry was found, fiscal year end, latest 10-K date, retrieval date, and any warnings | partly, on branch `d/S10-interface` (`test_coca_cola_header_shows_the_sec_name_ac1`): name, SEC industry and dates shown; how the industry was found waits for #27, the warnings for S11 |
 | AC2 | F1 | Any mode | The user types `JPM` | "Not supported" with the reason (bank, SEC industry code in 6000–6799); no scores shown | open |
-| AC3 | F2 | Tier 1 build, synthetic company, no share price | The scorecard opens | Past performance 4 passed of 4 assessed (P4, P5 "not assessed": status `insufficient_data`, no benchmark yet); financial health 4 of 6; dividend 5 passed of 5 assessed (D2 "not assessed") | passes on branch `d/S10-interface` (`test_ac3_scores_on_screen`, `tests/unit/test_scores.py`), with hand-built check results until #23, #28 and #29 are merged |
+| AC3 | F2 | Tier 1 build, synthetic company, no share price | The scorecard opens | Past performance 4 passed of 4 assessed (P4, P5 "not assessed": status `insufficient_data`, no benchmark yet); financial health 4 of 6; dividend 5 passed of 5 assessed (D2 "not assessed") | dividend part passes with C's module (`test_ac3_tier_1_dividend_score_of_the_synthetic_company`); the screen passes on branch `d/S10-interface` (`test_ac3_scores_on_screen`, `tests/unit/test_scores.py`) with hand-built check results; past performance and financial health: B's S5, S6 (#28, #29) |
 | AC4 | F2 | Any loaded company | The user opens a check | It shows the result, the rule in plain words, the formula, the input figures with units and fiscal years, and a link to the filing | passes on branch `d/S10-interface` (`test_a_closed_check_row_shows_mark_result_and_check_ac4`, `test_an_open_check_shows_its_figures_with_units_and_fiscal_year_ac4`); plain-language rule once E's `texts.yaml` (#17) is merged |
 | AC5 | F3 | Any loaded company | The user opens the sources page | One row per figure with metric, value, unit, period, kind, tag, form, accession, filing date, retrieval time and note; each missing figure shows its reason and the checks it blocks | passes on branch `d/S10-interface` (`test_sources_page_one_row_per_figure_ac5`) |
 | AC6 | F4 | Any loaded company | The user looks for an input other than the ticker, the share price and the demo switch | There is none: no way to change a figure, the industry, an assumption or a check result; the scorecard is the same for every user (§1, §3, §8.7) | open |
@@ -63,12 +63,12 @@ terminal value 1,101.7463.
 | CALC-H4 | Debt falling | 450 ÷ 820 = 54.88% against 400 ÷ 600 = 66.67% | pass | B | open, sign-off pending |
 | CALC-H5 | Debt covered by cash flow | 215 ÷ 450 | 47.78% ≥ 20% → pass | B | open, sign-off pending |
 | CALC-H6 | Interest covered | 208 ÷ 26 | 8.0 ≥ 5 → pass | B | open, sign-off pending |
-| CALC-D1 | Pays a dividend | 56 > 0 | pass | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
-| CALC-D2 | Yield above market | 56 ÷ (30.00 × 100) = 56 ÷ 3,000 | 1.867% > 1.5% → pass | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
-| CALC-D3 | No large cut | Changes: +10%, +9.09%, −6.25% (48 to 45), +24.44% | largest fall −6.25% → pass | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
-| CALC-D4 | Dividend grew | 56 > 40 | pass | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
-| CALC-D5 | Covered by earnings | 56 ÷ 140 | 40% < 90% → pass | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
-| CALC-D6 | Covered by cash | 56 ≤ 215 − 85 = 130 | pass | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
+| CALC-D1 | Pays a dividend | 56 > 0 | pass | C | passing (test: test_appendix_a_synthetic_company[D1]); signed off by C on PR #5 |
+| CALC-D2 | Yield above market | 56 ÷ (30.00 × 100) = 56 ÷ 3,000 | 1.867% > 1.5% → pass | C | signed off by C on PR #5; open: D2 is "not assessed" until S9 adds the share price and the market yield (test: test_appendix_a_d2_is_not_assessed_without_share_price_and_benchmark) |
+| CALC-D3 | No large cut | Changes: +10%, +9.09%, −6.25% (48 to 45), +24.44% | largest fall −6.25% → pass | C | passing (test: test_appendix_a_synthetic_company[D3]); signed off by C on PR #5 |
+| CALC-D4 | Dividend grew | 56 > 40 | pass | C | passing (test: test_appendix_a_synthetic_company[D4]); signed off by C on PR #5 |
+| CALC-D5 | Covered by earnings | 56 ÷ 140 | 40% < 90% → pass | C | passing (test: test_appendix_a_synthetic_company[D5]); signed off by C on PR #5 |
+| CALC-D6 | Covered by cash | 56 ≤ 215 − 85 = 130 | pass | C | passing (test: test_appendix_a_synthetic_company[D6]); signed off by C on PR #5 |
 | CALC-V1 | Below fair value | 30.00 against 20.13 | fail | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
 | CALC-V2 | Well below fair value | 30.00 against 0.80 × 20.13 = 16.10 | fail | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
 | CALC-V3 | P/E vs industry | 3,000 ÷ 140 | 21.43 > 20.0 → fail | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
@@ -84,6 +84,44 @@ terminal value 1,101.7463.
 | CALC-S | Area scores (tier 2) | Passes per area from the rows above | 5 of 6, 4 of 6, 6 of 6, 3 of 6 (v2.3: V6 now passes) | E (counts the passes of B's and C's rows; the fixture's `expected_scores()` waits for E) | signed off by E (Emma, 21 November 2026, review comment on pull request #5: 5, 4, 6, 3) |
 | CALC-G | Strengths and points to watch (tier 3) | SPEC v2.3 §9 rules on the rows above; SPEC Appendix A table | Shown: G1, G2 (8.78% a year), G3 (17.83% against 15%), G5 (8.0 times), G6; W3 (H2: 540 against 570), W4 (40.24%), W8 (49.0% above the estimate; V6 passes, so no second clause) | B | open, v2.3 value (assistant), B's recalculation pending |
 
+### S7 edge cases (test companies)
+
+Hand working by Flo (C), 22 November 2026, given in his S7 session; written down here by Claude Code and checked by Flo on 22 November 2026 (one wording corrected, S7-A). Test companies in `app/tests/unit/test_dividend_checks.py`: dividends paid in USD millions, FY-4 → FY0; every figure not listed is net income 500, operating cash flow 600 and capital expenditure 100 in every year. Rules and decisions: `app/src/checks/dividend.py`.
+
+| Id | Test company | Hand working | Expected | Test |
+|---|---|---|---|---|
+| S7-1 | Nil in all five years, labelled (Amazon's shape, PR #21) | 0 > 0 is false: D1 fails, so D2–D6 are not applicable | D1 fail; D2–D6 not applicable | `test_1_a_labelled_nil_means_no_dividend_paid` |
+| S7-2 | 30, 32, 34, 36, 0 (reported zero) | 0 > 0 is false | D1 fail; D2–D6 not applicable | `test_2_a_reported_zero_in_fy0_means_no_dividend_paid` |
+| S7-3 | 30, 32, 34, 36, missing | FY0 missing: D1 insufficient; D2 not assessed; D3–D6 each use FY0 | all six insufficient data | `test_3_missing_fy0_dividends_are_insufficient_data_never_no_dividend` |
+| S7-4a | 50, 50, 50, 50, 45 | 45 < 0.9 × 50 = 45 is false: no cut; 45 ÷ 50 − 1 = −10.00% | D3 pass, −10.00% | `test_4_d3_a_fall_of_exactly_10_percent_is_not_a_cut` |
+| S7-4b | 50, 50, 50, 50, 44.9 | 44.9 < 45: a cut; 44.9 ÷ 50 − 1 = −10.20% | D3 fail, −10.20% | `test_4_d3_a_fall_of_exactly_10_percent_is_not_a_cut` |
+| S7-5 | 30, 32, missing, 36, 38 | FY-2 missing; D3 uses all five years | D3 insufficient data | `test_5_d3_with_a_year_missing_is_insufficient_data` |
+| S7-6 | 0, 30, 35, 38, 40 | 0 → 30 not counted; 35 ÷ 30 − 1 = 16.67%, 38 ÷ 35 − 1 = 8.57%, 40 ÷ 38 − 1 = 5.26%; no cut | D3 pass, +5.26% | `test_6_d3_a_rise_from_a_year_of_zero_is_never_a_cut` |
+| S7-7 | Only four years: 32, 34, 36, 38 (FY-3 to FY0) | FY-4 not in the data, so missing | D3, D4 insufficient data | `test_7_with_only_four_fiscal_years_d3_and_d4_are_insufficient_data` |
+| S7-8 | 40, 42, 41, 40, 40 | 40 > 40 is false | D4 fail, 40 against 40 | `test_8_d4_a_dividend_equal_to_four_years_earlier_did_not_grow` |
+| S7-9 | 80, 82, 84, 86, 90; net income FY0 100, then 0, then −50 | 90 ÷ 100 = 90.00%, not < 90%; net income ≤ 0: fail, no ratio | D5 fail (90.00%); fail; fail | `test_9_d5_fails_at_exactly_90_percent_and_when_net_income_is_zero_or_negative` |
+| S7-10 | 120, 122, 124, 126, 130; FY0 (a) cash flow 215, capex 85; (b) capex missing; (c) 100, 150 | (a) 130 ≤ 215 − 85 = 130; (b) capex missing; (c) 130 ≤ 100 − 150 = −50 is false | D6 (a) pass, 130 against 130; (b) insufficient data; (c) fail, 130 against −50 | `test_10_d6_dividends_against_operating_cash_flow_minus_capex` |
+| S7-11 | 30, 32, 34, 36, 40; net income FY0 100; payout limit 30% | 40 ÷ 100 = 40% < 30% is false | D5 fail, 40% against 30% | `test_11_a_changed_payout_limit_changes_d5` |
+| S7-A | 30, 32, 34, 36, −10 | Negative FY0 payment: sign error. The negative FY0 dividend makes D1 and D3–D6 insufficient data because each uses that figure. D2 is already insufficient data because it is unassessed in S7 | all six insufficient data | `test_a_negative_fy0_dividend_is_insufficient_data_everywhere` |
+| S7-B | 30, 32, −34, 36, 38 | Only D3 uses FY-2; 38 > 0; 38 > 30; 38 ÷ 500 = 7.60%; 38 ≤ 500 | D1 pass; D2, D3 insufficient data; D4, D5, D6 pass | `test_b_a_negative_dividend_in_fy_minus_2_blocks_only_d3` |
+| S7-C | 0, 0, 0, 0, 5 | Every step starts at 0, so none is counted; no cut | D3 pass, no value | `test_c_d3_passes_with_no_value_when_every_step_starts_from_zero` |
+| S7-T1 | 120, 122, 124, 126, 130; FY0 cash flow 100, capex −50 | Negative capex: sign error, used by D6 only; 130 > 0; four rises; 130 > 120; 130 ÷ 500 = 26% | D1, D3, D4, D5 pass; D6 insufficient data | `test_t1_a_negative_capex_is_a_sign_error_and_d6_is_insufficient_data` |
+| S7-T2 | 50, 40, 45, 50, 55 | 40 < 45: a cut; 40 ÷ 50 − 1 = −20.00% | D3 fail, −20.00% | `test_t2_to_t4_d3_looks_at_every_step_year_on_year` |
+| S7-T3 | 30, 0, 30, 32, 34 | 0 < 27: a cut; 0 ÷ 30 − 1 = −100.00%; 0 → 30 not counted | D3 fail, −100.00% | `test_t2_to_t4_d3_looks_at_every_step_year_on_year` |
+| S7-T4 | 100, 92, 84.64, 90, 95 | 92 < 90 and 84.64 < 82.8 are false; each fall −8.00% year on year (from the peak it would be −15.36%) | D3 pass, −8.00% | `test_t2_to_t4_d3_looks_at_every_step_year_on_year` |
+| S7-T5 | −30, 32, 34, 36, 38 | Negative FY-4 blocks D3 and D4 only; 38 ÷ 500 = 7.60%; 38 ≤ 500 | D1, D5, D6 pass; D3, D4 insufficient data | `test_t5_a_negative_fy_minus_4_dividend_blocks_only_d3_and_d4` |
+| S7-T6 | missing, 32, 34, 36, 38 | FY-4 missing | D3, D4 insufficient data | `test_t6_a_missing_fy_minus_4_dividend_blocks_d3_and_d4` |
+| S7-T7 | 30, 32, 34, 36, 38; net income FY0 missing | D5 uses net income FY0; 38 ≤ 600 − 100 | D5 insufficient data; D6 pass | `test_t7_missing_net_income_blocks_d5_only` |
+| S7-T8 | 50, 50, 50, 50, 40; cut limit 25% | 40 < 0.75 × 50 = 37.5 is false; 40 ÷ 50 − 1 = −20.00% | D3 pass, −20.00% against −25% | `test_t8_a_changed_cut_limit_changes_d3` |
+| S7-T9 | 30, 32, 34, 36, 36, with FY0 replaced by 40 of kind `assumption` (no manual overrides in tier 1; this tests the kind, not a feature) | 40 > 0; the 40 is the figure used | D1 pass, value 40 | `test_t9_a_positive_dividend_typed_in_by_a_user_passes_d1` |
+| S7-T10 | 30, 32, missing, 36, 38 | 38 > 0; 38 > 30; 7.60%; 38 ≤ 500 | D1, D4, D5, D6 pass | `test_t10_a_missing_middle_year_leaves_d1_d4_d5_d6_assessed` |
+| S7-T11 | Only four years: 32, 34, 36, 38 | 38 > 0; 7.60%; 38 ≤ 500 | D1, D5, D6 pass | `test_t11_with_four_fiscal_years_d1_d5_d6_are_still_assessed` |
+| S7-T12 | Coca-Cola FY2025, Igor's hand reading (`KO.yaml`): dividends 8,779, net income 13,107 | 8,779 ÷ 13,107 = 66.98% < 90% | D5 pass, 66.98% | `test_coca_cola_dividend_covered_by_earnings_in_fiscal_year_2025` |
+| S7-T13 | Coca-Cola FY2025, Igor's hand reading (`KO.yaml`): dividends 8,779, operating cash flow 7,408, capital expenditure 2,112 | 8,779 ≤ 7,408 − 2,112 = 5,296 is false | D6 fail, 8,779 against 5,296 | `test_coca_cola_dividend_not_covered_by_cash_in_fiscal_year_2025` |
+| S7-T14 | Amazon, saved SEC data (no dividend under any dividend tag; nil, labelled, A's #21) | Nil counts as 0; 0 > 0 is false, so D1 fails and D2–D6 are not applicable (rule of S7-1) | D1 fail, "no dividend paid"; D2–D6 not applicable | `test_amazon_shows_no_dividend_paid` |
+| S7-R1 | 30, 32, 34, 36, 36, with FY0 replaced by 0 of kind `assumption` that is not the plan Q1 nil | 0 > 0 is false; only the data layer's nil gets the "treated as nil" sentence | D1 fail, shown as "USD 0"; D2–D6 not applicable | `test_a_zero_assumption_that_is_not_the_nil_is_shown_as_a_plain_zero` |
+| S7-R2 | 120, 122, 124, 126, 130, with FY0 capex replaced by −50 of kind `assumption` | Negative payment, but not read from a filing, so no SIGN warning to point to | D6 insufficient data, "a payment is a positive amount" | `test_the_sign_warning_is_named_only_for_a_figure_read_from_a_filing` |
+
 ## Edge cases and errors
 
 | Id | Situation | Expected behaviour | Status |
@@ -97,8 +135,8 @@ terminal value 1,101.7463.
 | E7 | Restated figure differs from the original by more than 1% | Latest filed value used; both shown with a warning (§5.3.4) | passing (test: test_planted_a_restated_figure_uses_the_latest_filing_and_keeps_the_original; KO 2018: test_coca_cola_2018_revenue_restatement_as_shown_in_session_5) |
 | E8 | 53-week fiscal year | Kept: flow periods of 350 to 380 days are accepted (§5.3.1) | passing (test: test_a_flow_must_cover_350_to_380_days; Apple: test_apple_has_a_53_week_fiscal_year) |
 | E9 | Negative equity | H3, P4, V5 fail with the note "negative equity"; recorded on the sources page, no header warning (§7, §10). H4: see open question in `docs/plan.md` | open |
-| E10 | Net income zero or below | V3, V4 and D5 fail; P2 fails | open |
-| E11 | No dividend | D1 fails; D2 to D6 `not applicable`; area shows "no dividend paid", score 0 | open |
+| E10 | Net income zero or below | V3, V4 and D5 fail; P2 fails | partly passing (D5, test: test_9_d5_fails_at_exactly_90_percent_and_when_net_income_is_zero_or_negative); V3, V4: S9; P2: S5 |
+| E11 | No dividend | D1 fails; D2 to D6 `not applicable`; area shows "no dividend paid", score 0 | passing for the checks (tests: test_1_a_labelled_nil_means_no_dividend_paid, test_2_a_reported_zero_in_fy0_means_no_dividend_paid; Amazon on real data: test_amazon_shows_no_dividend_paid); the area display: S10 |
 | E12 | Zero debt | H4 (no debt in both years), H5, H6 (no debt and no interest) pass; the levered beta equals the unlevered beta, kept within the limits 0.8 to 2.0 | open |
 | E15 | A warning that is not for the customer (e.g. a restated or derived figure) | Not in the header; listed on the sources page next to the figure (§10) | open |
 | E16 | Ticker outside the verified universe | Report shown with the header warning "not fully checked" (§2, §10) | open |
