@@ -104,8 +104,9 @@ def _style() -> str:
 .fs-row {{display:flex; align-items:center; gap:.75rem; margin:.35rem 0; flex-wrap:wrap}}
 .fs-area {{width:9.5rem; font-weight:600}}
 .fs-blocks {{display:flex; gap:.25rem}}
-.fs-block {{width:3.6rem; height:2.6rem; border-radius:.3rem; font-size:.75rem; line-height:1.1;
-  display:flex; flex-direction:column; align-items:center; justify-content:center; box-sizing:border-box}}
+.fs-block {{min-width:6.2rem; min-height:2.8rem; padding:.3rem .5rem; border-radius:.3rem; font-size:.75rem;
+  line-height:1.2; white-space:nowrap; text-align:center; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; box-sizing:border-box}}
 .fs-pass {{background:{c['accent']}; color:{c['page']}}}
 .fs-fail {{background:{c['text']}; color:{c['page']}}}
 .fs-insufficient_data, .fs-empty {{border:2px dashed {c['text']}; color:{c['text']}}}

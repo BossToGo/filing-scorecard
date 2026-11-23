@@ -114,6 +114,14 @@ def test_start_screen_lists_the_five_demo_companies():
         assert ticker in shown
 
 
+def test_the_ticker_field_takes_space_only_for_another_ticker():
+    """Simon's look at the app, 23 November: no empty gap in the input bar."""
+    app = AppTest.from_file(MAIN).run(timeout=30)
+    assert [t.label for t in app.text_input] == ["Share price (USD)"] and len(app.columns) == 3
+    app.selectbox(key="company").set_value("Other ticker").run(timeout=30)
+    assert [t.label for t in app.text_input] == ["Ticker", "Share price (USD)"] and len(app.columns) == 4
+
+
 def test_coca_cola_header_shows_the_sec_name_ac1():
     app = show("KO")
     assert not app.exception

@@ -1,7 +1,8 @@
 """Reading the typed share price (`app/ui/inputs.py`, SPEC §3 item 1, issue #32 point 1; slice S10). Owner: D.
 
-Expected results and messages are Simon's (D), 23 November 2026. A comma is a decimal point only when one or two
-digits follow it: "1,234" could be 1234 or 1.234 dollars, so it is refused instead of guessed.
+Expected results and messages are Simon's (D), 23 November 2026. At most two decimals, after a point or a comma:
+"1,234" and "1.234" could each be 1234 or 1.234 dollars (in France "1.234" means 1234), so both are refused
+instead of guessed. Simon's look at the app: "1.234" had been read as USD 1.23 (fixed the same day).
 """
 
 import pytest
@@ -18,6 +19,8 @@ POSITIVE = "The price must be greater than 0. " + HOW
     ("182,5", 182.5),
     ("182", 182.0),
     (" 182.50 ", 182.50),
+    ("182.5", 182.5),
+    ("1234", 1234.0),
 ])
 def test_accepted_prices(typed, price):
     assert parse_price(typed) == price
@@ -28,7 +31,7 @@ def test_empty_means_no_price_not_an_error():
     assert parse_price("   ") is None
 
 
-@pytest.mark.parametrize("typed", ["1,234.50", "1,234"])
+@pytest.mark.parametrize("typed", ["1,234.50", "1,234", "1.234", "182.555"])
 def test_ambiguous_thousands_are_refused(typed):
     with pytest.raises(PriceError) as refused:
         parse_price(typed)

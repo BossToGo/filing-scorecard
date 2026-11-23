@@ -24,9 +24,13 @@ def company(ticker: str, demo: bool):
 
 
 # --- input bar (SPEC 2.4.1 §3 item 1) ---------------------------------------------------------------------------
-pick, typed, price_box, demo_box = st.columns([2, 2, 2, 2])
+# The Ticker field takes a column only when "Other ticker" is chosen (no empty gap otherwise).
+other = st.session_state.get("company") == OTHER
+pick, *typed, price_box, demo_box = st.columns(4 if other else 3)
 choice = pick.selectbox("Company", [*DEMO_TICKERS, OTHER], key="company")
-ticker = typed.text_input("Ticker", key="ticker", placeholder="e.g. MSFT") if choice == OTHER else choice
+ticker = typed[0].text_input("Ticker", key="ticker", placeholder="e.g. MSFT") if typed else choice
+if choice == OTHER and not typed:  # first run after switching: the column appears on the next rerun
+    st.rerun()
 price_text = price_box.text_input("Share price (USD)", key="price", placeholder="e.g. 182.50")
 demo = demo_box.toggle("Demo mode (saved data, no network)", value=True, key="demo")
 if st.button("Show scorecard", type="primary", key="show"):
