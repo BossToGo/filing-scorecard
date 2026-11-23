@@ -130,6 +130,22 @@ def test_coca_cola_header_shows_the_sec_name_ac1():
     assert "Beverages, SEC code 2080" in texts(app)
 
 
+def test_header_shows_the_latest_fiscal_year_end_from_the_data():
+    """Igor's review of #35: the date the checks use (Apple's fiscal 2026 ended on 26 September 2026), not the SEC's
+    nominal year end (25 September)."""
+    shown = texts(show("AAPL"))
+    assert "Latest fiscal year ended 26 September 2026" in shown
+    assert "25 September" not in shown
+
+
+def test_a_check_not_assessed_shows_its_explanation_once():
+    """Igor's review of #35: not "Not assessed: ..." and again "How it is calculated: ..."."""
+    p4 = next(e for e in run_synthetic().expander if "P4" in e.label)
+    shown = [m.value for m in p4.markdown]
+    assert sum("P4: built by hand (AC3)" in line for line in shown) == 1
+    assert any(line.startswith("**Not assessed:**") for line in shown)
+
+
 def test_apple_missing_interest_expense_is_n_a_with_its_reason_never_zero_v4():
     table = show("AAPL").dataframe[-1].value
     rows = table[table["Metric"] == "interest_expense"]
