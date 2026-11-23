@@ -84,7 +84,8 @@ def _d1(dividends: Fact) -> CheckResult:
                            f"Dividends paid in the fiscal year ended {year}: {_usd(dividends.value)}.")
     if dividends.kind == "assumption" and "treated as nil" in dividends.note:
         # Plan Q1: the data layer's nil. Its full note (tags searched) stays with the figure for the sources page.
-        why = "dividends paid are not reported in any of the five fiscal years, so they are treated as nil"
+        # "In any fiscal year in the data": after a gap the data can hold fewer than five years (Igor, #23).
+        why = "dividends paid are not reported in any fiscal year in the data, so they are treated as nil"
     else:
         why = f"dividends paid {_usd(dividends.value)}"
     return CheckResult("D1", "fail", dividends.value, 0.0, (dividends,),

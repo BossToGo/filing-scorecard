@@ -107,6 +107,15 @@ line_items:
     # PaymentsOfOrdinaryDividends: Johnson & Johnson, Pfizer, Qualcomm, GE and Accenture file their dividends only
     # under this tag (J&J 12,381, USD m, fiscal 2025; S3 cache, audit of 21 November 2026); they were "missing".
     tags: [PaymentsOfDividends, PaymentsOfDividendsCommonStock, PaymentsOfOrdinaryDividends]
+    # Plan Q1 (SPEC v2.4 §7): when no fiscal year has a dividend amount, the company pays no dividend (nil, labelled)
+    # only if none of these tags shows a value above 0 in the five fiscal years in an annual report. They are the
+    # cash paid to shareholders and the dividends declared on common shares. Not evidence (Flo's review of PR #20,
+    # checked on the S3 cache): dividends received, the expected dividend rate of a stock-option valuation (Tesla,
+    # Netflix, Palantir, ServiceNow, Airbnb, AMD report it), preferred dividends, dividends paid to minority owners.
+    # Any evidence keeps the years missing ("insufficient data"): a payer is never shown as paying none.
+    nil_without_evidence: [PaymentsOfDividends, PaymentsOfDividendsCommonStock, PaymentsOfOrdinaryDividends,
+                           CommonStockDividendsPerShareDeclared, CommonStockDividendsPerShareCashPaid,
+                           DividendsCommonStock, DividendsCommonStockCash, Dividends, DividendsCash]
   minority_interest:
     kind: instant
     bridge: true  # absent: "not reported, treated as nil" (SPEC §8.3)
