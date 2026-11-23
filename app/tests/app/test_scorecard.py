@@ -10,6 +10,7 @@ Demo companies (AC1, V4) go through `main.py` itself, on the saved SEC data (no 
 
 from pathlib import Path
 
+import pytest
 from streamlit.testing.v1 import AppTest
 
 MAIN = str(Path(__file__).resolve().parents[2] / "main.py")
@@ -136,6 +137,19 @@ def test_apple_missing_interest_expense_is_n_a_with_its_reason_never_zero_v4():
     assert len(missing) == 3  # fiscal 2024, 2025 and 2026
     for shown in missing["Value"]:
         assert shown.startswith("n/a: no annual 10-K value")
+
+
+def test_a_check_names_its_filing_number_with_dashes_as_on_the_sources_page():
+    """Simon's request, 23 November: e.g. 0000021344-26-000010, not 000002134426000010."""
+    import re
+
+    pytest.importorskip("src.checks.dividend", reason="needs C's dividend module (merged in #23)")
+    app = show("KO")
+    d1 = next(e for e in app.expander if "D1" in e.label)
+    filing = next(m.value for m in d1.markdown if m.value.startswith("**Filing:**"))
+    accessions = set(app.dataframe[-1].value["Accession"]) - {""}
+    shown = re.findall(r"\[([^\]]+)\]", filing)
+    assert shown and all(re.fullmatch(r"\d{10}-\d{2}-\d{6}", a) and a in accessions for a in shown)
 
 
 def test_a_typed_price_is_repeated_next_to_valuation():

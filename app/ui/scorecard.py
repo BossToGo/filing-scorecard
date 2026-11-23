@@ -110,7 +110,7 @@ def _style() -> str:
 .fs-pass {{background:{c['accent']}; color:{c['page']}}}
 .fs-fail {{background:{c['text']}; color:{c['page']}}}
 .fs-insufficient_data, .fs-empty {{border:2px dashed {c['text']}; color:{c['text']}}}
-.fs-not_applicable {{border:1px solid {c['soft']}; background:{c['page']}; color:{c['text']}}}
+.fs-not_applicable {{border:1px solid {c['text']}; background:{c['page']}; color:{c['text']}}}
 .fs-label {{font-size:.9rem}}
 </style>"""
 
@@ -181,9 +181,10 @@ def render_check(data: CompanyData, result: CheckResult, texts: Mapping) -> None
         if result.inputs:
             st.table(pd.DataFrame([{"Figure": f.metric, "Period": _period(f), "Value": fact_value(f), "Kind": f.kind}
                                    for f in result.inputs]))
-            links = sorted({link for f in result.inputs if (link := filing_link(data, f))})
+            # Filing number with its dashes, as on the sources page (e.g. 0000063908-26-000035)
+            links = sorted({(f.accession, link) for f in result.inputs if (link := filing_link(data, f))})
             if links:
-                st.markdown("**Filing:** " + " · ".join(f"[{link.rsplit('/', 2)[-2]}]({link})" for link in links))
+                st.markdown("**Filing:** " + " · ".join(f"[{accession}]({link})" for accession, link in links))
             elif is_synthetic(data):
                 st.markdown(f"**Filing:** none ({SYNTHETIC})")
 
