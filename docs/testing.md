@@ -103,3 +103,99 @@ Owner A handoff: update S5 to implementation prepared / personal sign-off pendin
 results after the final run, and reconcile the older acceptance document with SPEC v2.4. B has
 not edited A's product/acceptance/plan files or the synthetic fixture. D owns interface integration;
 no browser check or screenshot inspection is claimed for this logic-only draft.
+
+# S6 financial health evidence
+
+## Publication refresh, 23 November 2026
+
+S6 is published on top of S5 commit `7115e99` (which includes current main `cbd6957`), reusing the
+identical decimal/fiscal-period helper. The full suite passes **587 tests**, including both P/H
+modules; real `.env` and external networking were guarded. Both slices' evidence and AI disclosures
+are retained. Merge S5 first, then retarget S6 to main; personal known-answer sign-off, Explain-back
+and teammate review remain necessary. No UI or other owner's implementation was changed.
+
+# Member B test evidence
+
+## Stress-audit repairs, 22 November 2026
+
+Greg requested all fixes in his own Part B files. The prepared S6 branch now passes **542 tests**
+(44 health tests). New regressions failed first at H2/H3/H4/H5/H6 and the 349/380-day boundaries.
+No existing test expectation, default threshold or Appendix A sign-off was changed. S4 and S5
+repairs are prepared separately in their own branches; the shared B helper is byte-identical.
+
+Independent arithmetic for the new cases (labelled synthetic, not Appendix A):
+
+- H4: `99,999,998/99,999,999 < 99,999,999/100,000,000`; cross-products differ by 1.
+  The falling order passes; reversing it fails even when displayed floats tie.
+- H2: `10^16 > 10^16 - 1`, by USD 1. A rounded intermediate must not erase the cover.
+- H3: `(10^16 - 1)/(25*10^15) - 0.40 = -1/25,000,000,000,000,000 < 0`.
+  Cash of USD 1 still lowers the exact ratio below the strict 40% limit.
+- H5 with a configurable 75% minimum: `4*9,007,199,254,740,994 - 3*12,009,599,006,321,326 = -2`.
+  The ratio is below 75% and fails. The production default remains 20%, whose equality still passes.
+- H6: `15,000,000,000,000,004 - 5*3,000,000,000,000,001 = -1`.
+  Coverage is below 5x and fails; exact 5x still passes.
+- Annual flow durations follow the existing resolver's `(end-start).days` convention: 350–380
+  accepted, 349/381 unavailable. B no longer adds one; A's code and settings stay unchanged.
+
+An independent stdlib Fraction computation, importing no application code, reproduced these
+identities. Decisions now compare exact source amounts/products and decimal settings thresholds;
+display ratios and existing finite-range/missing-input behavior remain. This also covers the
+nearby comparison errors discovered while repairing the originally reported H4 float tie.
+
+Independent code review caught a binary/decimal mismatch in the first repair. All source amounts
+and thresholds now use the same decimal-derived rational helper. Five additional health regressions
+failed before correction: `0.1 = 0.3-0.2` (H2 fails), `(0.3-0.2)/0.25 = 0.4` (H3 fails),
+`0.3/0.1 = 0.9/0.3 = 3` (H4 fails), `0.3/1.5 = 0.2` (H5 passes), and `0.25/0.05 = 5`
+(H6 passes). The independent test reviewer reproduced these with Decimal arithmetic; code/test
+re-reviews passed and existing expectations were unchanged. All **669 combined tests** pass;
+36,000 stress status comparisons and all original B-owned audit probes pass. The offline five-demo
+API journey passes; actual screen/browser/visual interaction is still D's integration work.
+
+Owner A handoff: copy this written working and evidence to the shared acceptance/progress records,
+record the period alignment, and retain implementation prepared / personal sign-off pending.
+B has not edited A-owned documents or the locked fixture. D owns the screen integration.
+
+## Latest-main refresh, 22 November 2026
+
+`b/S6-health-checks-ready` is based on current main `ab86bf0`; the full suite passes **526 tests**.
+Combined current main + published S4 + prepared S5/S6 + reviewed S7 passes **639 tests**. A network-blocked
+five-company API journey returns all 18 ordered checks, including Apple's unavailable interest coverage,
+McDonald's negative equity and Amazon's no-dividend state. B's human expected answers remain locked.
+This is draft publication evidence, not personal sign-off or screen verification.
+
+## S6: financial-health checks, draft pending personal sign-off
+
+Prepared on 22 November 2026 on `b/S6-health-checks`. The pure function
+`health_checks(company, settings=load_settings()["financial_health"])` returns H1-H6 in order.
+It uses B's `_b_inputs.py`, identical to the S5 helper; when preparing final commits, merge S5's helper
+first and keep S6 scoped to the health module and its tests. Both drafts are deliberately isolated until
+Greg reviews them. No change was made to C's checks, A's contracts/data or D's interface.
+
+Tests were written before `health.py` and failed with its missing-module import. They use labelled,
+independent synthetic cases for SPEC §7's exact boundaries: 40% net debt/equity fails, 20% cash-flow/debt
+passes and 5x interest cover passes. They exercise gross versus net debt, missing data, all zero-debt and
+zero-interest exceptions, positive/nonpositive equity, a missing old year, currency scaling, USD units,
+partial-year flows and empty data. No locked Appendix A expected answer is used.
+
+H4 follows §7's general rule: a zero/negative equity denominator is insufficient data, unless both years
+have reported zero debt (the explicit pass exception). This is recorded here because the older plan's Q3
+still asks about the case. Missing interest remains missing even for zero debt; a reported zero interest
+expense passes without manufacturing an infinite ratio. A no-debt H5 pass does not require a cash-flow
+figure because the SPEC explicitly grants that exception.
+
+Full suite: `cd app && .venv/bin/python -m pytest -q`: 485 passed before review. Temporary checkout path:
+`/private/tmp/filing-scorecard-b-S6`. The local environment is shared with the primary checkout; it is not
+a dependency or file to commit.
+
+Review result: code reviewer found no formula defect. Test reviewer showed that the first test set would
+miss reversed H2 subtraction and using current equity in H4's historical ratio. Added a passing H2 cover
+case and a historical debt/equity scaling property. The reviewer then deliberately changed each formula
+in memory: each mutant failed its new test (1 failed, 27 passed), while the correct code passed all 28.
+No source or pre-existing expected value was edited by the reviewer. Final complete S6 suite: 487 passed.
+Combined S4/S5/S6 suite: 546 passed; the network-blocked API journey evaluated all five saved companies,
+unknown industry and missing revenue without external attempts. No screen/browser verification claimed.
+
+Pending acceptance: Greg personally recalculates H1-H6 and A records the genuine S0c sign-off; then add/run
+the fixture-gated known-answer tests. B has not unlocked or edited the shared fixture or existing tests.
+Owner A should update S6/acceptance status to draft implementation and rule tests prepared, personal
+sign-off pending. D owns screen integration. No browser or visual check is claimed for this logic-only draft.
