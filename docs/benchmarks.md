@@ -1,5 +1,24 @@
 # Member B: industry benchmarks and handoff
 
+## Publication refresh, 23 November 2026
+
+Greg explicitly requested publication of the prepared fixes. Refreshed against latest main `cbd6957`:
+**527 tests passed**, with real `.env` access and external networking guarded. The current main's
+non-benchmark settings and other members' log entries are preserved. This updates draft PR #27;
+source re-reading, Greg's Explain-back and teammate approval remain prerequisites for merge.
+
+## Stress-audit repair, 22 November 2026
+
+A blank cell now retains its source column, workbook, source-cell identifier and retrieval timestamp,
+while its value remains `None` and its kind remains `missing`. An entirely absent source file still
+has no fabricated provenance. A new regression was observed failing before the fix; the complete
+S4 suite now passes **526 tests** (30 benchmark tests). No benchmark value, source selection,
+setting or company-to-industry match changed. This repair is local and awaits its own commit approval;
+the previously published S4 draft is PR #27. Human second-member source review remains pending.
+
+Owner A handoff: record this test-first source-trace repair against S4/AC8/E17 in the plan and
+acceptance evidence. B has not edited A-owned plan, acceptance or architecture documents.
+
 Status on 22 November 2026: Greg approved the S4 commit, branch publication and draft pull request in chat.
 A second member's source re-reading, teammate approval and green GitHub checks remain required for merge.
 This is not a claim that S4 is already on main.

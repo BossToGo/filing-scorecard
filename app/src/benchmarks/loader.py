@@ -103,7 +103,9 @@ def _fact(row: dict[str, str]) -> Fact:
             f"{row['source_sheet']}, row {row['source_row']}, column {column}; "
             f"as of {AS_OF}; {row['source_url']}; SHA-256 {row['source_sha256']}.")
     if not row["value"].strip():
-        return _missing(metric, f"Source benchmark cell is blank. {note}")
+        return Fact(metric, None, "pure", None, AS_OF, "missing", column, filename,
+                    f"Damodaran:{AS_OF}:{filename}:{row['source_row']}", None, retrieved,
+                    f"Source benchmark cell is blank. {note}")
     value = float(row["value"])
     if not math.isfinite(value):
         raise ValueError("benchmark value must be finite; blank means missing")

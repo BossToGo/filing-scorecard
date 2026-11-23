@@ -115,6 +115,18 @@ def test_blank_benchmark_is_missing_and_a_real_zero_is_preserved(tmp_path):
     assert zero.kind == "reported" and zero.value == 0
 
 
+def test_blank_source_cell_preserves_its_structured_provenance(tmp_path):
+    # A known blank source cell is different from having no source file at all.
+    original = load_benchmarks("KO").fact("roe")
+    blank = load_benchmarks("KO", path=edited_csv(tmp_path, field="value", value="")).fact("roe")
+    assert blank.kind == "missing" and blank.value is None
+    assert blank.tag == original.tag
+    assert blank.form == original.form
+    assert blank.accession == original.accession
+    assert blank.retrieved == original.retrieved
+    assert blank.period_end == original.period_end
+
+
 @pytest.mark.parametrize("field,value", [
     ("value", "nan"), ("value", "inf"), ("value", "not a number"),
     ("unit", "percent"), ("as_of", "2025-01-05"),
