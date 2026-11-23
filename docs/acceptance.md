@@ -7,11 +7,11 @@ Each criterion is checkable: a starting state, an action, an expected result. St
 
 | Id | Feature | Given | When | Then | Status |
 |---|---|---|---|---|---|
-| AC1 | F1 | Demo mode on | The user picks Coca-Cola from the five demo companies (or types `KO`) | The header shows the company's name as the SEC lists it (COCA COLA CO), its industry and how the industry was found, fiscal year end, latest 10-K date, retrieval date, and any warnings | open |
+| AC1 | F1 | Demo mode on | The user picks Coca-Cola from the five demo companies (or types `KO`) | The header shows the company's name as the SEC lists it (COCA COLA CO), its industry and how the industry was found, fiscal year end, latest 10-K date, retrieval date, and any warnings | partly, on branch `d/S10-interface` (`test_coca_cola_header_shows_the_sec_name_ac1`): name, SEC industry and dates shown; how the industry was found waits for #27, the warnings for S11 |
 | AC2 | F1 | Any mode | The user types `JPM` | "Not supported" with the reason (bank, SEC industry code in 6000–6799); no scores shown | open |
-| AC3 | F2 | Tier 1 build, synthetic company, no share price | The scorecard opens | Past performance 4 passed of 4 assessed (P4, P5 "not assessed": status `insufficient_data`, no benchmark yet); financial health 4 of 6; dividend 5 passed of 5 assessed (D2 "not assessed") | partly passing (dividend 5 of 5 assessed, D2 not assessed; test: test_ac3_tier_1_dividend_score_of_the_synthetic_company); past performance and financial health: S5, S6 |
-| AC4 | F2 | Any loaded company | The user opens a check | It shows the result, the rule in plain words, the formula, the input figures with units and fiscal years, and a link to the filing | open |
-| AC5 | F3 | Any loaded company | The user opens the sources page | One row per figure with metric, value, unit, period, kind, tag, form, accession, filing date, retrieval time and note; each missing figure shows its reason and the checks it blocks | open |
+| AC3 | F2 | Tier 1 build, synthetic company, no share price | The scorecard opens | Past performance 4 passed of 4 assessed (P4, P5 "not assessed": status `insufficient_data`, no benchmark yet); financial health 4 of 6; dividend 5 passed of 5 assessed (D2 "not assessed") | dividend part passes with C's module (`test_ac3_tier_1_dividend_score_of_the_synthetic_company`); the screen passes on branch `d/S10-interface` (`test_ac3_scores_on_screen`, `tests/unit/test_scores.py`) with hand-built check results; past performance and financial health: B's S5, S6 (#28, #29) |
+| AC4 | F2 | Any loaded company | The user opens a check | It shows the result, the rule in plain words, the formula, the input figures with units and fiscal years, and a link to the filing | passes on branch `d/S10-interface` (`test_a_closed_check_row_shows_mark_result_and_check_ac4`, `test_an_open_check_shows_its_figures_with_units_and_fiscal_year_ac4`); plain-language rule once E's `texts.yaml` (#17) is merged |
+| AC5 | F3 | Any loaded company | The user opens the sources page | One row per figure with metric, value, unit, period, kind, tag, form, accession, filing date, retrieval time and note; each missing figure shows its reason and the checks it blocks | passes on branch `d/S10-interface` (`test_sources_page_one_row_per_figure_ac5`) |
 | AC6 | F4 | Any loaded company | The user looks for an input other than the ticker, the share price and the demo switch | There is none: no way to change a figure, the industry, an assumption or a check result; the scorecard is the same for every user (§1, §3, §8.7) | open |
 | AC7 | F5 | Network switched off, demo mode on | The user opens each of the five demo companies | Each opens without an error | open |
 | AC8 | F6 | Tier 2 build, synthetic company with the synthetic benchmarks | The scorecard opens | P4 pass, P5 fail, D2 pass (share price USD 30.00); each benchmark shows the industry group, the route used, the number of firms and the source file | open |
@@ -26,8 +26,8 @@ Each criterion is checkable: a starting state, an action, an expected result. St
 |---|---|---|---|---|---|
 | V1 | Scorecard, laptop width | Header and score chart visible without scrolling; a unit on every input and figure | AppTest (S17) | not installed | pending |
 | V2 | Each error state (unknown ticker, unsupported, source unreachable, no price) | The message says how to fix the problem | AppTest (S11) | not installed | pending |
-| V3 | Synthetic company anywhere in the app | "SYNTHETIC DATA" mark visible | AppTest (S10) | not installed | pending |
-| V4 | A missing figure in a check or table | Shown as "n/a" with the reason, never as 0 | unit test on the display layer (S10) | not installed | pending |
+| V3 | Synthetic company anywhere in the app | "SYNTHETIC DATA" mark visible | AppTest (S10) | not installed | passes on branch `d/S10-interface` (`test_synthetic_data_mark_v3`) |
+| V4 | A missing figure in a check or table | Shown as "n/a" with the reason, never as 0 | unit test on the display layer (S10) | not installed | passes on branch `d/S10-interface` (`test_missing_figure_shows_n_a_with_its_reason_never_zero`, `test_apple_missing_interest_expense_is_n_a_with_its_reason_never_zero_v4`) |
 
 ## Calculations (known answers)
 

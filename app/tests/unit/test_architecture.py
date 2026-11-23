@@ -22,7 +22,7 @@ NETWORK = {"requests", "urllib", "urllib3", "http", "httpx", "aiohttp", "socket"
 LOGIC_FORBIDDEN = NETWORK | {"src.data", "importlib"}
 # The interface reaches the data layer only through src.data.company (SPEC §11; Simon's review of PR #7).
 INTERFACE_FORBIDDEN = NETWORK | {"src.data.sec_client", "src.data.resolver", "importlib"}
-LOGIC = [SRC / "checks", SRC / "valuation", SRC / "highlights.py", SRC / "gates.py"]
+LOGIC = [SRC / "checks", SRC / "valuation", SRC / "highlights.py", SRC / "gates.py", SRC / "scores.py"]
 BENCHMARKS = [SRC / "benchmarks"]
 
 
