@@ -326,6 +326,9 @@ def test_e20_a_beta_outside_the_limits_is_set_to_the_limit_labelled_and_recorded
     # SPEC §10: a limited beta is a record on the sources page, not a warning in the header.
     assert any(r.startswith("BETA_LIMIT:") for r in v.records)
     assert v.status == "ok"
+    if limit_name == "beta_max":  # plain words (Flo, 24 November); 2.12515 shown with two decimals
+        assert ("BETA_LIMIT: the company's beta, adjusted for its debt, is 2.13, outside the range 0.8 to 2.0, so 2.0 "
+                "is used.") in v.records
     # Review of 24 November, M2: the cost of equity uses the beta after the limit, not before it (SPEC §8.1).
     assert v.cost_of_equity.value == pytest.approx(RISK_FREE.value + limit * SETTINGS["valuation"]["equity_risk_premium"])
 
@@ -347,7 +350,10 @@ def test_e18_past_growth_above_the_cap_starts_at_the_cap_with_the_growth_note():
     assert "growth_cap" in v.starting_growth.note
     assert v.notes == ("Revenue grew 44.3% a year over the last four years; the model starts at 30% and lets growth "
                        "slow towards 2.5%.",)
-    assert any(r.startswith("GROWTH_LIMIT:") for r in v.records)  # SPEC §10: a record on the sources page
+    # SPEC §10: a record on the sources page, in plain words (Flo, 24 November).
+    assert ("GROWTH_LIMIT: revenue changed by 44.3% a year, from USD 300 million in the fiscal year ended 31 December "
+            "2021 to USD 1,300 million in the fiscal year ended 31 December 2025; this is beyond the 30% limit, so the "
+            "model starts at 30%.") in v.records
     # At the cap, the V6 valuation is the same valuation (SPEC §7, V6 repeats V1).
     assert v.fair_value_at_growth_cap.value == pytest.approx(v.fair_value.value)
 
@@ -451,6 +457,20 @@ def test_a_minority_interest_treated_as_nil_subtracts_nothing():
     e = synthetic.expected_valuation("fair_value_per_share")
     assert v.fair_value.value == pytest.approx(e["value"], abs=tol(e))
     assert nil in v.inputs
+
+
+def test_customer_texts_name_no_spec_section_setting_or_tool():
+    # Flo, 24 November: what a bank customer reads (reasons, detail lines, sources-page records) is in plain words.
+    cases = [value(changed("revenue", 2021, 300)), value(changed("revenue", 2021, 3000)),
+             value(beta=rate(1.9, "unlevered_beta")), value(changed("minority_interest", 2025, -50)),
+             value(changed("operating_cash_flow", 2025, 80)), value(price=None, risk_free=None, beta=None),
+             value(with_operating_cash_flow((50, 50, 50))), value(changed("minority_interest", 2025, 5000))]
+    for v in cases:
+        for text in (v.reason,) + v.notes + v.records:
+            for jargon in ("SPEC", "§", "settings.yaml", "FRED", "growth_cap", "growth_floor", "beta_min", "beta_max",
+                           "re-levered"):
+                assert jargon not in text, f"{jargon!r} in {text!r}"
+    assert "risk-free rate: not available at the moment" in cases[5].reason
 
 
 def test_a_negative_free_cash_flow_in_fy0_is_shown_with_a_line_and_a_record():

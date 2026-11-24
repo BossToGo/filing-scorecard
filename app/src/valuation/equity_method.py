@@ -183,8 +183,8 @@ def value_company(data: CompanyData, settings: Mapping[str, Mapping], *, share_p
     rf = risk_free_rate.value
     beta, before = _beta(unlevered_beta.value, debt, share_price, shares, s, fy0)
     if beta.kind == "assumption":
-        records.append(f"BETA_LIMIT: the re-levered beta {before:.2f} is outside {s['beta_min']}–{s['beta_max']}, "
-                       f"so {beta.value} is used (SPEC §8.1, §10).")
+        records.append(f"BETA_LIMIT: the company's beta, adjusted for its debt, is {before:.2f}, outside the range "
+                       f"{s['beta_min']} to {s['beta_max']}, so {beta.value} is used.")
     ke = rf + beta.value * s["equity_risk_premium"]
     cost_of_equity = _derived("cost_of_equity", ke, "pure", fy0,
                               f"risk-free rate {_pct(rf)} + beta {beta.value:.5f} × equity risk premium "
@@ -210,10 +210,14 @@ def value_company(data: CompanyData, settings: Mapping[str, Mapping], *, share_p
     notes = []
     if g1.kind == "assumption":
         notes.append(_growth_note(past, g1.value, gt, s))
-        records.append(f"GROWTH_LIMIT: {g1.note}.")
+        first, last = revenue[0], revenue[-1]
+        records.append(f"GROWTH_LIMIT: revenue changed by {_growth(past)} a year, from {_usd(first.value)} in the "
+                       f"fiscal year ended {_day(first.period_end)} to {_usd(last.value)} in the fiscal year ended "
+                       f"{_day(last.period_end)}; this is beyond the {_limit(g1.value)} limit, so the model starts at "
+                       f"{_limit(g1.value)}.")
     if minority.value < 0:
         records.append(f"The minority interest on {_day(fy0)} is negative ({_usd(minority.value)}); it is used as "
-                       "reported, so it adds to the equity value (SPEC §8.3).")
+                       "reported, so it adds to the equity value.")
     detail = dict(levered_beta=beta, cost_of_equity=cost_of_equity, terminal_growth=terminal_growth,
                   base_free_cash_flows=fcfs, free_cash_flow_margin=margin_fact, starting_free_cash_flow=fcf0,
                   starting_growth=g1, minority_interest=minority, notes=tuple(notes), records=tuple(records))
@@ -228,7 +232,7 @@ def value_company(data: CompanyData, settings: Mapping[str, Mapping], *, share_p
     # FCF0 > 0 from here, so a negative FY0 is worth a line (SPEC §8.6); before this test it would be false.
     if fcfs[-1].value < 0:
         line = (f"Free cash flow was negative in the fiscal year ended {_day(fy0)} ({_usd(fcfs[-1].value)}); the "
-                f"valuation starts from the {WORDS.get(base_years, base_years)}-year margin, which is positive.")
+                f"valuation uses the average of the last {WORDS.get(base_years, base_years)} years, which is positive.")
         detail.update(notes=detail["notes"] + (line,), records=detail["records"] + (line,))
 
     # 5. §8.3: forecast, terminal value, equity value.
@@ -354,8 +358,8 @@ def _market_gaps(price: float | None, risk_free: Fact | None, beta: Fact | None)
         gaps.append("share price: not given")
     elif price <= 0:
         gaps.append(f"share price: zero or negative ({price})")
-    for fact, label, absent in ((risk_free, "risk-free rate", "not given (no FRED value and no fallback in "
-                                 "settings.yaml)"), (beta, "industry beta", "not given (no industry benchmark)")):
+    for fact, label, absent in ((risk_free, "risk-free rate", "not available at the moment"),
+                                (beta, "industry beta", "not given (no industry benchmark)")):
         if fact is None:
             gaps.append(f"{label}: {absent}")
         elif fact.kind == "missing":
