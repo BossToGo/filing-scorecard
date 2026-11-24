@@ -18,7 +18,11 @@ asking FRED again, because Streamlit reruns the page on every click.
 Otherwise (demo mode, no key, a key in the wrong format, FRED unreachable, an unusable answer, or an average outside
 `PLAUSIBLE`) the dated value saved in settings.yaml (`valuation.risk_free_rate`, its period in
 `data.risk_free_fallback_period`) comes back as an `assumption` Fact whose note says why in plain words: the note
-is shown to customers on the sources page. Without a saved value the rate is `missing`, never zero.
+is shown to customers on the sources page. Without a saved value the rate is `missing`, never zero. The saved value
+is computed by A before each release from the US Treasury's own Daily Treasury Par Yield Curve Rates (public domain;
+the same daily values as DGS10), never from FRED: FRED's terms forbid storing or caching FRED data (item (p); API
+item (l)). Keeping the live average in memory for the day is our reading of those terms, recorded in
+docs/architecture.md (decided by Igor, 24 November).
 
 The key travels in the request's address (`?api_key=`), as FRED requires. Our code never stores, quotes or logs it:
 it is kept out of every Fact, message and the memory, only an error's type is kept (the web library's own error
@@ -52,6 +56,9 @@ OBSERVATIONS_URL = "https://api.stlouisfed.org/fred/series/observations"
 SERIES = "DGS10"
 SERIES_PAGE = "https://fred.stlouisfed.org/series/DGS10"
 NOTICE = "This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis."
+# The saved value is computed from the US Treasury's own file, not from FRED (FRED's terms forbid storing its data)
+SAVED_SOURCE = "US Treasury"
+SAVED_COLUMN = "10 Yr"  # the 10-year column of the Daily Treasury Par Yield Curve Rates
 TIMEOUT_SECONDS = 15
 FAILURE_PAUSE_SECONDS = 600  # after a failed download, use the saved value for 10 minutes without asking FRED again
 PLAUSIBLE = (0.0, 0.2)  # a live average outside 0% to 20% is not used (the same range as the settings test)
@@ -219,9 +226,9 @@ def _saved(settings: dict, today: date, reason: str) -> Fact:
     start, end = settings["data"]["risk_free_fallback_period"]
     return Fact(
         metric="risk_free_rate", value=value, unit="pure", period_start=start, period_end=end, kind="assumption",
-        tag=SERIES, form="FRED", accession=None, filed=None, retrieved=None,
+        tag=SAVED_COLUMN, form=SAVED_SOURCE, accession=None, filed=None, retrieved=None,
         note=(
-            f"Saved five-year average of the 10-year US Treasury yield (FRED series DGS10) from {start} to {end}, "
-            f"refreshed before each release; used because {reason}."
+            f"Saved five-year average of the 10-year US Treasury yield from {start} to {end}, computed from the "
+            f"US Treasury's Daily Treasury Par Yield Curve Rates and refreshed before each release; used because {reason}."
         ),
     )

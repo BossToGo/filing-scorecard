@@ -388,6 +388,16 @@ def test_without_a_saved_value_the_rate_is_missing_not_zero():
     assert "demo mode" in rate.note
 
 
+def test_the_saved_value_names_the_treasury_as_its_source(key_file):
+    # FRED's terms forbid storing FRED data (item (p)), so the saved average is computed from the US Treasury's own
+    # public-domain file (Flo's review of PR #42; decided by Igor, 24 November). Its label must say so.
+    rate = fred.risk_free_rate(demo=True, env_file=key_file, session=NoNetwork(), today=TODAY, settings=SETTINGS)
+
+    assert (rate.tag, rate.form) == ("10 Yr", "US Treasury")
+    assert "US Treasury's Daily Treasury Par Yield Curve Rates" in rate.note
+    assert "FRED" not in rate.note
+
+
 # --- the saved value in app/settings.yaml -----------------------------------------------------------------------------
 
 
