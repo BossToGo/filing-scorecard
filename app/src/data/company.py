@@ -8,6 +8,12 @@ Errors are `SecError`s whose messages say how to fix the problem. The interface 
 src.data.sec_client (SPEC §11; a layering test enforces it):
 
     from src.data.company import load_company, SourceUnreachable, UnknownTicker
+
+The risk-free rate comes from here too (slice S2b; it never raises: FRED's five-year average, else the dated
+value saved in settings.yaml, see src/data/fred.py):
+
+    from src.data.company import risk_free_rate
+    rate = risk_free_rate(demo=True)           # a Fact: value 0.0412 means 4.12%
 """
 
 from __future__ import annotations
@@ -17,6 +23,7 @@ from datetime import datetime
 from pathlib import Path
 
 from src.contracts import CompanyData
+from src.data.fred import risk_free_rate
 from src.data.resolver import resolve
 from src.data.sec_client import (
     InvalidCik,
@@ -29,7 +36,7 @@ from src.data.sec_client import (
     UnknownTicker,
 )
 
-__all__ = ["load_company", "DEMO_TICKERS", "DEMO_DIR", "SecError", "SourceUnreachable", "SecRefused",
+__all__ = ["load_company", "risk_free_rate", "DEMO_TICKERS", "DEMO_DIR", "SecError", "SourceUnreachable", "SecRefused",
            "MissingUserAgent", "UnknownTicker", "NotFound", "InvalidCik"]
 
 DEMO_DIR = Path(__file__).resolve().parents[2] / "evidence" / "demo"
