@@ -20,6 +20,16 @@ def rational(value: float) -> Fraction:
     return Fraction(str(value))
 
 
+def money(value: float) -> str:
+    """Readable USD millions; keep extremely small nonzero values visible."""
+    millions = value / 1_000_000
+    return f"USD {millions:,.6g} million" if millions or value == 0 else f"USD {value:g}"
+
+
+def day(value: date) -> str:
+    return value.strftime("%d %B %Y")
+
+
 class Inputs:
     def __init__(self, data: CompanyData):
         self.data = data
@@ -39,7 +49,7 @@ class Inputs:
         fact = self.data.fact(metric, end) if end is not None else None
         if fact is None:
             return Fact(metric, None, "USD", None, end or self.latest or date.min, "missing", None,
-                        None, None, None, None, f"Missing {metric} for FY-{offset}; fiscal-year match unavailable.")
+                        None, None, None, None, f"Missing {metric.replace('_', ' ')} for the required fiscal year.")
         if fact.kind == "missing":
             return fact
         invalid = None
@@ -55,7 +65,9 @@ class Inputs:
 
 
 def unavailable(check: str, facts: tuple[Fact, ...], reason: str) -> CheckResult:
-    gaps = "; ".join(f.note for f in facts if f.kind == "missing")
+    gaps = ", ".join(dict.fromkeys(f.metric.replace("_", " ") for f in facts if f.kind == "missing"))
+    if gaps:
+        gaps = f"Unavailable figures: {gaps}. See their source notes for details."
     return CheckResult(check, "insufficient_data", None, None, facts, f"{reason} {gaps}".strip())
 
 

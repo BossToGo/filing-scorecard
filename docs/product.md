@@ -16,14 +16,14 @@ version 2.4 (the MVP is the five demo companies, one workflow end to end), appro
 - **Problem today:** reading annual reports takes hours and knowledge most retail investors do not have; free
   websites mix reported figures with forecasts and rarely show sources; the bank wants to help without giving
   advice (§1).
-- **Success looks like:** typing a ticker and the share price gives a one-page scorecard in under a minute
+- **Success looks like:** choosing a company and typing the share price gives a one-page scorecard in under a minute
   (seconds in demo mode) that needs no checking by the user: every figure passed the automatic checks or is shown
   as "not assessed", and each one can be traced to its filing, tag and filing date on the sources page.
 
 ## Main user journey
 
 1. The user opens the app and sees the input bar: ticker, share price (USD; the only figure the user types; without it the valuation area and the dividend yield check show "insufficient data"), demo mode.
-2. They type a ticker and the share price (in a bank, the price would come from the bank's own quote).
+2. They pick one of the five demo companies (or type another ticker, outside the MVP) and type the share price (in a bank, the price would come from the bank's own quote).
 3. The app fetches the company's SEC filings (or reads saved data in demo mode), runs the data-quality gates
    (§10), and shows the header, the score chart, the strengths and points to watch and the 24 checks (§3, §7, §9).
 4. They open a check to see the rule in plain words, the formula, the input figures with fiscal years and the
@@ -43,7 +43,7 @@ advice: never "buy", "sell" or "undervalued" (§3).
 
 | Screen | Purpose | The user sees first | Cards / charts / tables (unit, period) | The user can | Loading / empty / error |
 |---|---|---|---|---|---|
-| Scorecard (main page) | First-pass view of one company | Header: company, industry and how it was found, fiscal year end, latest 10-K date, retrieval date, and only two warnings ("not fully checked", "old annual report"; the rest on the sources page, §10); then the score chart | Score chart (4 areas, passes out of 6); 24 checks, each expandable to rule, formula, inputs (USD m, fiscal year) and filing link | Type ticker and share price (USD); switch demo mode; open a check | Loading: "Fetching SEC filings…". Unknown ticker, unsupported company (bank, insurer, REIT, non-USD, non-10-K), source unreachable: a message that says how to fix it (§3) |
+| Scorecard (main page) | First-pass view of one company | Header: company, industry and how it was found, fiscal year end, latest 10-K date, retrieval date, and only two warnings ("not fully checked", "old annual report"; the rest on the sources page, §10); then the score chart | Score chart (4 areas, passes out of 6); 24 checks, each expandable to rule, formula, inputs (USD m, fiscal year) and filing link | Pick one of the five demo companies or type another ticker; type the share price (USD); switch demo mode; open a check | Loading: "Fetching SEC filings…". Unknown ticker, unsupported company (bank, insurer, REIT, non-USD, non-10-K), source unreachable: a message that says how to fix it (§3) |
 | Valuation detail (tier 2, on the main page) | Show how the fair value was built | Fair value per share against the share price (USD) | Tables: cost of equity build-up (%), 10-year free cash flow forecast (USD m), actual revenue growth (%); the growth note when the growth limit applies | Nothing to type: the share price in the input bar is the only input | No share price: the whole area shows "insufficient data, enter a share price". Model does not fit (§8.6): no fair value, the reason in plain words |
 | Strengths and points to watch (tier 3, next to the score chart) | Say in plain words what the numbers mean | Up to five strengths and five points to watch, important ones first | List of short statements with the company's numbers, each linked to its check or figures (§9) | Open the check behind a statement | Inputs missing: the statement is not shown (never guessed) |
 | Sources page | Trace every number | One row per figure | Table: metric, value, unit, period, kind, tag, form, accession, filed, retrieved, note | Filter by kind; follow the link to the filing | Missing figures listed with the reason and the checks they block |

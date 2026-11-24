@@ -115,11 +115,33 @@ def test_a_recent_loss_never_passes_earnings_growth():
     assert run(data)["P2"].status == "fail"
 
 
-def test_latest_year_loss_has_undefined_compound_growth_and_is_unassessed():
-    # Greg's explicit decision, 22 November 2026: positive FY-4/FY-1, negative FY0.
+def test_latest_year_loss_fails_with_a_loss_reason_without_computing_compound_growth():
+    # Greg adopted Flo's policy on 23 November 2026, replacing the earlier unassessed rule.
     result = run(change(company(), "net_income", 2025, -1))["P3"]
-    assert result.status == "insufficient_data" and result.value is None
-    assert "undefined" in result.explanation.lower()
+    assert result.status == "fail" and result.value is None and result.threshold is None
+    assert "the latest year is a loss" in result.explanation.lower()
+
+
+@pytest.mark.parametrize("year", [2024, 2025])
+@pytest.mark.parametrize("value", [0, -1])
+@pytest.mark.parametrize("missing_benchmark", [False, True])
+def test_roe_nonpositive_equity_fails_even_when_benchmark_is_absent_or_missing(year, value, missing_benchmark):
+    data = change(company(), "equity", year, value)
+    b = ({"roe": replace(benchmark("roe", 0), value=None, kind="missing", note="Source cell absent.")}
+         if missing_benchmark else None)
+    check = run(data, b)["P4"]
+    assert check.status == "fail"
+    assert "negative equity" in check.explanation.lower()
+    assert all(f.kind != "missing" for f in check.inputs)
+
+
+def test_known_nonpositive_equity_is_decisive_despite_other_missing_roe_inputs():
+    data = change(change(change(company(), "equity", 2025, -1), "equity", 2024, None),
+                  "net_income", 2025, None)
+    check = run(data)["P4"]
+    assert check.status == "fail"
+    assert tuple(f.metric for f in check.inputs) == ("equity",)
+    assert check.inputs[0].value == -1
 
 
 @pytest.mark.parametrize("year", [2024, 2025])

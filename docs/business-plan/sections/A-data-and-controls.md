@@ -27,18 +27,18 @@ The most serious risk is an undetected error that makes a company appear financi
 
 - **Wrong figures:** The sources page identifies the filing, accession number and line item behind each financial input. Accounting checks help identify inconsistencies, including whether assets equal liabilities plus equity within a 1% tolerance.
 - **Missing figures:** Missing information stays missing and is never replaced with zero. Checks that require it display “insufficient data”.
-- **Limited verification:** The app has a verified set of 30 companies. Other tickers display “not fully checked”.
+- **Limited verification:** The five demonstration companies are reconciled by hand against their annual reports. Any other ticker displays “not fully checked”.
 - **Old information and outages:** Annual reports more than 15 months old display “old annual report”. Saved industry tables and rate fallbacks retain their dates. For bank deployment, these dates should be clearly visible wherever older inputs affect a result.
 - **Unsuitable companies:** The app does not produce a fair value when the cash flow model does not fit.
 - **Price errors:** Manual entry remains a weakness of the prototype. Using the bank’s quote and validating any remaining manual entries are proposed controls for deployment.
 - **Misinterpretation:** The app avoids trading recommendations and presents fair value as an estimate based on model assumptions.
 
-Validation includes more than 380 automated tests, a second-source check covering 727 figures, and an independent spreadsheet model built by a team member. Before submission, the five team members will also reconcile 30 figures directly with the filings.
+Validation includes more than 500 automated tests, a second-source check covering 727 figures across 30 large companies, and an independent spreadsheet model built by a team member. Before submission, the five team members will also reconcile 30 figures directly with the filings: six for each demonstration company.
 
 The app uses no AI internally and no analyst forecasts. Its calculations are repeatable, but they still depend on correct inputs and appropriate assumptions.
 
 **D. Limits we admit**
 
-Testing has focused on large US companies, and coverage is limited to US filers. Banks, insurers and real estate companies are outside scope. Annual reports may miss recent developments, while industry tables can become dated between yearly updates.
+The demonstration covers five large US companies, testing has focused on large US companies, and coverage is limited to US filers. Banks, insurers and real estate companies are outside scope. Annual reports may miss recent developments, while industry tables can become dated between yearly updates.
 
 The scorecard helps customers understand reported information. It does not remove investment risk or provide investment advice.
