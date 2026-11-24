@@ -4,7 +4,7 @@
                           benchmarks={'roe': roe_fact, 'operating_margin': margin_fact})
 
 All ratios stay decimals; money stays USD. No rounding is used to decide a result.
-This implementation remains a draft until Greg's Appendix A calculation sign-off.
+Appendix A values: tests/unit/test_b_appendix_a.py (signed off by Greg on PR #5, 24 November 2026).
 """
 from __future__ import annotations
 

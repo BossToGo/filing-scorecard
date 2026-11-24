@@ -4,7 +4,7 @@
 
 Amounts are USD; ratios are decimals and interest cover is a multiple. A missing
 amount is never zero. No-debt/zero-interest rules do not manufacture an infinite ratio.
-Known-answer acceptance remains pending Greg's own Appendix A calculation sign-off.
+Appendix A values: tests/unit/test_b_appendix_a.py (signed off by Greg on PR #5, 24 November 2026).
 """
 from __future__ import annotations
 

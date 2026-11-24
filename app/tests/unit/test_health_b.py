@@ -1,4 +1,4 @@
-"""S6 rule/edge/property tests, SPEC §7. Appendix A acceptance awaits Greg.
+"""S6 rule/edge/property tests, SPEC §7. Appendix A known answers: test_b_appendix_a.py.
 
 The constructed threshold examples come from the published rules (40%, 20%, 5x),
 not the app's output. No locked Appendix A expected values are used.
