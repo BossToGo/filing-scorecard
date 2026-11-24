@@ -93,10 +93,34 @@ def test_h4_no_debt_in_both_years_passes_even_without_equity():
 
 @pytest.mark.parametrize("year", [2021, 2025])
 @pytest.mark.parametrize("equity", [0, -1])
-def test_h4_nonpositive_equity_is_unassessed_under_general_denominator_rule(year, equity):
+def test_h4_nonpositive_equity_fails_under_gregs_approved_q3_rule(year, equity):
+    # Greg approved Flo's Q3 proposal on 23 November: replaces insufficient_data.
     check = run(change(company(), "equity", equity, year))["H4"]
-    assert check.status == "insufficient_data" and check.value is None
-    assert "equity" in check.explanation.lower()
+    assert check.status == "fail" and check.value is None
+    assert "negative equity" in check.explanation.lower()
+    assert all(f.kind != "missing" for f in check.inputs)
+
+
+@pytest.mark.parametrize("year", [2021, 2025])
+@pytest.mark.parametrize("equity", [0, -1])
+def test_h4_known_nonpositive_equity_fails_before_missing_debt(year, equity):
+    data = change(change(company(), "equity", equity, year), "financial_debt", None)
+    check = run(data)["H4"]
+    assert check.status == "fail" and check.value is None
+    assert "negative equity" in check.explanation.lower()
+    assert all(f.kind != "missing" for f in check.inputs)
+
+
+@pytest.mark.parametrize("year", [2021, 2025])
+@pytest.mark.parametrize("equity", [0, -1])
+def test_h4_known_nonpositive_equity_fails_even_with_zero_debt_in_both_years(year, equity):
+    data = change(change(company(), "financial_debt", 0), "financial_debt", 0, 2021)
+    assert run(change(data, "equity", equity, year))["H4"].status == "fail"
+
+
+@pytest.mark.parametrize("year", [2021, 2025])
+def test_h4_missing_equity_is_not_classified_as_negative_equity(year):
+    assert run(change(company(), "equity", None, year))["H4"].status == "insufficient_data"
 
 
 def test_h4_compares_four_years_earlier_and_uses_gross_debt():
@@ -121,9 +145,64 @@ def test_h6_reported_zero_interest_passes_without_division_or_operating_income()
     assert all(f.kind != "missing" for f in check.inputs)
 
 
-def test_h6_missing_interest_never_becomes_zero_even_with_no_debt():
+def test_h6_assumed_zero_debt_does_not_turn_missing_interest_into_zero():
     data = change(change(company(), "interest_expense", None), "financial_debt", 0)
     assert run(data)["H6"].status == "insufficient_data"
+
+
+def reported_debt(data, value):
+    original = data.fact("financial_debt", date(2025, 12, 31))
+    return data.with_fact(replace(original, value=value, kind="reported",
+                                  tag="SYNTHETIC:FinancialDebt", form="SYNTHETIC",
+                                  accession="SYNTHETIC-H6-DEBT",
+                                  note="SYNTHETIC DATA: reported debt for Greg's approved H6 rule."))
+
+
+@pytest.mark.parametrize("operating_income", [None, 5])
+def test_h6_reported_zero_debt_passes_with_missing_interest_without_filling_it(operating_income):
+    data = reported_debt(change(change(company(), "interest_expense", None),
+                                "operating_income", operating_income), 0)
+    interest = data.fact("interest_expense", date(2025, 12, 31))
+    check = run(data)["H6"]
+    assert check.status == "pass" and check.value is None
+    assert check.inputs == (data.fact("financial_debt", date(2025, 12, 31)),)
+    assert "zero" in check.explanation.lower() and "missing" in check.explanation.lower()
+    assert data.fact("interest_expense", date(2025, 12, 31)) is interest
+    assert interest.kind == "missing" and interest.value is None
+
+
+def test_h6_derived_zero_debt_does_not_invoke_the_reported_zero_exception():
+    data = change(company(), "interest_expense", None)
+    debt = data.fact("financial_debt", date(2025, 12, 31))
+    data = data.with_fact(replace(debt, value=0, kind="derived",
+                                  note="SYNTHETIC DATA: two components sum to zero, not a reported zero."))
+    assert run(data)["H6"].status == "insufficient_data"
+
+
+@pytest.mark.parametrize("absent_tag", [False, True])
+def test_h6_missing_debt_and_interest_never_trigger_the_zero_debt_pass(absent_tag):
+    data = change(change(company(), "interest_expense", None), "financial_debt", None)
+    if absent_tag:
+        items = dict(data.items)
+        items["financial_debt"] = {d: f for d, f in items["financial_debt"].items() if d.year != 2025}
+        data = replace(data, items=items)
+    assert run(data)["H6"].status == "insufficient_data"
+
+
+def test_h6_reported_nonzero_debt_with_missing_interest_remains_unassessed():
+    assert run(reported_debt(change(company(), "interest_expense", None), 1))["H6"].status == "insufficient_data"
+
+
+def test_h6_wrong_unit_zero_debt_cannot_trigger_a_pass_with_missing_interest():
+    data = reported_debt(change(company(), "interest_expense", None), 0)
+    debt = data.fact("financial_debt", date(2025, 12, 31))
+    assert run(data.with_fact(replace(debt, unit="pure")))["H6"].status == "insufficient_data"
+
+
+def test_h6_positive_interest_still_uses_coverage_even_when_reported_debt_is_zero():
+    data = reported_debt(change(company(), "operating_income", 4), 0)
+    assert run(data)["H6"].status == "fail"  # 4 / 1 < 5; zero debt does not erase known expense.
+    assert run(change(data, "interest_expense", -1))["H6"].status == "insufficient_data"
 
 
 def test_h6_does_not_require_debt_when_operating_profit_and_interest_are_known():
