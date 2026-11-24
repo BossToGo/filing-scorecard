@@ -32,6 +32,13 @@ If `python3` or `py` is older than 3.11 but you have Anaconda, use its Python by
 Then open `app/.env` in an editor and put **your own** name and e-mail in `SEC_USER_AGENT` (the SEC requires
 it). Never commit `.env` and never paste it into a chat. Demo mode and the tests do not need it.
 
+Optional: a free FRED key (https://fredaccount.stlouisfed.org, "API Keys") in `FRED_API_KEY` gives the risk-free
+rate as today's five-year average of the 10-year Treasury yield. Without it, and in demo mode, the app uses the
+dated average saved in `settings.yaml` (`valuation.risk_free_rate`), labelled as an assumption and computed from
+the US Treasury's own file (FRED's terms forbid storing FRED data). The key is personal: each person uses their
+own, for personal, non-commercial use (commercial use needs FRED's written consent). After a failed download the app keeps the saved value for 10 minutes;
+if you fix a wrong key while the app is running, restart it.
+
 ## Run
 
 ```bash
@@ -57,7 +64,7 @@ The same tests run on every pull request on Linux and Windows, Python 3.11 and 3
 |---|---|---|
 | `main.py`, `ui/` | Streamlit interface | D |
 | `src/contracts.py` | Shared data shapes `Fact`, `CheckResult`, `CompanyData` | A |
-| `src/data/` | SEC client, cache, resolver | A |
+| `src/data/` | SEC client, cache, resolver, FRED risk-free rate | A |
 | `src/benchmarks/` | Benchmarks, industry map | B |
 | `src/checks/` | The 24 checks | B (past, health), C (dividend, valuation) |
 | `src/valuation/` | Valuation engine | C |
@@ -65,3 +72,14 @@ The same tests run on every pull request on Linux and Windows, Python 3.11 and 3
 | `tests/` | Unit, integration, app and reconciliation tests | each owner for their code |
 
 Full table and rules: `docs/architecture.md`.
+
+## Data sources
+
+- Company figures: SEC EDGAR (`submissions` and `companyfacts`), with a declared User-Agent.
+- Risk-free rate: Board of Governors of the Federal Reserve System (US), Market Yield on U.S. Treasury Securities
+  at 10-Year Constant Maturity, Quoted on an Investment Basis [DGS10], retrieved from FRED, Federal Reserve Bank
+  of St. Louis, https://fred.stlouisfed.org/series/DGS10. This product uses the FRED® API but is not endorsed or
+  certified by the Federal Reserve Bank of St. Louis.
+- Saved risk-free rate (demo mode, or when FRED cannot be used): U.S. Department of the Treasury, Daily Treasury
+  Par Yield Curve Rates, 10-year, https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve
+  (public domain).

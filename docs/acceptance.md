@@ -122,6 +122,15 @@ Hand working by Flo (C), 22 November 2026, given in his S7 session; written down
 | S7-R1 | 30, 32, 34, 36, 36, with FY0 replaced by 0 of kind `assumption` that is not the plan Q1 nil | 0 > 0 is false; only the data layer's nil gets the "treated as nil" sentence | D1 fail, shown as "USD 0"; D2–D6 not applicable | `test_a_zero_assumption_that_is_not_the_nil_is_shown_as_a_plain_zero` |
 | S7-R2 | 120, 122, 124, 126, 130, with FY0 capex replaced by −50 of kind `assumption` | Negative payment, but not read from a filing, so no SIGN warning to point to | D6 insufficient data, "a payment is a positive amount" | `test_the_sign_warning_is_named_only_for_a_figure_read_from_a_filing` |
 
+### Risk-free rate (S2b, owner A)
+
+| ID | Input | Working | Expected | Test (`app/tests/unit/test_fred.py`) |
+|---|---|---|---|---|
+| S2b-RF1 | Fixture `fred_dgs10_small.json`: 4.13, 4.12, (no value), 4.09, 4.15, 4.11 (percent) | Igor's hand working, 24 November 2026: the five days with a value average 4.12% (sum 20.60 ÷ 5); ÷ 100 | 0.0412 | `test_the_rate_is_the_average_of_the_days_with_a_value` |
+| S2b-RF2 | 4.00, 4.00, (no value), 5.00 (percent): mean and median differ | Igor's hand working, 24 November 2026: the three days with a value average 0.04333 as a decimal (the middle value would be 0.04); compared to half a unit of its last digit | 0.04333 | `test_the_rate_is_the_mean_not_the_middle_value` |
+| S2b-RF3 | One day, 4.50 | DGS10 is in percent (FRED series page, 24 November 2026) | 0.045 | `test_percent_becomes_a_decimal` |
+| S2b-RF4 | The saved fallback in `settings.yaml` | US Treasury, Daily Treasury Par Yield Curve Rates, column `10 Yr`, 2021-11-24 to 2026-11-20: 1,247 days with a value, sum 4,900.29, average 3.92966%. To repeat: download the yearly CSV files 2021 to 2026 (`https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/<year>/all?type=daily_treasury_yield_curve&field_tdr_date_value=<year>&page&_format=csv`), keep the days in the period, average the `10 Yr` column, ÷ 100. Computed on 24 November 2026 by a separate script; the same 1,247 days and the same value on every day as FRED DGS10 (checked against FRED's download and the app's live average, 3.9297%, the same day). Taken from the Treasury because FRED's terms forbid storing FRED data (`docs/architecture.md`); saved rounded | 0.0393 | `test_the_saved_fallback_is_set_and_dated` (range and five-year period); the source label: `test_the_saved_value_names_the_treasury_as_its_source` |
+
 ## Edge cases and errors
 
 | Id | Situation | Expected behaviour | Status |
