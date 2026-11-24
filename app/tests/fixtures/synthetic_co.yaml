@@ -154,7 +154,8 @@ expected_tier1:
 # Recorded by A from each owner's review comment on the S0c pull request (#5): "name, date, link to the comment".
 # All three recorded sign-offs are for the version 2.3 values above.
 sign_off:
-  B: null  # CALC-P1–P6, CALC-H1–H6 and the statements (CALC-G): not signed off yet, so these stay locked
+  B: null  # CALC-P1–P6 and CALC-H1–H6: not signed off yet, so these stay locked
+  B_statements: null  # CALC-G, the strengths and points to watch (also B's): a separate record, locked until B checks them
   C: "Florian Spitzer, 2026-11-21, https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6005138344"  # CALC-D1–D6, CALC-V1–V6, CALC-W1–W2, CALC-F1–F4, from his own Excel model (PR #14)
   D: "Simon Armengaud, 2026-11-19 (confirmed for the lean version 2026-11-21), https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-5977120036"  # AC3 (tier 1 scores)
   E: "Emma Riggi, 2026-11-21, https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6008385452"  # CALC-S (the four area scores, tier 2)
