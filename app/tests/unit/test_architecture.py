@@ -20,8 +20,9 @@ SRC = APP / "src"
 INTERFACE = {"ui", "main", "streamlit", "plotly"}
 NETWORK = {"requests", "urllib", "urllib3", "http", "httpx", "aiohttp", "socket", "ssl", "yfinance", "fredapi"}
 LOGIC_FORBIDDEN = NETWORK | {"src.data", "importlib"}
-# The interface reaches the data layer only through src.data.company (SPEC §11; Simon's review of PR #7).
-INTERFACE_FORBIDDEN = NETWORK | {"src.data.sec_client", "src.data.resolver", "src.data.fred", "importlib"}
+# The interface reaches the data layer only through src.data.company (SPEC §11; Simon's review of PR #7): every
+# other part of src.data is forbidden there, including `from src import data` (security review of S2b).
+INTERFACE_ALLOWED_DATA = "src.data.company"
 LOGIC = [SRC / "checks", SRC / "valuation", SRC / "highlights.py", SRC / "gates.py", SRC / "scores.py"]
 BENCHMARKS = [SRC / "benchmarks"]
 
@@ -58,6 +59,16 @@ def imported_modules(source: str, module: str = "", is_package: bool = False) ->
 
 def violations(names: set[str], forbidden: set[str]) -> set[str]:
     return {n for n in names for f in forbidden if n == f or n.startswith(f + ".")}
+
+
+def interface_violations(names: set[str]) -> set[str]:
+    """Network modules, dynamic imports, and any part of src.data other than src.data.company."""
+    data_layer = {
+        n for n in names
+        if (n == "src.data" or n.startswith("src.data."))
+        and not (n == INTERFACE_ALLOWED_DATA or n.startswith(INTERFACE_ALLOWED_DATA + "."))
+    }
+    return violations(names, NETWORK | {"importlib"}) | data_layer
 
 
 def python_files(*paths: Path) -> list[Path]:
@@ -141,14 +152,20 @@ def test_the_interface_never_calls_the_network_itself(path):
 
 @pytest.mark.parametrize("source, expected", [
     ("from src.data.sec_client import SourceUnreachable", {"src.data.sec_client", "src.data.sec_client.SourceUnreachable"}),
-    ("from src.data.company import load_company, SourceUnreachable", set()),
+    ("from src.data.fred import risk_free_rate", {"src.data.fred", "src.data.fred.risk_free_rate"}),
+    ("from src.data import fred", {"src.data", "src.data.fred"}),
+    ("from src import data", {"src.data"}),
+    ("import src.data", {"src.data"}),
+    ("import requests", {"requests"}),
+    ("from src.data.company import load_company, risk_free_rate, SourceUnreachable", set()),
 ])
 def test_the_import_reader_finds_data_layer_imports_in_the_interface(source, expected):
-    assert violations(imported_modules(source, "ui.page"), INTERFACE_FORBIDDEN) == expected
+    assert interface_violations(imported_modules(source, "ui.page")) == expected
 
 
 @pytest.mark.parametrize("path", python_files(APP / "main.py", APP / "ui"), ids=ids)
 def test_the_interface_uses_only_src_data_company(path):
-    found = check(path, INTERFACE_FORBIDDEN)
+    found = interface_violations(imported_modules(path.read_text(encoding="utf-8"), module_name(path),
+                                                  path.name == "__init__.py"))
     assert not found, (f"{ids(path)} imports {sorted(found)}; the interface imports load_company and the SEC errors from "
                        "src.data.company only (SPEC §11)")

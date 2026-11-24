@@ -3,11 +3,14 @@
 
 No test uses the network: FRED's answers come from fake sessions built on `tests/fixtures/fred_dgs10_small.json`,
 a hand-made answer in the shape FRED documents (https://fred.stlouisfed.org/docs/api/fred/series_observations.html),
-not a real download. No test reads the real app/.env: each one points the module at a file in a temporary folder.
+not a real download. No test reads the real app/.env or the real key: `tests/conftest.py` points the module at a
+file that does not exist and removes FRED_API_KEY; tests that need a key write their own file.
 
 Expected values:
 - the average of the fixture's six days (one without a value): Igor's hand working, 24 November 2026;
+- the second, uneven set (its mean differs from its median): Igor's hand working, 24 November 2026;
 - percent to decimal: DGS10 is in percent (FRED series page, read on 24 November 2026), so 4.50 is 0.045;
+- dates and request parameters: read off the fixture and the calendar;
 - the fallback: the test's own settings below (Appendix A's risk-free rate of 4.0%), not the app's output.
 """
 
@@ -32,6 +35,10 @@ SETTINGS = {
 # Igor's hand working (24 November 2026): the five days with a value, 4.13, 4.12, 4.09, 4.15 and 4.11, average 4.12%;
 # the day without a value is left out. As a decimal: 0.0412.
 IGOR_AVERAGE = 0.0412
+# Igor's hand working (24 November 2026) for the uneven set 4.00, 4.00, (no value), 5.00: 0.04333 as he wrote it,
+# so it is compared to half a unit of its last digit (the tolerance rule of docs/acceptance.md). The middle value,
+# 0.04, would fail.
+IGOR_SECOND_AVERAGE = 0.04333
 
 
 class FakeResponse:
@@ -58,6 +65,18 @@ class NoNetwork(FakeSession):
         raise AssertionError("this case must not download anything")
 
 
+class Clock:
+    def __init__(self, start=1000.0):
+        self.now = start
+
+    def __call__(self):
+        return self.now
+
+
+def fixture_rows():
+    return json.loads(FIXTURE.read_text(encoding="utf-8"))["observations"]
+
+
 def answer(observations=None, status_code=200):
     data = json.loads(FIXTURE.read_text(encoding="utf-8"))
     if observations is not None:
@@ -65,13 +84,8 @@ def answer(observations=None, status_code=200):
     return FakeResponse(status_code, json.dumps(data).encode("utf-8"))
 
 
-@pytest.fixture(autouse=True)
-def no_real_env(tmp_path, monkeypatch):
-    monkeypatch.delenv("FRED_API_KEY", raising=False)
-    monkeypatch.setattr(fred, "ENV_FILE", tmp_path / "absent.env")
-    fred.forget()
-    yield
-    fred.forget()
+def row(day, value):
+    return {"realtime_start": "2026-11-24", "realtime_end": "2026-11-24", "date": day, "value": value}
 
 
 @pytest.fixture
@@ -81,8 +95,10 @@ def key_file(tmp_path):
     return path
 
 
-def live(session, env_file, today=TODAY, settings=SETTINGS):
-    return fred.risk_free_rate(demo=False, env_file=env_file, session=session, today=today, settings=settings)
+def live(session, env_file, today=TODAY, settings=SETTINGS, clock=None):
+    options = {"clock": clock} if clock else {}
+    return fred.risk_free_rate(demo=False, env_file=env_file, session=session, today=today, settings=settings,
+                               **options)
 
 
 # --- live: the average of the days with a value ------------------------------------------------------------------
@@ -95,6 +111,14 @@ def test_the_rate_is_the_average_of_the_days_with_a_value(key_file):
     assert (rate.kind, rate.unit, rate.tag, rate.form) == ("derived", "pure", "DGS10", "FRED")
 
 
+def test_the_rate_is_the_mean_not_the_middle_value(key_file):
+    uneven = [row("2026-11-17", "4.00"), row("2026-11-18", "4.00"), row("2026-11-19", "."), row("2026-11-20", "5.00")]
+
+    rate = live(FakeSession(answer(uneven)), key_file)
+
+    assert rate.value == pytest.approx(IGOR_SECOND_AVERAGE, abs=0.000005)
+
+
 def test_the_period_runs_from_the_first_to_the_last_day_with_a_value(key_file):
     rate = live(FakeSession(answer()), key_file)
 
@@ -103,8 +127,24 @@ def test_the_period_runs_from_the_first_to_the_last_day_with_a_value(key_file):
     assert isinstance(rate.retrieved, datetime)
 
 
+def test_days_without_a_value_at_either_end_are_not_part_of_the_period(key_file):
+    rows = [row("2026-11-13", "."), *fixture_rows(), row("2026-11-26", ".")]  # 26 November: Thanksgiving
+
+    rate = live(FakeSession(answer(rows)), key_file)
+
+    assert (rate.period_start, rate.period_end) == (date(2026, 11, 16), date(2026, 11, 23))
+    assert rate.value == pytest.approx(IGOR_AVERAGE)
+
+
+def test_rows_out_of_date_order_give_the_same_rate_and_period(key_file):
+    rate = live(FakeSession(answer(list(reversed(fixture_rows())))), key_file)
+
+    assert (rate.period_start, rate.period_end) == (date(2026, 11, 16), date(2026, 11, 23))
+    assert rate.value == pytest.approx(IGOR_AVERAGE)
+
+
 def test_percent_becomes_a_decimal(key_file):
-    rate = live(FakeSession(answer([{"date": "2026-11-23", "value": "4.50"}])), key_file)
+    rate = live(FakeSession(answer([row("2026-11-23", "4.50")])), key_file)
 
     assert rate.value == pytest.approx(0.045)
 
@@ -124,6 +164,15 @@ def test_the_request_asks_for_five_years_of_dgs10_with_the_key_as_a_parameter(ke
     }
     assert request["timeout"] > 0
     assert request["allow_redirects"] is False  # a redirect would carry the key to another address
+
+
+def test_the_window_follows_the_setting(key_file):
+    three_years = {**SETTINGS, "data": {**SETTINGS["data"], "risk_free_average_years": 3}}
+    session = FakeSession(answer())
+
+    live(session, key_file, settings=three_years)
+
+    assert session.requests[0]["params"]["observation_start"] == "2023-11-24"
 
 
 def test_five_years_before_29_february_is_28_february():
@@ -154,12 +203,41 @@ def test_one_download_per_day(key_file):
     assert len(session.requests) == 2
 
 
-def test_a_failed_download_is_tried_again_on_the_next_call(key_file):
-    failing = FakeSession(error=requests.ConnectionError("no route"))
-    assert live(failing, key_file).kind == "assumption"
+def test_after_a_failed_download_fred_is_asked_again_only_after_ten_minutes(key_file):
+    clock = Clock()
+    assert live(FakeSession(error=requests.ConnectionError("no route")), key_file, clock=clock).kind == "assumption"
 
     working = FakeSession(answer())
-    assert live(working, key_file).kind == "derived"
+    clock.now += fred.FAILURE_PAUSE_SECONDS - 1
+    paused = live(working, key_file, clock=clock)
+    assert paused.kind == "assumption" and "reached" in paused.note
+    assert working.requests == []
+
+    clock.now += 1
+    assert live(working, key_file, clock=clock).kind == "derived"
+    assert len(working.requests) == 1
+
+
+def test_a_key_added_later_is_used_at_once(tmp_path, key_file):
+    assert live(NoNetwork(), tmp_path / "absent.env").kind == "assumption"
+
+    assert live(FakeSession(answer()), key_file).kind == "derived"
+
+
+def test_demo_mode_after_a_live_download_still_uses_the_saved_value(key_file):
+    assert live(FakeSession(answer()), key_file).kind == "derived"
+
+    rate = fred.risk_free_rate(demo=True, env_file=key_file, session=NoNetwork(), today=TODAY, settings=SETTINGS)
+
+    check_fallback(rate, "demo mode")
+
+
+def test_a_live_download_after_demo_mode_is_not_the_saved_value(key_file):
+    fred.risk_free_rate(demo=True, env_file=key_file, session=NoNetwork(), today=TODAY, settings=SETTINGS)
+    session = FakeSession(answer())
+
+    assert live(session, key_file).kind == "derived"
+    assert len(session.requests) == 1
 
 
 # --- the dated fallback ----------------------------------------------------------------------------------------------
@@ -170,6 +248,9 @@ def check_fallback(rate, reason_words):
     assert (rate.period_start, rate.period_end) == (date(2020, 11, 20), date(2025, 11, 20))
     assert "2020-11-20" in rate.note and "2025-11-20" in rate.note
     assert reason_words in rate.note
+    # The note is shown to customers on the sources page: no file, setting or team names (security review of S2b).
+    for internal in ("app/.env", "FRED_API_KEY", "settings.yaml", "member A"):
+        assert internal not in rate.note
 
 
 def test_demo_mode_uses_the_saved_value_without_the_network(key_file):
@@ -182,7 +263,7 @@ def test_no_key_uses_the_saved_value_without_the_network(tmp_path):
     empty = tmp_path / "empty.env"
     empty.write_text("SEC_USER_AGENT=\"A Student a.student@example.org\"\nFRED_API_KEY=\n", encoding="utf-8")
 
-    check_fallback(live(NoNetwork(), empty), "FRED_API_KEY")
+    check_fallback(live(NoNetwork(), empty), "no FRED key")
 
 
 def test_a_key_in_the_wrong_format_is_never_sent(tmp_path):
@@ -191,7 +272,7 @@ def test_a_key_in_the_wrong_format_is_never_sent(tmp_path):
 
     rate = live(NoNetwork(), placeholder)
 
-    check_fallback(rate, "32 lower-case letters and digits")
+    check_fallback(rate, "not in FRED's format")
     assert "your-fred-key-here" not in rate.note
 
 
@@ -200,19 +281,40 @@ def test_a_key_in_the_wrong_format_is_never_sent(tmp_path):
     [
         (FakeSession(error=requests.ConnectionError(f"Max retries exceeded with url: /x?api_key={KEY}")), "reached"),
         (FakeSession(error=requests.Timeout(f"read timed out: /x?api_key={KEY}")), "reached"),
+        (FakeSession(error=RuntimeError(f"something else went wrong: /x?api_key={KEY}")), "could not be used"),
         (FakeSession(FakeResponse(400, f'{{"error_message": "bad api_key {KEY}"}}'.encode())), "HTTP 400"),
         (FakeSession(FakeResponse(500, b"server error")), "HTTP 500"),
         (FakeSession(FakeResponse(200, b"<html>busy</html>")), "could not be read"),
+        (FakeSession(FakeResponse(200, b"[" * 200_000)), "could not be"),
         (FakeSession(answer([])), "no values"),
-        (FakeSession(answer([{"date": "2026-11-23", "value": "."}])), "no values"),
-        (FakeSession(answer([{"date": "2026-11-23", "value": "4.1x"}])), "could not be read"),
+        (FakeSession(answer([row("2026-11-23", ".")])), "no values"),
+        (FakeSession(answer([row("2026-11-23", "4.1x")])), "could not be read"),
+        (FakeSession(answer([row("2026-11-23", "NaN")])), "could not be read"),
+        (FakeSession(answer([row("2026-11-23", None)])), "could not be read"),
+        (FakeSession(answer([{"date": "2026-11-23"}])), "could not be read"),
+        (FakeSession(answer([row("2026-11-20", "4.00"), row("2026-11-20", "4.00")])), "appears twice"),
     ],
-    ids=["no connection", "timeout", "key refused", "server error", "not JSON", "empty", "only gaps", "not a number"],
+    ids=["no connection", "timeout", "any other error", "key refused", "server error", "not JSON",
+         "nested too deep", "empty", "only gaps", "not a number", "NaN", "null value", "no value field",
+         "same day twice"],
 )
 def test_an_unusable_answer_uses_the_saved_value(key_file, session, reason_words):
     rate = live(session, key_file)
 
     check_fallback(rate, reason_words)
+
+
+@pytest.mark.parametrize(
+    "values",
+    [["-0.50"], ["0.00"], ["20.00"], ["25.00"], ["1e308", "1e308"]],
+    ids=["negative", "zero", "20 percent", "above 20 percent", "too large to add up"],
+)
+def test_an_average_outside_0_to_20_percent_is_not_used(key_file, values):
+    rows = [row(f"2026-11-{16 + i}", value) for i, value in enumerate(values)]
+
+    rate = live(FakeSession(answer(rows)), key_file)
+
+    check_fallback(rate, "plausible range")
 
 
 # --- the key never leaves the request --------------------------------------------------------------------------------
@@ -223,15 +325,16 @@ def test_an_unusable_answer_uses_the_saved_value(key_file, session, reason_words
     [
         FakeSession(answer()),
         FakeSession(error=requests.ConnectionError(f"Max retries exceeded with url: /x?api_key={KEY}")),
+        FakeSession(error=RuntimeError(f"something else went wrong: /x?api_key={KEY}")),
         FakeSession(FakeResponse(400, f'{{"error_message": "bad api_key {KEY}"}}'.encode())),
     ],
-    ids=["success", "no connection", "key refused"],
+    ids=["success", "no connection", "any other error", "key refused"],
 )
 def test_the_key_appears_nowhere_in_the_result(key_file, session):
     rate = live(session, key_file)
 
     assert KEY not in repr(rate)
-    assert all(KEY not in repr(remembered) for remembered in fred._MEMORY.items())
+    assert KEY not in repr(fred._MEMORY) and KEY not in repr(fred._FAILED)
 
 
 # --- missing is never zero --------------------------------------------------------------------------------------------

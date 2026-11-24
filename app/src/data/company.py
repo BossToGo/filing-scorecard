@@ -9,8 +9,8 @@ src.data.sec_client (SPEC §11; a layering test enforces it):
 
     from src.data.company import load_company, SourceUnreachable, UnknownTicker
 
-The risk-free rate comes from here too (slice S2b; it never raises: FRED's five-year average, else the dated
-value saved in settings.yaml, see src/data/fred.py):
+The risk-free rate comes from here too (slice S2b; a problem with FRED never stops the app: FRED's five-year
+average, else the dated value saved in settings.yaml, see src/data/fred.py):
 
     from src.data.company import risk_free_rate
     rate = risk_free_rate(demo=True)           # a Fact: value 0.0412 means 4.12%
