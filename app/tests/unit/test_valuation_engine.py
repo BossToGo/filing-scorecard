@@ -262,6 +262,24 @@ def test_e22_with_four_fiscal_years_the_missing_market_inputs_are_named_too():
         assert word in v.reason
 
 
+@pytest.mark.parametrize("price", [float("inf"), float("-inf"), float("nan")], ids=["inf", "-inf", "nan"])
+def test_e22_a_share_price_that_is_not_a_finite_number_means_no_fair_value(price):
+    # Review of 24 November (Igor, point 2): the screen blocks these, the engine must be safe on its own.
+    v = value(price=price)
+    assert v.status == "insufficient_data"
+    assert "share price" in v.reason and "not a usable number" in v.reason
+    assert v.fair_value is None and v.equity_value is None
+
+
+def test_e22_with_four_fiscal_years_the_result_still_lists_the_figures_that_exist():
+    # Review of 24 November (Igor, point 3): V1, V2 and V6 and the sources page link to these. The four revenue years
+    # that exist are 2022 to 2025 (2021 removed); the two market inputs come with them.
+    v = value(without(synthetic.company_data(), "revenue", 2021))
+    assert v.status == "insufficient_data"
+    used = {(f.metric, f.period_end.year) for f in v.inputs}
+    assert used == {("revenue", y) for y in range(2022, 2026)} | {("risk_free_rate", 2025), ("unlevered_beta", 2025)}
+
+
 def test_a_negative_capex_not_read_from_a_filing_does_not_point_to_a_sign_warning():
     # As in the dividend checks (S7-R2): only a figure read from a filing has the data layer's SIGN warning.
     old = synthetic.company_data().fact("capital_expenditure", date(2024, 12, 31))
@@ -300,6 +318,25 @@ def test_e19_equity_value_zero_or_below_after_minority_interests_means_not_appli
     assert v.fair_value is None and v.fair_value_at_growth_cap is None
 
 
+def test_e19_minority_case_carries_no_line_about_a_valuation_that_never_ran():
+    # Review of 24 November (Igor, point 1): operating cash flow FY0 of 80 against capital expenditure of 85 makes
+    # FY0's free cash flow negative (−5) while the three-year total stays positive; with minority interests of 5,000
+    # the result is "not applicable", so the line "the valuation uses the average ... which is positive" must not appear.
+    data = changed("operating_cash_flow", 2025, 80, changed("minority_interest", 2025, 5000))
+    v = value(data)
+    assert v.status == "not_applicable" and "minority interests" in v.reason
+    assert v.fair_value is None
+    assert v.notes == ()
+    assert not any("valuation uses the average" in line for line in v.notes + v.records)
+
+
+def test_a_negative_free_cash_flow_in_fy0_still_gets_its_line_when_the_valuation_works():
+    v = value(changed("operating_cash_flow", 2025, 80))  # FCF FY0 = 80 − 85 = −5; the three-year total is positive
+    assert v.status == "ok"
+    assert any("valuation uses the average" in line for line in v.notes)
+    assert any("valuation uses the average" in line for line in v.records)
+
+
 def test_e22_before_e19_a_missing_input_wins_over_no_free_cash_flow():
     data = changed("financial_debt", 2025, None, with_operating_cash_flow((50, 50, 50)))
     v = value(data)
@@ -322,7 +359,8 @@ def test_e20_a_beta_outside_the_limits_is_set_to_the_limit_labelled_and_recorded
     limit = SETTINGS["valuation"][limit_name]
     assert v.levered_beta.value == limit
     assert v.levered_beta.kind == "assumption"
-    assert f"= {before} before the limit" in v.levered_beta.note and limit_name in v.levered_beta.note
+    assert f"= {before} before the limit" in v.levered_beta.note
+    assert f"set to the {'upper' if limit_name == 'beta_max' else 'lower'} limit ({limit})" in v.levered_beta.note
     # SPEC §10: a limited beta is a record on the sources page, not a warning in the header.
     assert any(r.startswith("BETA_LIMIT:") for r in v.records)
     assert v.status == "ok"
@@ -331,6 +369,16 @@ def test_e20_a_beta_outside_the_limits_is_set_to_the_limit_labelled_and_recorded
                 "is used.") in v.records
     # Review of 24 November, M2: the cost of equity uses the beta after the limit, not before it (SPEC §8.1).
     assert v.cost_of_equity.value == pytest.approx(RISK_FREE.value + limit * SETTINGS["valuation"]["equity_risk_premium"])
+
+
+@pytest.mark.parametrize("unlevered, shown", [(1.7908, "2.003"), (1.7883, "2.0002")])
+def test_e20_a_beta_just_past_the_limit_is_not_printed_as_the_limit(unlevered, shown):
+    # Review of 24 November (Igor, point 1): with two decimals 2.003 would read "is 2.00, outside the range 0.8 to 2.0".
+    # Hand working: 1.7908 × (1 + 0.79 × 450 ÷ 3,000) = 1.7908 × 1.1185 = 2.00301, and 1.7883 × 1.1185 = 2.00021.
+    v = value(beta=rate(unlevered, "unlevered_beta"))
+    assert v.levered_beta.value == SETTINGS["valuation"]["beta_max"]
+    assert (f"BETA_LIMIT: the company's beta, adjusted for its debt, is {shown}, outside the range 0.8 to 2.0, "
+            "so 2.0 is used.") in v.records
 
 
 def test_e12_with_zero_debt_a_low_unlevered_beta_is_still_limited():
@@ -347,7 +395,7 @@ def test_e18_past_growth_above_the_cap_starts_at_the_cap_with_the_growth_note():
     assert v.starting_growth.value == SETTINGS["valuation"]["growth_cap"]
     assert v.starting_growth.kind == "assumption"
     assert "past revenue growth 44.3% a year before the limit" in v.starting_growth.note
-    assert "growth_cap" in v.starting_growth.note
+    assert "set to the upper limit (30%)" in v.starting_growth.note
     assert v.notes == ("Revenue grew 44.3% a year over the last four years; the model starts at 30% and lets growth "
                        "slow towards 2.5%.",)
     # SPEC §10: a record on the sources page, in plain words (Flo, 24 November).
@@ -376,7 +424,7 @@ def test_past_growth_just_beyond_a_limit_is_still_labelled_as_limited(past, limi
     # limit is limited, labelled and noted as usual.
     v = value(changed("revenue", 2021, 1300 / past ** 4))
     assert v.starting_growth.value == SETTINGS["valuation"][limit_name]
-    assert v.starting_growth.kind == "assumption" and limit_name in v.starting_growth.note
+    assert v.starting_growth.kind == "assumption" and ("upper limit" if limit_name == "growth_cap" else "lower limit") in v.starting_growth.note
     assert len(v.notes) == 1 and any(r.startswith("GROWTH_LIMIT:") for r in v.records)
 
 
@@ -385,9 +433,57 @@ def test_e18_past_growth_below_the_floor_starts_at_the_floor_with_the_growth_not
     assert v.starting_growth.value == SETTINGS["valuation"]["growth_floor"]
     assert v.starting_growth.kind == "assumption"
     assert "past revenue growth −18.9% a year before the limit" in v.starting_growth.note
-    assert "growth_floor" in v.starting_growth.note
+    assert "set to the lower limit (−10%)" in v.starting_growth.note
     assert v.notes == ("Revenue fell 18.9% a year over the last four years; the model starts at −10% and lets growth "
                        "recover towards 2.5%.",)
+
+
+# --- the two figures Simon's screen shows (SPEC §3 item 6; his review of #43, 24 November) ----------------------------
+
+
+def test_the_actual_revenue_growth_is_a_figure_of_its_own_inside_the_limits():
+    # Inside the limits it equals the starting growth of Appendix A (Flo's sign-off).
+    e = synthetic.expected_valuation("starting_growth")
+    past = value().past_revenue_growth
+    assert past.value == pytest.approx(pct(e), abs=tol(e, 0.01))
+    assert (past.metric, past.unit, past.kind) == ("past_revenue_growth", "pure", "derived")
+    assert (past.period_start, past.period_end) == (date(2021, 12, 31), FY0)
+    assert "SPEC" not in past.note  # a plain-words note: the screen shows it as it is
+
+
+@pytest.mark.parametrize("revenue_2021, expected", [(300, 0.442798), (3000, -0.188655)],
+                         ids=["above the cap", "below the floor"])
+def test_the_actual_revenue_growth_is_not_limited_when_the_starting_growth_is(revenue_2021, expected):
+    # Flo's hand working, cases c and d: (1,300 ÷ 300)^(1/4) − 1 = 44.2798%; (1,300 ÷ 3,000)^(1/4) − 1 = −18.8655%.
+    v = value(changed("revenue", 2021, revenue_2021))
+    assert v.starting_growth.kind == "assumption"
+    assert v.past_revenue_growth.value == pytest.approx(expected, abs=1e-6)
+    assert v.past_revenue_growth.kind == "derived"
+
+
+def test_the_actual_revenue_growth_is_there_when_the_model_does_not_fit_and_absent_without_five_years():
+    not_fitting = value(with_operating_cash_flow((50, 50, 50)))
+    assert not_fitting.status == "not_applicable" and not_fitting.past_revenue_growth is not None
+    too_short = value(without(synthetic.company_data(), "revenue", 2021))
+    assert too_short.status == "insufficient_data" and too_short.past_revenue_growth is None
+
+
+def test_the_equity_risk_premium_is_an_assumption_with_its_source_in_plain_words():
+    premium = value().equity_risk_premium
+    assert premium.value == synthetic.inputs()["settings"]["equity_risk_premium"]  # 5.0%, Appendix A
+    assert (premium.metric, premium.unit, premium.kind, premium.period_end) == ("equity_risk_premium", "pure",
+                                                                                 "assumption", FY0)
+    assert "5%" in premium.note and "not read from a filing" in premium.note
+    assert not any(word in premium.note for word in ("SPEC", "setting", "yaml"))
+    v = value()  # the relation between two figures of the same run: cost of equity = risk-free + beta × premium
+    assert v.cost_of_equity.value == pytest.approx(RISK_FREE.value + v.levered_beta.value * premium.value)
+
+
+def test_the_equity_risk_premium_follows_the_settings_and_is_absent_without_a_result():
+    settings = {**SETTINGS, "valuation": {**SETTINGS["valuation"], "equity_risk_premium": 0.06}}
+    assert value(settings=settings).equity_risk_premium.value == 0.06
+    assert "6%" in value(settings=settings).equity_risk_premium.note
+    assert value(price=None).equity_risk_premium is None  # insufficient data: no build-up to show
 
 
 def test_the_limits_come_from_the_settings_not_the_code():
@@ -471,6 +567,27 @@ def test_customer_texts_name_no_spec_section_setting_or_tool():
                            "re-levered"):
                 assert jargon not in text, f"{jargon!r} in {text!r}"
     assert "risk-free rate: not available at the moment" in cases[5].reason
+
+
+def test_every_figure_note_the_screen_shows_is_in_plain_words():
+    # Flo, 24 November (Igor's point 1a, after Simon's answer on #43: the screen shows each Fact with its note). The
+    # figures the engine builds, not the inputs: those come from the data layer (A) and the benchmarks (B).
+    cases = [value(), value(changed("revenue", 2021, 300)), value(changed("revenue", 2021, 3000)),
+             value(beta=rate(1.9, "unlevered_beta")), value(beta=rate(0.5, "unlevered_beta")),
+             value(changed("revenue", 2021, 1300 / 1.3 ** 4)), value(changed("minority_interest", 2025, -50)),
+             value(with_operating_cash_flow((50, 50, 50))), value(changed("minority_interest", 2025, 5000))]
+    own = ("levered_beta", "cost_of_equity", "terminal_growth", "equity_risk_premium", "free_cash_flow_margin",
+           "starting_free_cash_flow", "starting_growth", "past_revenue_growth", "equity_value", "fair_value",
+           "fair_value_at_growth_cap")
+    seen = 0
+    for v in cases:
+        facts = [getattr(v, name) for name in own] + list(v.base_free_cash_flows)
+        for fact in (f for f in facts if f is not None):
+            seen += 1
+            for jargon in ("SPEC", "§", "settings", "yaml", "FRED", "terminal_growth_cap", "growth_cap", "growth_floor",
+                           "beta_min", "beta_max", "_cap", "_floor"):
+                assert jargon not in fact.note, f"{jargon!r} in the note of {fact.metric}: {fact.note!r}"
+    assert seen > 40  # the loop did look at the figures
 
 
 def test_a_negative_free_cash_flow_in_fy0_is_shown_with_a_line_and_a_record():

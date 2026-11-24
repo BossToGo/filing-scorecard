@@ -47,6 +47,7 @@ Decisions after the review of 24 November (Flo):
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from datetime import date
 from typing import Literal, Mapping
@@ -92,7 +93,17 @@ class Forecast:
 
 @dataclass(frozen=True)
 class Valuation:
-    """Everything the valuation detail shows (S10b) and the checks V1, V2 and V6 use (S9)."""
+    """Everything the valuation detail shows (S10b) and the checks V1, V2 and V6 use (S9).
+
+    Which fields are filled:
+    - "insufficient_data": only `status`, `reason` and `inputs` (the figures that exist, so the checks and the sources
+      page can link them: the revenue years found, and the risk-free rate and industry beta when given).
+    - "not_applicable": `reason` and `inputs`, plus the steps that ran: `levered_beta`, `cost_of_equity`,
+      `terminal_growth`, `equity_risk_premium`, `base_free_cash_flows`, `free_cash_flow_margin`,
+      `starting_free_cash_flow`, `starting_growth`, `past_revenue_growth`, `minority_interest` and `records`. `forecast` only when the minority interests were larger than the value;
+      `notes` is empty; `equity_value`, `fair_value` and `fair_value_at_growth_cap` are None.
+    - "ok": everything, `reason` is "".
+    """
 
     status: Literal["ok", "insufficient_data", "not_applicable"]
     reason: str  # "" when ok; otherwise the plain-words reason for V1, V2 and V6
@@ -104,6 +115,8 @@ class Valuation:
     free_cash_flow_margin: Fact | None = None
     starting_free_cash_flow: Fact | None = None
     starting_growth: Fact | None = None
+    equity_risk_premium: Fact | None = None  # an assumption, with its source in plain words
+    past_revenue_growth: Fact | None = None  # the company's actual growth a year, never limited (SPEC §3, item 6)
     forecast: Forecast | None = None
     minority_interest: Fact | None = None
     equity_value: Fact | None = None
@@ -152,10 +165,12 @@ def value_company(data: CompanyData, settings: Mapping[str, Mapping], *, share_p
     s = settings["valuation"]
     base_years = int(s["fcf_base_years"])
     years = data.fiscal_years("revenue")[-YEARS:]
+    market = [f for f in (risk_free_rate, unlevered_beta) if f is not None]
     if len(years) < YEARS:
         gaps = [f"the valuation needs revenue for five fiscal years (four years earlier to the latest); the data has "
                 f"{len(years)}"] + _market_gaps(share_price, risk_free_rate, unlevered_beta)
-        return Valuation("insufficient_data", f"Insufficient data: {'; '.join(gaps)}.", ())
+        found = tuple(_figure(data, "revenue", end) for end in years) + tuple(market)  # what exists, for the links
+        return Valuation("insufficient_data", f"Insufficient data: {'; '.join(gaps)}.", found)
     fy0, base = years[-1], years[-base_years:]
 
     # 1. §8.6, first test: every input there and usable.
@@ -166,7 +181,6 @@ def value_company(data: CompanyData, settings: Mapping[str, Mapping], *, share_p
     minority = _figure(data, "minority_interest", fy0)
     shares = data.latest("shares") or _missing("shares", fy0, "no share count in the data", unit="shares")
     company = revenue + cash_flows + capex + [debt, shares, minority]
-    market = [f for f in (risk_free_rate, unlevered_beta) if f is not None]
     inputs = tuple(company + market)
 
     gaps = []
@@ -183,16 +197,21 @@ def value_company(data: CompanyData, settings: Mapping[str, Mapping], *, share_p
     rf = risk_free_rate.value
     beta, before = _beta(unlevered_beta.value, debt, share_price, shares, s, fy0)
     if beta.kind == "assumption":
-        records.append(f"BETA_LIMIT: the company's beta, adjusted for its debt, is {before:.2f}, outside the range "
+        records.append(f"BETA_LIMIT: the company's beta, adjusted for its debt, is {_beta_text(before, beta.value)}, "
+                       f"outside the range "
                        f"{s['beta_min']} to {s['beta_max']}, so {beta.value} is used.")
     ke = rf + beta.value * s["equity_risk_premium"]
     cost_of_equity = _derived("cost_of_equity", ke, "pure", fy0,
                               f"risk-free rate {_pct(rf)} + beta {beta.value:.5f} × equity risk premium "
-                              f"{_pct(s['equity_risk_premium'])} (SPEC §8.1)")
+                              f"{_pct(s['equity_risk_premium'])}")
+    premium = s["equity_risk_premium"]
+    premium_fact = Fact("equity_risk_premium", premium, "pure", None, fy0, "assumption", None, None, None, None, None,
+                        f"equity risk premium of {_limit(premium)}: a fixed convention of the model, the same for every "
+                        "company; not read from a filing")
     gt = min(rf, s["terminal_growth_cap"])
     terminal_growth = _derived("terminal_growth", gt, "pure", fy0,
-                               f"the lower of the risk-free rate ({_pct(rf)}) and terminal_growth_cap "
-                               f"({_limit(s['terminal_growth_cap'])}) (SPEC §8.3)")
+                               f"the lower of the risk-free rate ({_pct(rf)}) and the model's limit on long-run growth "
+                               f"({_limit(s['terminal_growth_cap'])})")
 
     # 3. §8.2: starting free cash flow and starting growth.
     fcfs = tuple(_derived("free_cash_flow", c.value - x.value, "USD", c.period_end,
@@ -203,10 +222,12 @@ def value_company(data: CompanyData, settings: Mapping[str, Mapping], *, share_p
     margin_fact = _derived("free_cash_flow_margin", margin, "pure", fy0,
                            f"sum of free cash flow {_usd(sum(f.value for f in fcfs))} ÷ sum of revenue "
                            f"{_usd(sum(r.value for r in base_revenue))}, last {WORDS.get(base_years, base_years)} "
-                           "fiscal years (SPEC §8.2)")
+                           "fiscal years")
     fcf0 = _derived("starting_free_cash_flow", margin * revenue[-1].value, "USD", fy0,
-                    f"free cash flow margin {_pct(margin)} × revenue {_usd(revenue[-1].value)} (SPEC §8.2)")
+                    f"free cash flow margin {_pct(margin)} × revenue {_usd(revenue[-1].value)}")
     g1, past = _starting_growth(revenue[0], revenue[-1], s)
+    past_growth = _derived("past_revenue_growth", past, "pure", fy0, _growth_formula(revenue[0], revenue[-1]),
+                           start=revenue[0].period_end)
     notes = []
     if g1.kind == "assumption":
         notes.append(_growth_note(past, g1.value, gt, s))
@@ -219,6 +240,7 @@ def value_company(data: CompanyData, settings: Mapping[str, Mapping], *, share_p
         records.append(f"The minority interest on {_day(fy0)} is negative ({_usd(minority.value)}); it is used as "
                        "reported, so it adds to the equity value.")
     detail = dict(levered_beta=beta, cost_of_equity=cost_of_equity, terminal_growth=terminal_growth,
+                  equity_risk_premium=premium_fact, past_revenue_growth=past_growth,
                   base_free_cash_flows=fcfs, free_cash_flow_margin=margin_fact, starting_free_cash_flow=fcf0,
                   starting_growth=g1, minority_interest=minority, notes=tuple(notes), records=tuple(records))
 
@@ -228,12 +250,6 @@ def value_company(data: CompanyData, settings: Mapping[str, Mapping], *, share_p
             f"Not applicable: the model does not fit. Over the last {WORDS.get(base_years, base_years)} fiscal years "
             f"the company produced no free cash flow in total ({_usd(sum(f.value for f in fcfs))}), so a cash flow "
             "model says nothing useful about its value."), inputs, **detail)
-
-    # FCF0 > 0 from here, so a negative FY0 is worth a line (SPEC §8.6); before this test it would be false.
-    if fcfs[-1].value < 0:
-        line = (f"Free cash flow was negative in the fiscal year ended {_day(fy0)} ({_usd(fcfs[-1].value)}); the "
-                f"valuation uses the average of the last {WORDS.get(base_years, base_years)} years, which is positive.")
-        detail.update(notes=detail["notes"] + (line,), records=detail["records"] + (line,))
 
     # 5. §8.3: forecast, terminal value, equity value.
     shape = (gt, s["growth_half_life_years"], int(s["forecast_years"]))
@@ -245,20 +261,26 @@ def value_company(data: CompanyData, settings: Mapping[str, Mapping], *, share_p
         return Valuation("not_applicable", (
             f"Not applicable: the model does not fit. The minority interests of {_usd(minority.value)} are larger than "
             f"the estimated value of the company's cash flows ({_usd(own.present_value)}), so the value left for "
-            "the shareholders is zero or negative."), inputs, forecast=own, **detail)
+            "the shareholders is zero or negative."), inputs, forecast=own, **{**detail, "notes": ()})
+
+    # The valuation works and FCF0 > 0, so a negative FY0 is worth a line (SPEC §8.6). Not before the two tests above:
+    # a "not applicable" result must not describe a valuation that never ran (review of 24 November, Igor).
+    if fcfs[-1].value < 0:
+        line = (f"Free cash flow was negative in the fiscal year ended {_day(fy0)} ({_usd(fcfs[-1].value)}); the "
+                f"valuation uses the average of the last {WORDS.get(base_years, base_years)} years, which is positive.")
+        detail.update(notes=detail["notes"] + (line,), records=detail["records"] + (line,))
 
     at_cap = forecast(fcf0.value, growth_path(s["growth_cap"], *shape), ke, gt).present_value - minority.value
     return Valuation(
         "ok", "", inputs, forecast=own,
         equity_value=_derived("equity_value", equity, "USD", fy0,
-                              f"present value {_usd(own.present_value)} − minority interest {_usd(minority.value)} "
-                              "(SPEC §8.3)"),
+                              f"present value {_usd(own.present_value)} − minority interest {_usd(minority.value)}"),
         fair_value=_derived("fair_value", equity / shares.value, "USD/shares", fy0,
-                            f"equity value {_usd(equity)} ÷ {shares.value:,.0f} shares (SPEC §8.3)"),
+                            f"equity value {_usd(equity)} ÷ {shares.value:,.0f} shares"),
         fair_value_at_growth_cap=_derived("fair_value_at_growth_cap", at_cap / shares.value, "USD/shares", fy0,
-                                          f"the same valuation with starting growth at growth_cap "
+                                          f"the same valuation with starting growth at the upper limit "
                                           f"({_limit(s['growth_cap'])}): equity value {_usd(at_cap)} ÷ "
-                                          f"{shares.value:,.0f} shares (SPEC §7, V6)"),
+                                          f"{shares.value:,.0f} shares"),
         **detail,
     )
 
@@ -285,33 +307,45 @@ def _beta(unlevered: float, debt: Fact, price: float, shares: Fact, s: Mapping, 
     market_value = price * shares.value
     beta, before = levered_beta(unlevered, debt.value, market_value, s["tax_rate"], s["beta_min"], s["beta_max"])
     formula = (f"industry unlevered beta {unlevered} × (1 + (1 − tax rate {_limit(s['tax_rate'])}) × financial debt "
-               f"{_usd(debt.value)} ÷ market value of equity {_usd(market_value)}) (SPEC §8.1)")
+               f"{_usd(debt.value)} ÷ market value of equity {_usd(market_value)})")
     if beta == before:
         return _derived("levered_beta", beta, "pure", fy0, f"{formula}; inside the limits {s['beta_min']} to "
                         f"{s['beta_max']}"), before
-    limit = "beta_max" if before > s["beta_max"] else "beta_min"
+    limit = "upper" if before > s["beta_max"] else "lower"
     return Fact("levered_beta", beta, "pure", None, fy0, "assumption", None, None, None, None, None,
-                f"{formula} = {before:.5f} before the limit; set to {limit} ({beta})"), before
+                f"{formula} = {before:.5f} before the limit; set to the {limit} limit ({beta})"), before
+
+
+def _growth_formula(first: Fact, last: Fact) -> str:
+    intervals = YEARS - 1
+    return (f"(revenue {_usd(last.value)}, fiscal year ended {_day(last.period_end)} ÷ revenue "
+            f"{_usd(first.value)}, fiscal year ended {_day(first.period_end)})^(1/{intervals}) − 1")
 
 
 def _starting_growth(first: Fact, last: Fact, s: Mapping) -> tuple[Fact, float]:
     """(g1 as a Fact, the past growth before any limit)."""
-    intervals = YEARS - 1
-    past = (last.value / first.value) ** (1 / intervals) - 1
-    formula = (f"(revenue {_usd(last.value)}, fiscal year ended {_day(last.period_end)} ÷ revenue "
-               f"{_usd(first.value)}, fiscal year ended {_day(first.period_end)})^(1/{intervals}) − 1")
+    past = (last.value / first.value) ** (1 / (YEARS - 1)) - 1
+    formula = _growth_formula(first, last)
     cap, floor = s["growth_cap"], s["growth_floor"]
     for limit in (cap, floor):
         if abs(past - limit) <= AT_LIMIT:  # exactly at a limit (up to rounding): the limit itself, not "limited"
-            return _derived("starting_growth", limit, "pure", last.period_end, f"{formula} (SPEC §8.2)",
+            return _derived("starting_growth", limit, "pure", last.period_end, formula,
                             start=first.period_end), past
     if floor <= past <= cap:
-        return _derived("starting_growth", past, "pure", last.period_end, f"{formula} (SPEC §8.2)",
+        return _derived("starting_growth", past, "pure", last.period_end, formula,
                         start=first.period_end), past
-    name, limited = ("growth_cap", cap) if past > cap else ("growth_floor", floor)
+    name, limited = ("upper", cap) if past > cap else ("lower", floor)
     return Fact("starting_growth", limited, "pure", first.period_end, last.period_end, "assumption", None, None,
                 None, None, None, f"past revenue growth {_growth(past)} a year before the limit ({formula}); "
-                f"set to {name} ({_limit(limited)}) (SPEC §8.2)"), past
+                f"set to the {name} limit ({_limit(limited)})"), past
+
+
+def _beta_text(before: float, limit: float) -> str:
+    """The beta before the limit: two decimals, or more when two would print it as the limit itself (2.003 → "2.003")."""
+    for decimals in range(2, 7):
+        if round(before, decimals) != limit:
+            return f"{before:.{decimals}f}"
+    return f"{before:.6f}"
 
 
 def _growth_note(past: float, g1: float, gt: float, s: Mapping) -> str:
@@ -356,6 +390,8 @@ def _market_gaps(price: float | None, risk_free: Fact | None, beta: Fact | None)
     gaps = []
     if price is None:
         gaps.append("share price: not given")
+    elif not math.isfinite(price):
+        gaps.append("share price: not a usable number")
     elif price <= 0:
         gaps.append(f"share price: zero or negative ({price})")
     for fact, label, absent in ((risk_free, "risk-free rate", "not available at the moment"),
