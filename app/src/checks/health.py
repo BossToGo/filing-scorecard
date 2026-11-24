@@ -12,7 +12,7 @@ import math
 from collections.abc import Mapping
 
 from src.contracts import CheckResult, CompanyData
-from src.checks._b_inputs import Inputs, day, missing, money, rational, result, unavailable
+from src.checks._b_inputs import Inputs, compared, day, missing, money, rational, result, unavailable
 
 
 def health_checks(data: CompanyData, *, settings: Mapping[str, float]) -> tuple[CheckResult, ...]:
@@ -32,16 +32,16 @@ def health_checks(data: CompanyData, *, settings: Mapping[str, float]) -> tuple[
         checks.append(unavailable("H1", cover, "Short-term cover cannot be assessed because a short-term asset or liability figure is missing."))
     else:
         checks.append(result("H1", assets.value > current.value, assets.value, current.value, cover,
-                             f"On {day(assets.period_end)}, short-term assets were {money(assets.value)} and short-term liabilities were {money(current.value)}. This check requires assets to exceed liabilities."))
+                             f"On {day(assets.period_end)}, short-term assets were {money(assets.value)}, {compared(assets.value > current.value)} short-term liabilities of {money(current.value)}. Assets must be higher to pass."))
 
     long_cover = assets, liabilities, current
     if missing(long_cover):
         checks.append(unavailable("H2", long_cover, "Long-term cover cannot be assessed because short-term assets, total liabilities or short-term liabilities are missing."))
     else:
-        long_term = liabilities.value - current.value
-        covered = rational(assets.value) > rational(liabilities.value) - rational(current.value)
-        checks.append(result("H2", covered, assets.value, long_term, long_cover,
-                             f"On {day(assets.period_end)}, short-term assets were {money(assets.value)}. Long-term liabilities are total liabilities of {money(liabilities.value)} less short-term liabilities of {money(current.value)}. This check requires the assets to exceed that difference."))
+        long_term = rational(liabilities.value) - rational(current.value)
+        covered = rational(assets.value) > long_term
+        checks.append(result("H2", covered, assets.value, float(long_term), long_cover,
+                             f"On {day(assets.period_end)}, short-term assets were {money(assets.value)}, {compared(covered)} long-term liabilities of {money(float(long_term))} (total liabilities of {money(liabilities.value)} less short-term liabilities of {money(current.value)}). Assets must be higher to pass."))
 
     debt, cash, equity = (inputs.fact(m) for m in ("financial_debt", "cash", "equity"))
     leverage = debt, cash, equity
@@ -54,12 +54,11 @@ def health_checks(data: CompanyData, *, settings: Mapping[str, float]) -> tuple[
         checks.append(unavailable("H3", leverage,
                                   f"Financial debt was {money(debt.value)} on {day(debt.period_end)}. This negative debt figure needs checking before debt cover can be assessed."))
     else:
-        value = (debt.value - cash.value) / equity.value
+        ratio = (rational(debt.value) - rational(cash.value)) / rational(equity.value)
         limit = limits["max_net_debt_to_equity"]
-        moderate = (rational(debt.value) - rational(cash.value)
-                    < rational(limit) * rational(equity.value))
-        checks.append(result("H3", moderate, value, limit, leverage,
-                             f"On {day(equity.period_end)}, financial debt of {money(debt.value)} less cash of {money(cash.value)} was about {value:.2%} of shareholder equity of {money(equity.value)}. This check requires less than {limit:.2%}."))
+        moderate = ratio < rational(limit)
+        checks.append(result("H3", moderate, float(ratio), limit, leverage,
+                             f"On {day(equity.period_end)}, financial debt of {money(debt.value)} less cash of {money(cash.value)} was about {float(ratio):.2%} of shareholder equity of {money(equity.value)}, {compared(moderate, 'below', 'not below')} the limit of {limit:.2%}. It must be below to pass."))
 
     old_debt, old_equity = inputs.fact("financial_debt", 4), inputs.fact("equity", 4)
     debt_pair = debt, old_debt
@@ -83,11 +82,11 @@ def health_checks(data: CompanyData, *, settings: Mapping[str, float]) -> tuple[
                                       for f in debt_pair if f.value < 0)
                                   + ". A negative debt figure cannot establish a meaningful debt trend."))
     else:
-        now, old = debt.value / equity.value, old_debt.value / old_equity.value
-        falling = (rational(debt.value) * rational(old_equity.value)
-                   < rational(old_debt.value) * rational(equity.value))
-        checks.append(result("H4", falling, now, old, debt_trend,
-                             f"Financial debt of {money(debt.value)} was about {now:.2%} of shareholder equity of {money(equity.value)} on {day(equity.period_end)}, compared with debt of {money(old_debt.value)} and equity of {money(old_equity.value)} (about {old:.2%}) on {day(old_equity.period_end)}. This check requires the later share to be lower; cash is not deducted from debt."))
+        now = rational(debt.value) / rational(equity.value)
+        old = rational(old_debt.value) / rational(old_equity.value)
+        falling = now < old
+        checks.append(result("H4", falling, float(now), float(old), debt_trend,
+                             f"Financial debt of {money(debt.value)} was about {float(now):.2%} of shareholder equity of {money(equity.value)} on {day(equity.period_end)}, {compared(falling, 'down from', 'not below')} about {float(old):.2%} on {day(old_equity.period_end)} (debt of {money(old_debt.value)}, equity of {money(old_equity.value)}). The later share must be lower to pass; cash is not deducted from debt."))
 
     cash_flow = inputs.fact("operating_cash_flow")
     cash_cover = cash_flow, debt
@@ -100,11 +99,11 @@ def health_checks(data: CompanyData, *, settings: Mapping[str, float]) -> tuple[
         checks.append(unavailable("H5", cash_cover,
                                   f"Financial debt was {money(debt.value)} on {day(debt.period_end)}. A negative debt figure does not give meaningful cash-flow cover."))
     else:
-        value = cash_flow.value / debt.value
+        ratio = rational(cash_flow.value) / rational(debt.value)
         limit = limits["min_operating_cash_flow_to_debt"]
-        covered = rational(cash_flow.value) >= rational(limit) * rational(debt.value)
-        checks.append(result("H5", covered, value, limit, cash_cover,
-                             f"Operating cash flow of {money(cash_flow.value)} for the year ended {day(cash_flow.period_end)} covered about {value:.2%} of financial debt of {money(debt.value)}. This check requires at least {limit:.2%}."))
+        covered = ratio >= rational(limit)
+        checks.append(result("H5", covered, float(ratio), limit, cash_cover,
+                             f"Operating cash flow of {money(cash_flow.value)} for the year ended {day(cash_flow.period_end)} covered about {float(ratio):.2%} of financial debt of {money(debt.value)}, {compared(covered, 'at or above', 'below')} the required {limit:.2%}."))
 
     operating, interest = inputs.fact("operating_income"), inputs.fact("interest_expense")
     interest_cover = operating, interest
@@ -120,9 +119,9 @@ def health_checks(data: CompanyData, *, settings: Mapping[str, float]) -> tuple[
         checks.append(unavailable("H6", interest_cover,
                                   f"Interest expense was {money(interest.value)} for the year ended {day(interest.period_end)}. A negative interest expense does not give meaningful interest cover."))
     else:
-        value = operating.value / interest.value
+        ratio = rational(operating.value) / rational(interest.value)
         limit = limits["min_interest_cover"]
-        covered = rational(operating.value) >= rational(limit) * rational(interest.value)
-        checks.append(result("H6", covered, value, limit, interest_cover,
-                             f"Operating profit of {money(operating.value)} covered interest expense of {money(interest.value)} about {value:.2f} times for the year ended {day(operating.period_end)}. This check requires at least {limit:g} times."))
+        covered = ratio >= rational(limit)
+        checks.append(result("H6", covered, float(ratio), limit, interest_cover,
+                             f"Operating profit of {money(operating.value)} covered interest expense of {money(interest.value)} about {float(ratio):.2f} times for the year ended {day(operating.period_end)}, {compared(covered, 'at or above', 'below')} the required {limit:g} times."))
     return tuple(checks)

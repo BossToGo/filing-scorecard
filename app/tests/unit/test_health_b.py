@@ -332,3 +332,42 @@ def test_decimal_cash_flow_equal_to_twenty_percent_passes_the_inclusive_rule():
 def test_decimal_interest_cover_equal_to_five_passes_the_inclusive_rule():
     data = change(change(company(), "operating_income", .25), "interest_expense", .05)
     assert run(data)["H6"].status == "pass"  # 0.25/0.05 == 5
+
+
+# --- Igor's review of #28/#29 (24 November 2026): figures shown; hand working next to each test ------------------
+
+def test_h2_threshold_is_long_term_liabilities_not_total_liabilities():
+    # Total liabilities 200 - current liabilities 100 = 100 long-term; current assets 100 -> 100 > 100 is false.
+    result = run(company())["H2"]
+    assert result.status == "fail" and result.value == 100 and result.threshold == 100
+
+
+def test_h3_value_is_net_debt_over_equity():
+    # (debt 40 - cash 10) / equity 100 = 0.30 < 0.40 -> pass. Gross debt would give 0.40.
+    result = run(change(company(), "cash", 10))["H3"]
+    assert result.status == "pass" and result.value == pytest.approx(0.30) and result.threshold == 0.40
+
+
+def test_h4_values_are_debt_over_equity_now_and_four_years_earlier():
+    # 2025: 30 / 100 = 0.30; 2021: 40 / 100 = 0.40 -> falling, pass.
+    result = run(change(company(), "financial_debt", 30))["H4"]
+    assert result.status == "pass" and result.value == pytest.approx(0.30) and result.threshold == pytest.approx(0.40)
+
+
+def test_h5_value_is_cash_flow_over_debt_not_inverted():
+    # Operating cash flow 20 / debt 40 = 0.50 >= 0.20 -> pass. Inverted would give 2.0.
+    result = run(company())["H5"]
+    assert result.status == "pass" and result.value == pytest.approx(0.50) and result.threshold == 0.20
+
+
+def test_h6_value_is_operating_income_over_interest_not_inverted():
+    # Operating income 5 / interest 1 = 5.0 >= 5 -> pass. Inverted would give 0.2.
+    result = run(company())["H6"]
+    assert result.status == "pass" and result.value == 5.0 and result.threshold == 5.0
+
+
+def test_h6_just_below_five_times_does_not_read_like_a_pass():
+    # 4.9999 / 1 = 4.9999 < 5 -> fail; shown as "about 5.00 times", so the sentence must say "below".
+    result = run(change(company(), "operating_income", 4.9999))["H6"]
+    assert result.status == "fail"
+    assert "below the required 5 times" in result.explanation
