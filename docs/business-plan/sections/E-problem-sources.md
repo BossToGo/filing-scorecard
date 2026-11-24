@@ -27,7 +27,7 @@ Rule (SPEC 14.17): no figure, statistic or source in the business plan that is n
 1. Annual reports are available to everyone but are hardly read (1), partly because they have become very long (2).
 2. Retail investors often turn to fast but unchecked sources, especially young and new investors (3a, 3b), and find the documents they receive about their investments less useful than before (3c).
 3. Many people lack the financial knowledge to read accounts themselves (4).
-4. The bank remains the main channel through which investors place orders (7), and advisers are an important source of information (5, 6). The bank is therefore well placed to offer a plain, sourced reading of the accounts next to its order screen, without giving advice.
+4. The bank remains the main channel through which investors place orders (7), and advisers are an important source of information for French adults (5) and investors (6). The bank is therefore well placed to offer a plain, sourced reading of the accounts next to its order screen, without giving advice.
 
 Do not write that investors "trust" the bank most: none of these sources measures trust.
 
@@ -37,7 +37,7 @@ Do not write that investors "trust" the bank most: none of these sources measure
 - Source 2's figure is taken from the NBER Digest summary.
 - Source 3c is about documents on investment products, not annual reports.
 - Source 5 is a press release, not the full Baromètre. Its figures describe French adults, not investors only, and it does not say whether the shares are of everyone surveyed or of those who invest.
-- Sources 4 to 7 describe European and French investors, while the app analyses US companies. This fits a European bank offering US stocks; say so in the text.
+- Sources 4 to 7 describe European and French adults or investors, while the app analyses US companies. This fits a European bank offering US stocks; say so in the text.
 
 ## References
 
