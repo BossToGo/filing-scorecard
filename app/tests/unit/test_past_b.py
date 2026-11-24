@@ -1,7 +1,7 @@
 """S5 draft: rule/edge/property tests from SPEC §7; no locked Appendix A answers.
 
 These cases establish comparisons and safety behavior, not Greg's personal numerical sign-off.
-Known-answer acceptance stays pending until Greg recalculates and A unlocks the fixture.
+The Appendix A known answers are in test_b_appendix_a.py (Greg's sign-off on PR #5, 24 November 2026).
 """
 from dataclasses import replace
 from datetime import date, timedelta
