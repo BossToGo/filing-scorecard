@@ -70,7 +70,7 @@ benchmarks:  # synthetic
 # A test of a check asserts its value and what it is compared with, not only pass or fail: several wrong formulas
 # give the same pass or fail on this company (audit of 21 November 2026).
 expected_checks:
-  P1: {owner: B, result: pass, value: 5, compared_with: 5, unit: years, decimals: 0}
+  P1: {owner: B, result: pass, value: 5, compared_with: 4, unit: years, decimals: 0}  # the limit is 4 ("at least 4 of 5"): corrected from 5 at owner B's sign-off on #5, 24 November 2026; Appendix A shows it
   P2: {owner: B, result: pass, value: 140, compared_with: 100, unit: USD m, decimals: 0}
   P3: {owner: B, result: pass, value: 9.375, compared_with: 8.776, unit: "%", decimals: 3}
   P4: {owner: B, result: pass, value: 17.83, compared_with: 15, unit: "%", decimals: 2}
@@ -154,7 +154,7 @@ expected_tier1:
 # Recorded by A from each owner's review comment on the S0c pull request (#5): "name, date, link to the comment".
 # All three recorded sign-offs are for the version 2.3 values above.
 sign_off:
-  B: null  # CALC-P1–P6 and CALC-H1–H6: not signed off yet, so these stay locked
+  B: "Greg, 2026-11-24 (P4 and P5 by his own hand working; the other ten rows from Simon's hand working of 19 November, compared by Greg), https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536"  # CALC-P1–P6 and CALC-H1–H6
   B_statements: null  # CALC-G, the strengths and points to watch (also B's): a separate record, locked until B checks them
   C: "Florian Spitzer, 2026-11-21, https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6005138344"  # CALC-D1–D6, CALC-V1–V6, CALC-W1–W2, CALC-F1–F4, from his own Excel model (PR #14)
   D: "Simon Armengaud, 2026-11-19 (confirmed for the lean version 2026-11-21), https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-5977120036"  # AC3 (tier 1 scores)

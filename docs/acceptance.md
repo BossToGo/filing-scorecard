@@ -51,18 +51,18 @@ terminal value 1,101.7463.
 
 | Id | Number | Hand working (SPEC Appendix A) | Expected | Owner | Status |
 |---|---|---|---|---|---|
-| CALC-P1 | Years profitable | Net income 100, 115, 105, 128, 140: all > 0 | 5 of 5 → pass | B | open, sign-off pending |
-| CALC-P2 | Earnings grew | 140 > 100 and 140 > 0 | pass | B | open, sign-off pending |
-| CALC-P3 | Growth accelerating | 140 ÷ 128 − 1 = 9.375%; (140 ÷ 100)^(1/4) − 1 = 8.776% | 9.375% > 8.776% → pass | B | open, sign-off pending |
-| CALC-P4 | ROE vs industry | 140 ÷ ((750 + 820) ÷ 2) = 140 ÷ 785 | 17.83% > 15% → pass | B | open, sign-off pending |
-| CALC-P5 | Margin vs industry | 208 ÷ 1,300 | 16.00% < 18% → fail | B | open, sign-off pending |
-| CALC-P6 | Return on capital improved | 208 ÷ (1,750 − 360) = 208 ÷ 1,390; FY-3: 170 ÷ (1,480 − 310) = 170 ÷ 1,170 | 14.96% > 14.53% → pass | B | open, sign-off pending |
-| CALC-H1 | Short-term cover | 540 > 360 | pass | B | open, sign-off pending |
-| CALC-H2 | Long-term cover | 540 against 930 − 360 = 570 | fail | B | open, sign-off pending |
-| CALC-H3 | Moderate debt | (450 − 120) ÷ 820 = 330 ÷ 820 | 40.24% ≥ 40% → fail | B | open, sign-off pending |
-| CALC-H4 | Debt falling | 450 ÷ 820 = 54.88% against 400 ÷ 600 = 66.67% | pass | B | open, sign-off pending |
-| CALC-H5 | Debt covered by cash flow | 215 ÷ 450 | 47.78% ≥ 20% → pass | B | open, sign-off pending |
-| CALC-H6 | Interest covered | 208 ÷ 26 | 8.0 ≥ 5 → pass | B | open, sign-off pending |
+| CALC-P1 | Years profitable | Net income 100, 115, 105, 128, 140: all > 0 | 5 of 5 (at least 4) → pass | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
+| CALC-P2 | Earnings grew | 140 > 100 and 140 > 0 | pass | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
+| CALC-P3 | Growth accelerating | 140 ÷ 128 − 1 = 9.375%; (140 ÷ 100)^(1/4) − 1 = 8.776% | 9.375% > 8.776% → pass | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
+| CALC-P4 | ROE vs industry | 140 ÷ ((750 + 820) ÷ 2) = 140 ÷ 785 | 17.83% > 15% → pass | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
+| CALC-P5 | Margin vs industry | 208 ÷ 1,300 | 16.00% < 18% → fail | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
+| CALC-P6 | Return on capital improved | 208 ÷ (1,750 − 360) = 208 ÷ 1,390; FY-3: 170 ÷ (1,480 − 310) = 170 ÷ 1,170 | 14.96% > 14.53% → pass | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
+| CALC-H1 | Short-term cover | 540 > 360 | pass | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
+| CALC-H2 | Long-term cover | 540 against 930 − 360 = 570 | fail | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
+| CALC-H3 | Moderate debt | (450 − 120) ÷ 820 = 330 ÷ 820 | 40.24% ≥ 40% → fail | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
+| CALC-H4 | Debt falling | 450 ÷ 820 = 54.88% against 400 ÷ 600 = 66.67% | pass | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
+| CALC-H5 | Debt covered by cash flow | 215 ÷ 450 | 47.78% ≥ 20% → pass | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
+| CALC-H6 | Interest covered | 208 ÷ 26 | 8.0 ≥ 5 → pass | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
 | CALC-D1 | Pays a dividend | 56 > 0 | pass | C | passing (test: test_appendix_a_synthetic_company[D1]); signed off by C on PR #5 |
 | CALC-D2 | Yield above market | 56 ÷ (30.00 × 100) = 56 ÷ 3,000 | 1.867% > 1.5% → pass | C | signed off by C on PR #5; open: D2 is "not assessed" until S9 adds the share price and the market yield (test: test_appendix_a_d2_is_not_assessed_without_share_price_and_benchmark) |
 | CALC-D3 | No large cut | Changes: +10%, +9.09%, −6.25% (48 to 45), +24.44% | largest fall −6.25% → pass | C | passing (test: test_appendix_a_synthetic_company[D3]); signed off by C on PR #5 |
