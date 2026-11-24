@@ -1,7 +1,7 @@
 """The layering rule of SPEC §11, checked on every pull request. Owner: A.
 
 - Nothing in `app/src` imports the interface (`app/main.py`, `app/ui`, Streamlit, Plotly).
-- The logic (checks, valuation, five forces, gates) never touches the network: no network library, no import of
+- The logic (checks, valuation, strengths and points to watch, gates) never touches the network: no network library, no import of
   the data layer `src.data`, no dynamic imports that could hide one.
 - The benchmark loader reads only the extracted CSV files: no network library either.
 
@@ -22,7 +22,7 @@ NETWORK = {"requests", "urllib", "urllib3", "http", "httpx", "aiohttp", "socket"
 LOGIC_FORBIDDEN = NETWORK | {"src.data", "importlib"}
 # The interface reaches the data layer only through src.data.company (SPEC §11; Simon's review of PR #7).
 INTERFACE_FORBIDDEN = NETWORK | {"src.data.sec_client", "src.data.resolver", "importlib"}
-LOGIC = [SRC / "checks", SRC / "valuation", SRC / "forces.py", SRC / "gates.py"]
+LOGIC = [SRC / "checks", SRC / "valuation", SRC / "highlights.py", SRC / "gates.py", SRC / "scores.py"]
 BENCHMARKS = [SRC / "benchmarks"]
 
 
@@ -122,7 +122,7 @@ def test_src_never_imports_the_interface(path):
 def test_logic_never_touches_the_network_or_the_data_layer(path):
     found = check(path, LOGIC_FORBIDDEN)
     assert not found, (
-        f"{ids(path)} imports {sorted(found)}; checks, valuation, forces and gates are pure functions "
+        f"{ids(path)} imports {sorted(found)}; checks, valuation, highlights and gates are pure functions "
         "(SPEC §11): the data comes in as CompanyData, they never fetch it"
     )
 

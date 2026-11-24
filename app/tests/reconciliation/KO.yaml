@@ -36,3 +36,7 @@ figures:
     value: 8779  # shown in parentheses as a cash outflow; written as the positive amount paid
     page: 64
     line_in_filing: Dividends
+  capital_expenditure:  # added on 22 November 2026 for D6 (Flo's S7 review); read by hand by Igor
+    value: 2112  # shown in parentheses as a cash outflow; written as the positive amount paid
+    page: 64
+    line_in_filing: Purchases of property, plant and equipment
