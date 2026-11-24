@@ -28,7 +28,21 @@ class _Section(dict):
 
 def load_settings(path: Path = SETTINGS_FILE) -> dict[str, dict]:
     raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    return {
+    settings = {
         section: _Section(section, {name: entry["value"] for name, entry in (entries or {}).items()})
         for section, entries in raw.items()
     }
+    _check_cost_of_equity_floor(settings.get("valuation", {}), path)
+    return settings
+
+
+def _check_cost_of_equity_floor(valuation: dict, path: Path) -> None:
+    """SPEC §8.3: beta_min × equity_risk_premium > 0, so the cost of equity stays above terminal growth."""
+    beta_min, premium = valuation.get("beta_min"), valuation.get("equity_risk_premium")
+    if beta_min is None or premium is None:
+        return
+    if not beta_min * premium > 0:
+        raise ValueError(
+            f"beta_min × equity_risk_premium must be above 0 (SPEC §8.3), got {beta_min} × {premium} in {path.name}: "
+            "otherwise the cost of equity can fall to terminal growth and the terminal value does not exist"
+        )

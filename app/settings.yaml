@@ -26,6 +26,9 @@ data:  # owner A (SPEC §4, §5.3)
   risk_free_average_years:
     value: 5
     reason: "The risk-free rate is the average of the last five years of daily FRED DGS10 values, as in the Simply Wall St model: steadier estimates (decided by Igor, 20 November; SPEC v2.3 §4, §8.1)"
+  risk_free_fallback_period:
+    value: [2021-11-24, 2026-11-20]
+    reason: "First and last day with a value behind the saved valuation.risk_free_rate, shown next to it (SPEC §4); A refreshes both before each release"
   tag_conflict_warning:
     value: 0.01
     reason: "Flag a figure when two fallback tags differ by more than 1% for the same period (SPEC §5.3.7)"
@@ -88,8 +91,8 @@ dividend:  # owner C (SPEC §7)
 
 valuation:  # owner C (SPEC §7, §8)
   risk_free_rate:
-    value: null
-    reason: "Fallback for demo mode, a missing FRED key or no network: the five-year average of FRED DGS10 (e.g. 0.04), with its period written in this reason; otherwise the app computes that average live (SPEC v2.3 §4, §8.1). A refreshes it before each release"
+    value: 0.0393
+    reason: "Fallback for demo mode, a missing FRED key or no network: the average of the 1,247 daily 10-year yields ('10 Yr') in the US Treasury's Daily Treasury Par Yield Curve Rates from 2021-11-24 to 2026-11-20 (3.92966%, rounded), computed 24 November 2026 by a separate script. Taken from the Treasury (public domain), not from FRED, because FRED's terms forbid storing FRED data (item (p)); the values are the same as FRED DGS10, day by day. Period in data.risk_free_fallback_period. Otherwise the app computes the average live from FRED (SPEC §4, §8.1). A refreshes it before each release"
   equity_risk_premium:
     value: 0.05
     reason: "Session 5 convention (SPEC §8.1)"
