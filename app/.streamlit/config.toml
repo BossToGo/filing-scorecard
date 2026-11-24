@@ -1,0 +1,14 @@
+# Theme of the Filing Scorecard (SPEC §3). Owner: D.
+# Every colour of the app is defined here, once, so a bank can apply its own brand. Calm and light, one accent
+# colour (passed checks, buttons); a failed check is filled in the text colour with a cross.
+
+[theme]
+base = "light"
+primaryColor = "#2F5D8A"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F3F5F7"
+textColor = "#1F2933"
+
+[browser]
+# Do not send Streamlit usage statistics (audit of 21 November, security #10).
+gatherUsageStats = false

@@ -5,19 +5,23 @@ Each member reads six figures of one demo company **by hand** from its latest 10
 within USD 0.5 million (SPEC §13.2, S15). This is the independent check of the data layer: a person reading the
 filing, not a program. Emma (E) coordinates; the format and the test are Igor's (A).
 
+**Optional seventh figure:** `capital_expenditure` ("Purchases of property, plant and equipment" on the cash flow
+statement, written as the positive amount) when a check owner needs it, compared with the app in the same way.
+Coca-Cola has it, for D6 (Flo's S7 review). The other files need only the six.
+
 | Member | Company | File | Status |
 |---|---|---|---|
-| A, Igor | Coca-Cola | `KO.yaml` | done, 6 of 6 match |
+| A, Igor | Coca-Cola | `KO.yaml` | done, 6 of 6 match, plus capital expenditure (7 of 7) |
 | B, Greg | Apple | `AAPL.yaml` | to do |
-| C, Flo | Nvidia | `NVDA.yaml` | to do |
+| C, Flo | Nvidia | `NVDA.yaml` | done, 6 of 6 match (PR #30) |
 | D, Simon | McDonald's | `MCD.yaml` | to do |
 | E, Emma | Amazon | `AMZN.yaml` | to do |
 
 ## Rules
 
-- **Read the figures yourself, on the page.** An AI assistant may help you find the filing or check your file's
-  format afterwards, but it does not read the figures for you. If a tool extracted them first, say so in
-  `how_read` and `AI-USAGE.md`, and confirm every value and line name on the page yourself.
+- **Every figure is confirmed by you, on the page.** Read the figures yourself, or let a tool extract them first:
+  that is allowed only if you then confirm every value and line name on the printed page yourself, and say so in
+  `how_read` and `AI-USAGE.md` (as `KO.yaml` does). An unconfirmed tool reading never counts.
 - **Never change a figure to match the app.** If the test fails, recheck the page; if your reading is right, the
   app has a bug: tell Igor (A) and open an issue. That is the point of the check (SPEC §13.5, R6).
 - Branch `<member>/S15-reconciliation-<ticker>`, e.g. `b/S15-reconciliation-aapl`; one file per pull request.
@@ -45,6 +49,10 @@ filing, not a program. Emma (E) coordinates; the format and the test are Igor's 
 **Units:** write USD millions. If a statement is in thousands, divide by 1,000 and say so in a `note`.
 **No such line** (e.g. a company that pays no dividend): `value: null`, the page of the statement you checked,
 `line_in_filing: none`, and a `note` saying what the filing shows. The test then expects the app to show none too.
+For dividends, "none" in the app means the nil of plan Q1 (a value of 0 labelled "treated as nil", pull request
+#21), so the customer sees "no dividend paid" (SPEC §7, D1); for any other figure it means missing, never 0. The nil
+only applies when the filing shows no dividend under any tag: a payer that uses another tag name is never shown as
+paying none.
 
 ## Template
 

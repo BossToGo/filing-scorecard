@@ -1,9 +1,9 @@
 # Who is asked to review what (SPEC §12). GitHub requests a review from the owner of the files a pull request
-# touches; the last matching line wins. Member A fills in each member's GitHub username once their line is in
-# docs/team.md. Until then those lines stay commented out.
+# touches; the last matching line wins. Names agreed on 18 November 2026 (SPEC v2.2). An owner who has not yet
+# accepted the invitation becomes active once they do.
 
-# Default and member A: repository setup, CI, shared shapes, data layer, evidence, coverage, product documents
-*                                   @BossToGo
+# Default and member A, Igor: repository setup, CI, shared shapes, data layer, evidence, coverage, product documents
+*                                              @BossToGo
 
 # Member B (benchmarks, industry files, past performance and health checks)
 /app/src/benchmarks/                            @Greg3334444
@@ -14,38 +14,40 @@
 /app/data/sic_to_damodaran.csv                  @Greg3334444
 /app/src/checks/past.py                         @Greg3334444
 /app/src/checks/health.py                       @Greg3334444
+/app/src/checks/_b_inputs.py                    @Greg3334444
 /app/src/highlights.py                         @Greg3334444
 /docs/benchmarks.md                            @Greg3334444
 
-# Member C (dividend and valuation checks, valuation engine, Excel cross-check)
-# /app/src/checks/dividend.py                    @<C>
-# /app/src/checks/valuation.py                   @<C>
-# /app/src/valuation/                            @<C>
-# /docs/crosscheck/                              @<C>
+# Member C, Flo: dividend and valuation checks, valuation engine, Excel cross-check
+/app/src/checks/dividend.py                    @florian-spitzer
+/app/src/checks/valuation.py                   @florian-spitzer
+/app/src/valuation/                            @florian-spitzer
+/docs/crosscheck/                              @florian-spitzer
 
-# Member D (interface, five forces, gates, export, app tests)
-# /app/main.py                                   @<D>
-# /app/ui/                                       @<D>
-# /app/src/forces.py                             @<D>
-# /app/src/gates.py                              @<D>
-# /app/src/export.py                             @<D>
-# /app/tests/app/                                @<D>
+# Member D, Simon: interface (including the strengths and points to watch on screen, and the theme), gates, app tests
+/app/main.py                                   @Simonarmengaud
+/app/ui/                                       @Simonarmengaud
+/app/.streamlit/                               @Simonarmengaud
+/app/src/gates.py                              @Simonarmengaud
+/app/src/scores.py                             @Simonarmengaud
+/app/tests/app/                                @Simonarmengaud
 
-# Member E (business plan, slides, README, plain-language texts, question bank)
-/README.md                                      @EmmaRiggi
-/app/ui/texts.yaml                              @EmmaRiggi
-/docs/business-plan/                            @EmmaRiggi
-/docs/slides/                                   @EmmaRiggi
-/docs/qa-bank.md                                @EmmaRiggi
+# Member E, Emma: Excel export, business plan, slides, README, plain-language texts, question bank
+/app/src/export.py                             @EmmaRiggi
+/README.md                                     @EmmaRiggi
+/app/ui/texts.yaml                             @EmmaRiggi
+/docs/business-plan/                           @EmmaRiggi
+/docs/slides/                                  @EmmaRiggi
+/docs/qa-bank.md                               @EmmaRiggi
 
-# Guardrails: the files that enforce the team rules. A change here must be reviewed by A and, once known, by the
-# backup D (A cannot approve his own pull requests). Keep these lines last so they win.
-/.github/                           @BossToGo
-/.gitignore                         @BossToGo
-/AGENTS.md                          @BossToGo
-/CLAUDE.md                          @BossToGo
-/.claude/                           @BossToGo
-/app/pytest.ini                     @BossToGo
-/app/tests/conftest.py              @BossToGo
-/app/tests/network_guard.py         @BossToGo
-/app/src/contracts.py               @BossToGo
+# Guardrails: the files that enforce the team rules. A change here is reviewed by A and by the backup D (A cannot
+# approve his own pull requests). Keep these lines last so they win.
+/.github/                                      @BossToGo @Simonarmengaud
+/.gitignore                                    @BossToGo @Simonarmengaud
+/AGENTS.md                                     @BossToGo @Simonarmengaud
+/CLAUDE.md                                     @BossToGo @Simonarmengaud
+/.claude/                                      @BossToGo @Simonarmengaud
+/app/pytest.ini                                @BossToGo @Simonarmengaud
+/app/tests/conftest.py                         @BossToGo @Simonarmengaud
+/app/tests/network_guard.py                    @BossToGo @Simonarmengaud
+/app/src/contracts.py                          @BossToGo @Simonarmengaud

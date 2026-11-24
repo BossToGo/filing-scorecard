@@ -13,7 +13,7 @@ def test_settings_are_loaded_as_plain_values_per_section():
 
 
 def test_empty_sections_are_empty_dicts():
-    assert load_settings()["forces"] == {}
+    assert load_settings()["highlights"] == {}
 
 
 def test_a_missing_setting_names_the_section_and_the_file():
