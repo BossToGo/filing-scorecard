@@ -60,9 +60,23 @@ class FakeSession:
         return self.response
 
 
+UNEXPECTED_REQUESTS = []
+
+
 class NoNetwork(FakeSession):
+    """For cases that must not download. fred.py catches every error itself, so the request is also recorded and
+    checked after each test (re-review of S2b)."""
+
     def get(self, url, params=None, **options):
+        UNEXPECTED_REQUESTS.append(url)
         raise AssertionError("this case must not download anything")
+
+
+@pytest.fixture(autouse=True)
+def _no_unexpected_request():
+    UNEXPECTED_REQUESTS.clear()
+    yield
+    assert UNEXPECTED_REQUESTS == [], "a case that must not download anything sent a request"
 
 
 class Clock:
@@ -218,6 +232,22 @@ def test_after_a_failed_download_fred_is_asked_again_only_after_ten_minutes(key_
     assert len(working.requests) == 1
 
 
+def test_a_failure_pauses_only_its_own_day(key_file):
+    clock = Clock()
+    live(FakeSession(error=requests.ConnectionError("no route")), key_file, clock=clock)
+
+    assert live(FakeSession(answer()), key_file, today=date(2026, 11, 25), clock=clock).kind == "derived"
+
+
+def test_a_successful_download_ends_the_pause(key_file):
+    clock = Clock()
+    live(FakeSession(error=requests.ConnectionError("no route")), key_file, clock=clock)
+    clock.now += fred.FAILURE_PAUSE_SECONDS
+
+    assert live(FakeSession(answer()), key_file, clock=clock).kind == "derived"
+    assert fred._FAILED == {}
+
+
 def test_a_key_added_later_is_used_at_once(tmp_path, key_file):
     assert live(NoNetwork(), tmp_path / "absent.env").kind == "assumption"
 
@@ -293,10 +323,11 @@ def test_a_key_in_the_wrong_format_is_never_sent(tmp_path):
         (FakeSession(answer([row("2026-11-23", None)])), "could not be read"),
         (FakeSession(answer([{"date": "2026-11-23"}])), "could not be read"),
         (FakeSession(answer([row("2026-11-20", "4.00"), row("2026-11-20", "4.00")])), "appears twice"),
+        (FakeSession(answer([row("2026-11-20", "4.00"), row("2026-11-20", "4.10")])), "appears twice"),
     ],
     ids=["no connection", "timeout", "any other error", "key refused", "server error", "not JSON",
          "nested too deep", "empty", "only gaps", "not a number", "NaN", "null value", "no value field",
-         "same day twice"],
+         "same day twice", "same day, two values"],
 )
 def test_an_unusable_answer_uses_the_saved_value(key_file, session, reason_words):
     rate = live(session, key_file)
@@ -315,6 +346,14 @@ def test_an_average_outside_0_to_20_percent_is_not_used(key_file, values):
     rate = live(FakeSession(answer(rows)), key_file)
 
     check_fallback(rate, "plausible range")
+
+
+@pytest.mark.parametrize("value, expected", [("0.01", 0.0001), ("19.99", 0.1999)], ids=["0.01 percent", "19.99 percent"])
+def test_an_average_just_inside_the_limits_is_used(key_file, value, expected):
+    rate = live(FakeSession(answer([row("2026-11-23", value)])), key_file)
+
+    assert rate.kind == "derived"
+    assert rate.value == pytest.approx(expected)
 
 
 # --- the key never leaves the request --------------------------------------------------------------------------------
