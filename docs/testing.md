@@ -7,7 +7,7 @@ Greg adopted Flo's rule changes on 23 November:
 - P4: known nonpositive equity fails before missing benchmarks or other inputs.
 Missing data is never zero; fiscal gaps are not compressed.
 The saved McDonald's negative-equity regression tests P4 without a benchmark.
-Tests were seen failing before the fixes; final suite on main `b5520b6`: 752 passed.
+Tests were seen failing before the fixes; final suite on main `b5520b6`: 756 passed.
 Run from `app/`: `.venv/bin/python -m pytest -q`.
 Personal calculations, source reading, Explain-backs and fixture-gated acceptance remain pending.
 Shared rule/status records, formal teammate approval and merge remain open.

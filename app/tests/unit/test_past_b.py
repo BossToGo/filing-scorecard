@@ -66,6 +66,32 @@ def test_equal_profits_are_not_growth_or_acceleration():
     assert results["P3"].status == "fail"
 
 
+def test_positive_profit_above_four_years_earlier_passes_p2():
+    # Independent rule working: latest 2 USD > old 1 USD, and 2 > 0.
+    result = run(change(company(), "net_income", 2025, 2))["P2"]
+    assert result.status == "pass"
+    assert result.value == 2 and result.threshold == 1
+
+
+def test_latest_zero_profit_fails_p3_because_both_growth_rates_are_minus_one():
+    # 0/1 - 1 = -1; (0/1) ** (1/4) - 1 = -1. Strict -1 > -1 is false.
+    result = run(change(company(), "net_income", 2025, 0))["P3"]
+    assert result.status == "fail"
+    assert result.value == -1 and result.threshold == -1
+
+
+@pytest.mark.parametrize("check,metric", [("P4", "roe"), ("P5", "operating_margin")])
+def test_missing_benchmark_message_does_not_label_available_company_figures_missing(check, metric):
+    result = run(company())[check]
+    assert result.status == "insufficient_data"
+    assert [f.metric for f in result.inputs if f.kind == "missing"] == [metric]
+    assert "benchmark" in result.explanation.lower()
+    assert "unavailable figures" not in result.explanation.lower()
+    if check == "P5":
+        assert "operating income" not in result.explanation.lower()
+        assert "revenue" not in result.explanation.lower()
+
+
 def test_nonzero_equal_compound_growth_does_not_pass_acceleration():
     # Geometric identity: fivefold each year gives the same final growth as its four-year CAGR.
     # NI FY0/FY-1 = 625/125 = 5; (NI FY0/FY-4)^(1/4) = 625^(1/4) = 5.

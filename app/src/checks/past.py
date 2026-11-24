@@ -86,10 +86,11 @@ def past_checks(data: CompanyData, *, settings: Mapping[str, float],
     else:
         roe = _benchmark("roe", benchmarks, inputs)
         roe_inputs = (net[0], *equity, roe)
-        if roe.kind == "missing":
-            checks.append(unavailable("P4", roe_inputs, "Not assessed: industry return-on-equity benchmark required."))
+        if roe.kind == "missing" and not missing((net[0], *equity)):
+            checks.append(CheckResult("P4", "insufficient_data", None, None, roe_inputs,
+                                      "The industry return-on-equity benchmark is unavailable."))
         elif missing(roe_inputs):
-            checks.append(unavailable("P4", roe_inputs, "Net income and both opening/closing equity figures are required."))
+            checks.append(unavailable("P4", roe_inputs, "Return on equity cannot be assessed from the available figures."))
         else:
             average = equity[0].value + (equity[1].value - equity[0].value) / 2
             value = net[0].value / average
@@ -103,8 +104,11 @@ def past_checks(data: CompanyData, *, settings: Mapping[str, float],
     revenue = inputs.fact("revenue")
     margin = _benchmark("operating_margin", benchmarks, inputs)
     margin_inputs = operating, revenue, margin
-    if missing(margin_inputs):
-        checks.append(unavailable("P5", margin_inputs, "Operating income, revenue and an industry operating-margin benchmark are required."))
+    if margin.kind == "missing" and not missing((operating, revenue)) and revenue.value > 0:
+        checks.append(CheckResult("P5", "insufficient_data", None, None, margin_inputs,
+                                  "The industry operating-margin benchmark is unavailable."))
+    elif missing(margin_inputs):
+        checks.append(unavailable("P5", margin_inputs, "Operating margin cannot be assessed from the available figures."))
     elif revenue.value <= 0:
         checks.append(unavailable("P5", margin_inputs, "Revenue is zero or negative; operating margin is not meaningful."))
     else:
