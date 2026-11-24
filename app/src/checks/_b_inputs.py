@@ -23,6 +23,8 @@ def rational(value: float) -> Fraction:
 def money(value: float) -> str:
     """Readable USD millions; keep extremely small nonzero values visible."""
     millions = value / 1_000_000
+    if abs(millions) >= 1_000_000:  # above USD 1 trillion: write it in full, never "1.2e+06"
+        return f"USD {millions:,.0f} million"
     return f"USD {millions:,.6g} million" if millions or value == 0 else f"USD {value:g}"
 
 
@@ -73,6 +75,16 @@ def unavailable(check: str, facts: tuple[Fact, ...], reason: str) -> CheckResult
 
 def missing(facts: tuple[Fact, ...]) -> bool:
     return any(f.kind == "missing" for f in facts)
+
+
+def compared(passed: bool, above: str = "above", below: str = "below") -> str:
+    """The word that states the result, so a rounded figure never reads like the opposite result."""
+    return above if passed else below
+
+
+def change(rate: float) -> str:
+    """'grew by about 5.00%' or 'fell by about 5.00%', never 'grew by about -5.00%'."""
+    return f"grew by about {rate:.2%}" if rate >= 0 else f"fell by about {-rate:.2%}"
 
 
 def result(check: str, passed: bool, value: float | None, threshold: float | None,

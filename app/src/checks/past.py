@@ -13,7 +13,7 @@ from collections.abc import Mapping
 from datetime import date
 
 from src.contracts import CheckResult, CompanyData, Fact
-from src.checks._b_inputs import Inputs, day, missing, money, rational, result, unavailable
+from src.checks._b_inputs import Inputs, change, compared, day, missing, money, rational, result, unavailable
 
 
 def _benchmark(metric: str, benchmarks: Mapping[str, Fact] | None, inputs: Inputs) -> Fact:
@@ -58,16 +58,20 @@ def past_checks(data: CompanyData, *, settings: Mapping[str, float],
                              f"Net income was {money(net[0].value)} for the year ended {day(net[0].period_end)}, against {money(net[4].value)} four years earlier ({day(net[4].period_end)}). The latest profit must be positive and higher."))
 
     growth_inputs = net[0], net[1], net[4]
-    if missing(growth_inputs):
+    known_losses = tuple(f for f in (net[4], net[1]) if f.kind != "missing" and f.value <= 0)
+    if known_losses:
+        # A known loss in a comparison year fails P3 whatever the other years are (SPEC §7), even when one is missing.
+        amounts = " and ".join(f"{money(f.value)} for the year ended {day(f.period_end)}" for f in known_losses)
+        known = tuple(f for f in growth_inputs if f.kind != "missing")
+        checks.append(result("P3", False, None, None, known,
+                             f"Growth from a loss is not meaningful: net income was {amounts}. Both comparison years must be profitable."))
+    elif missing(growth_inputs):
         checks.append(unavailable("P3", growth_inputs, "Net income for the latest year, the preceding year and four years earlier is required."))
-    elif net[4].value <= 0 or net[1].value <= 0:
-        checks.append(result("P3", False, None, None, growth_inputs,
-                             f"Growth from a loss is not meaningful: net income was {money(net[4].value)} for the year ended {day(net[4].period_end)} and {money(net[1].value)} for {day(net[1].period_end)}; both comparison profits must be positive."))
     elif net[0].value < 0:
         checks.append(result("P3", False, None, None, growth_inputs,
                              f"The latest year is a loss: net income was {money(net[0].value)} for the year ended {day(net[0].period_end)}."))
     else:
-        recent = net[0].value / net[1].value - 1
+        recent = float(rational(net[0].value) / rational(net[1].value) - 1)
         # Log differences avoid overflowing the ratio before taking its fourth root.
         compound = math.expm1((math.log(net[0].value) - math.log(net[4].value)) / 4) if net[0].value else -1.0
         # With positive NI, recent > CAGR iff NI0^3 * NI-4 > NI-1^4.
@@ -75,7 +79,7 @@ def past_checks(data: CompanyData, *, settings: Mapping[str, float],
         accelerating = (rational(net[0].value) ** 3 * rational(net[4].value)
                         > rational(net[1].value) ** 4) if net[0].value else False
         checks.append(result("P3", accelerating, recent, compound, growth_inputs,
-                             f"Net income grew by about {recent:.2%} in the year ended {day(net[0].period_end)}, against compound annual growth of about {compound:.2%} from {day(net[4].period_end)}. The latest growth must be higher."))
+                             f"Net income {change(recent)} in the year ended {day(net[0].period_end)}, against an average of about {compound:.2%} a year since {day(net[4].period_end)}. The latest change is {compared(accelerating, 'faster', 'not faster')} than the average; it must be faster to pass."))
 
     equity = inputs.fact("equity"), inputs.fact("equity", 1)
     if any(f.kind != "missing" and f.value <= 0 for f in equity):
@@ -92,13 +96,11 @@ def past_checks(data: CompanyData, *, settings: Mapping[str, float],
         elif missing(roe_inputs):
             checks.append(unavailable("P4", roe_inputs, "Return on equity cannot be assessed from the available figures."))
         else:
-            average = equity[0].value + (equity[1].value - equity[0].value) / 2
-            value = net[0].value / average
-            # Compare source amounts and the published decimal cell before any ratio rounding.
-            above = (2 * rational(net[0].value) > rational(roe.value)
-                     * (rational(equity[0].value) + rational(equity[1].value)))
-            checks.append(result("P4", above, value, roe.value, roe_inputs,
-                                 f"Return on equity was about {value:.2%} for the year ended {day(net[0].period_end)} ({money(net[0].value)} profit on average equity of {money(average)}), against {roe.value:.2%} for the industry. It must be higher than the industry benchmark."))
+            average = (rational(equity[0].value) + rational(equity[1].value)) / 2
+            ratio = rational(net[0].value) / average  # one exact ratio for both the result and the figure shown
+            above = ratio > rational(roe.value)
+            checks.append(result("P4", above, float(ratio), roe.value, roe_inputs,
+                                 f"Return on equity was about {float(ratio):.2%} for the year ended {day(net[0].period_end)} ({money(net[0].value)} profit on average equity of {money(float(average))}), {compared(above)} the industry's {roe.value:.2%}. It must be higher to pass."))
 
     operating = inputs.fact("operating_income")
     revenue = inputs.fact("revenue")
@@ -112,10 +114,10 @@ def past_checks(data: CompanyData, *, settings: Mapping[str, float],
     elif revenue.value <= 0:
         checks.append(unavailable("P5", margin_inputs, "Revenue is zero or negative; operating margin is not meaningful."))
     else:
-        value = operating.value / revenue.value
-        above = rational(operating.value) > rational(margin.value) * rational(revenue.value)
-        checks.append(result("P5", above, value, margin.value, margin_inputs,
-                             f"Operating margin was about {value:.2%} for the year ended {day(operating.period_end)} ({money(operating.value)} operating profit on {money(revenue.value)} revenue), against {margin.value:.2%} for the industry. It must be higher."))
+        ratio = rational(operating.value) / rational(revenue.value)
+        above = ratio > rational(margin.value)
+        checks.append(result("P5", above, float(ratio), margin.value, margin_inputs,
+                             f"Operating margin was about {float(ratio):.2%} for the year ended {day(operating.period_end)} ({money(operating.value)} operating profit on {money(revenue.value)} revenue), {compared(above)} the industry's {margin.value:.2%}. It must be higher to pass."))
 
     capital_inputs = (operating, inputs.fact("total_assets"), inputs.fact("current_liabilities"),
                       inputs.fact("operating_income", 3), inputs.fact("total_assets", 3),
@@ -130,11 +132,9 @@ def past_checks(data: CompanyData, *, settings: Mapping[str, float],
         elif now_capital <= 0 or old_capital <= 0:
             checks.append(unavailable("P6", capital_inputs, "Assets minus current liabilities is zero or negative in a comparison year."))
         else:
-            now, old = operating.value / now_capital, capital_inputs[3].value / old_capital
-            improved = (rational(operating.value)
-                        * (rational(capital_inputs[4].value) - rational(capital_inputs[5].value))
-                        > rational(capital_inputs[3].value)
-                        * (rational(capital_inputs[1].value) - rational(capital_inputs[2].value)))
-            checks.append(result("P6", improved, now, old, capital_inputs,
-                                 f"Return on capital employed was about {now:.2%} for the year ended {day(operating.period_end)}, against {old:.2%} three years earlier ({day(capital_inputs[3].period_end)}). Capital employed was {money(now_capital)} and {money(old_capital)}, respectively; the latest return must be higher."))
+            now = rational(operating.value) / (rational(capital_inputs[1].value) - rational(capital_inputs[2].value))
+            old = rational(capital_inputs[3].value) / (rational(capital_inputs[4].value) - rational(capital_inputs[5].value))
+            improved = now > old
+            checks.append(result("P6", improved, float(now), float(old), capital_inputs,
+                                 f"Return on capital employed was about {float(now):.2%} for the year ended {day(operating.period_end)}, {compared(improved, 'up from', 'not above')} {float(old):.2%} three years earlier ({day(capital_inputs[3].period_end)}). Capital employed was {money(now_capital)} and {money(old_capital)}, respectively; the latest return must be higher to pass."))
     return tuple(checks)
