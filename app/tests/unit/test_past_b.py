@@ -320,3 +320,49 @@ def test_equal_decimal_capital_returns_do_not_improve():
                              "total_assets", year, assets), "current_liabilities", year, current)
     # 0.9/(0.6-0.3) = 0.3/(0.2-0.1) = 3 exactly in decimal USD.
     assert run(data)["P6"].status == "fail"
+
+
+# --- Igor's review of #28 (24 November 2026); expected values are hand working written next to each test ---------
+
+def test_p3_known_loss_fails_even_when_the_latest_year_is_missing():
+    # SPEC §7 P3: FY-4 or FY-1 <= 0 fails whatever FY0 is, so a missing FY0 cannot change the result
+    # (same reasoning as P4's known negative equity). Flo's open point on #28.
+    data = change(change(company(), "net_income", 2021, -1), "net_income", 2025, None)
+    result = run(data)["P3"]
+    assert result.status == "fail"
+    assert "loss" in result.explanation.lower()
+
+
+def test_p3_says_fell_not_grew_by_a_negative_amount():
+    # NI 2024 = 1, NI 2025 = 0.9: change -10%. Hand working: 0.9 / 1 - 1 = -0.10.
+    result = run(change(company(), "net_income", 2025, 0.9))["P3"]
+    assert result.value == pytest.approx(-0.10)
+    assert "fell by about 10.00%" in result.explanation
+    assert "grew by about -" not in result.explanation and "grew by about −" not in result.explanation
+
+
+def test_p4_value_is_the_exact_ratio_of_profit_to_average_equity():
+    # NI 1, equity 2 and 2: 1 / ((2 + 2) / 2) = 0.5 exactly; benchmark 0.4 -> pass.
+    result = run(company(), benchmarks={"roe": benchmark("roe", 0.4)})["P4"]
+    assert result.status == "pass" and result.value == 0.5 and result.threshold == 0.4
+
+
+def test_p5_just_below_the_benchmark_does_not_read_like_a_pass():
+    # Operating income 0.99999 on revenue 2: 0.499995 against 0.5 -> fail; rounds to 50.00% on screen.
+    data = change(company(), "operating_income", 2025, 0.99999)
+    result = run(data, benchmarks={"operating_margin": benchmark("operating_margin", 0.5)})["P5"]
+    assert result.status == "fail"
+    assert result.value == pytest.approx(0.499995)
+    assert "below the industry's 50.00%" in result.explanation
+
+
+def test_p6_value_and_threshold_are_the_returns_on_capital_employed():
+    # 2025: operating income 1 / (assets 3 - current liabilities 1) = 0.5; 2022: the same 0.5 -> not improved.
+    result = run(company())["P6"]
+    assert result.status == "fail" and result.value == 0.5 and result.threshold == 0.5
+
+
+def test_amounts_above_one_trillion_are_written_in_full():
+    from src.checks._b_inputs import money
+    assert money(1.2e15) == "USD 1,200,000,000 million"
+    assert "e+" not in money(3.5e12)
