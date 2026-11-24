@@ -1,0 +1,38 @@
+# Nvidia, read by hand from its 10-K for fiscal year 2026 (slice S15). Owner: C.
+# Format and rules: README.md in this folder. Never edit a figure to match the app: a mismatch is a bug.
+company: NVDA
+read_by: Flo (C)
+date_read: 2026-11-23
+how_read: >-
+  Read by hand by Flo from the printed pages of the 10-K below; afterwards Claude Code double-checked the
+  readings (AI-USAGE.md, 23 November).
+accession: 0001045810-26-000021
+filed: 2026-02-25
+fiscal_year_end: 2026-01-25
+document: https://www.sec.gov/Archives/edgar/data/1045810/000104581026000021/nvda-20260125.htm
+unit: USD millions
+figures:
+  revenue:
+    value: 215938
+    page: 51
+    line_in_filing: Revenue
+  operating_income:
+    value: 130387
+    page: 51
+    line_in_filing: Operating income
+  net_income:
+    value: 120067
+    page: 51
+    line_in_filing: Net income
+  total_assets:
+    value: 206803
+    page: 53
+    line_in_filing: Total assets
+  operating_cash_flow:
+    value: 102718
+    page: 55
+    line_in_filing: Net cash provided by operating activities
+  dividends_paid:
+    value: 974  # shown in parentheses as a cash outflow; written as the positive amount paid
+    page: 55
+    line_in_filing: Dividends paid
