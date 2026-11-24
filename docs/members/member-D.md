@@ -1,7 +1,7 @@
 # Member D: Simon (@Simonarmengaud)
 
 **You own:** `app/main.py`, `app/ui/` (except `texts.yaml`, which is Emma's), including the strengths and points
-to watch on screen, the theme file `app/.streamlit/config.toml`, `app/src/gates.py`, `app/tests/app/`, the `gates` section of `app/settings.yaml`. **Backup:** A, Igor (you
+to watch on screen, the theme file `app/.streamlit/config.toml`, `app/src/gates.py`, `app/src/scores.py` (area scores), `app/tests/app/`, the `gates` section of `app/settings.yaml`. **Backup:** A, Igor (you
 review Igor's PRs first, Igor reviews yours; you run the release check if Igor cannot). **Reconciliation company:** McDonald's (MCD).
 
 ## Your slices, in order
@@ -67,8 +67,13 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
 - **No overrides anywhere (SPEC v2.3):** no figure override, no industry dropdown, no rating override. The only
   inputs are the ticker, the share price (USD, greater than 0) and the demo switch (SPEC §3, AC6). Each invalid
   entry gets a message that says how to fix it.
-- **Header warnings (SPEC v2.3 §10):** show only "not fully checked" (outside the verified universe) and "latest
-  annual report is old". Every other warning goes on the sources page next to its figure.
+- **Header warnings (SPEC 2.4.1 §10):** show only "not fully checked" (every ticker other than the five demo
+  companies: `DEMO_TICKERS` from `src.data.company`; Apple never shows it) and "latest annual report is old".
+  Every other warning goes on the sources page next to its figure.
+- **Decided on 23 November (SPEC 2.4.1 §3, §7):** the input bar offers the five demo companies to pick from and lets
+  the user type another ticker; the header shows `data.name` as the SEC lists it ("COCA COLA CO"); the area scores
+  (passed, assessed) are computed in your `app/src/scores.py`, and the screen only displays them. The nine UX points
+  of the audit are in issue #32.
 - Figures arrive in USD with a unit from `UNITS` (`app/src/contracts.py`); show amounts in USD m through one
   tested formatting function, never ad hoc in a page. A check with status `insufficient_data` shows its
   explanation ("not assessed until …" or the missing input), never a score.
