@@ -98,10 +98,10 @@ valuation:  # owner C (SPEC §7, §8)
     reason: "US federal statutory rate, used only to re-lever the industry beta; state taxes ignored, stated as a limitation (SPEC §8.1)"
   forecast_years:
     value: 10
-    reason: "Ten-year free cash flow forecast, as in the Simply Wall St model; growth decays towards terminal growth (SPEC v2.3 §8.2)"
+    reason: "Ten years give starting growth time to approach the long-run rate before the terminal value begins (SPEC v2.3 §8.2)"
   fcf_base_years:
     value: 3
-    reason: "Starting free cash flow = free cash flow margin of the last three fiscal years x latest revenue: smooths working-capital and capex swings (SPEC v2.3 §8.2; C to confirm)"
+    reason: "Three years smooth temporary working-capital and capital-expenditure swings while keeping the starting cash-flow margin reasonably current (SPEC v2.3 §8.2)"
   terminal_growth_cap:
     value: 0.025
     reason: "Terminal growth is the lower of the risk-free rate and 2.5% (SPEC §8.3)"
@@ -110,19 +110,19 @@ valuation:  # owner C (SPEC §7, §8)
     reason: "Well below fair value: share price at most 80% of fair value (V2)"
   growth_floor:
     value: -0.10
-    reason: "Lowest automatic starting growth; a steeper past fall is not projected forward (SPEC v2.3 §8.2; C to confirm)"
+    reason: "The floor limits how strongly an unusually steep historical decline drives the forecast, with the adjustment disclosed in the growth note (SPEC v2.3 §8.2, §8.3)"
   growth_cap:
     value: 0.3
-    reason: "Highest automatic starting growth: decaying with a half-life of 2 years, revenue reaches about 2.9 times FY0 in year 10; Nvidia's 68% a year (FY2022-FY2026) is not projected forward (SPEC v2.3 §8.2; C to confirm)"
+    reason: "The cap limits the extrapolation of exceptional historical growth, including growth caused by a boom or acquisition (SPEC v2.3 §8.2)"
   growth_half_life_years:
     value: 2
-    reason: "The gap between growth and terminal growth halves every 2 years: fast growth fades fast, moderate growth lasts (SPEC v2.3 §8.2; C to confirm)"
+    reason: "Halving the gap to terminal growth every two years lets recent growth influence the early forecast and reduces its influence over time (SPEC v2.3 §8.2)"
   beta_min:
     value: 0.8
-    reason: "Re-levered beta is kept at or above 0.8, as in the Simply Wall St model (SPEC v2.3 §8.1)"
+    reason: "The 0.8 floor keeps a low beta from pushing the company's cost of equity below the risk-free rate plus 4 percentage points (SPEC v2.3 §8.1)"
   beta_max:
     value: 2.0
-    reason: "Re-levered beta is kept at or below 2.0, as in the Simply Wall St model (SPEC v2.3 §8.1)"
+    reason: "The ceiling limits the effect of an unusually high re-levered beta on the discount rate (SPEC v2.3 §8.1)"
 
 gates:  # owner D (SPEC §10)
   unsupported_sic_min:
