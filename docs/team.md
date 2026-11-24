@@ -3,6 +3,7 @@
 | Member | Name | GitHub | Assistant | Area (SPEC §12, `docs/architecture.md`) | Backup |
 |---|---|---|---|---|---|
 | A | Igor Willms | @BossToGo | Claude Code | Repository, CI, shared data shapes, SEC data layer, evidence, coverage report, demo snapshot | D |
+| B | Greg | @Greg3334444 | Codex | Industry benchmarks (`app/src/benchmarks/`, benchmark files in `app/data/`), past-performance and financial-health checks (`app/src/checks/past.py`, `app/src/checks/health.py`), strengths and points to watch (`app/src/highlights.py`, only if tier 3 is released) | C |
 | C | Florian Spitzer | @florian-spitzer | Claude Code | Dividend and valuation checks (`app/src/checks/dividend.py`, `app/src/checks/valuation.py`), valuation engine (`app/src/valuation/`), Excel cross-check model (`docs/crosscheck/`) | B |
 | D | Simon Armengaud | @simonarmengaud | Claude Code | Interface and theme (`app/main.py`, `app/ui/` except `texts.yaml`, `app/.streamlit/`), gates, demo mode with A, strengths and points to watch on screen, app tests | A |
 | E | Emma Riggi | @EmmaRiggi | Claude Code | Excel export (`app/src/export.py`), plain-language texts (`app/ui/texts.yaml`), business plan, slides, README, question bank, `AI-USAGE.md` coordination | — |

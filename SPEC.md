@@ -692,7 +692,7 @@ Other inputs: current financial debt FY2025 = 50 (not used since version 2.3); s
 
 | Check | Value | Result |
 |---|---|---|
-| P1 | 5 of 5 years profitable | pass |
+| P1 | 5 of 5 years profitable (at least 4 required) | pass |
 | P2 | 140 against 100 | pass |
 | P3 | 9.375% against 8.776% | pass |
 | P4 | 140 ÷ 785 = 17.83% against 15% | pass |

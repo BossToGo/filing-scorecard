@@ -13,7 +13,7 @@ Each criterion is checkable: a starting state, an action, an expected result. St
 | AC4 | F2 | Any loaded company | The user opens a check | It shows the result, the rule in plain words, the formula, the input figures with units and fiscal years, and a link to the filing | passes on branch `d/S10-interface` (`test_a_closed_check_row_shows_mark_result_and_check_ac4`, `test_an_open_check_shows_its_figures_with_units_and_fiscal_year_ac4`); plain-language rule once E's `texts.yaml` (#17) is merged |
 | AC5 | F3 | Any loaded company | The user opens the sources page | One row per figure with metric, value, unit, period, kind, tag, form, accession, filing date, retrieval time and note; each missing figure shows its reason and the checks it blocks | passes on branch `d/S10-interface` (`test_sources_page_one_row_per_figure_ac5`) |
 | AC6 | F4 | Any loaded company | The user looks for an input other than the ticker, the share price and the demo switch | There is none: no way to change a figure, the industry, an assumption or a check result; the scorecard is the same for every user (§1, §3, §8.7) | open |
-| AC7 | F5 | Network switched off, demo mode on | The user opens each of the five demo companies | Each opens without an error | open |
+| AC7 | F5 | Network switched off, demo mode on | The user opens each of the five demo companies | Each opens without an error | passes on branch `a/S14-demo-mode` (`tests/integration/test_demo_mode_ac7.py`): each of the five opens through `main.py` with the network blocked, with no crash, no error, no network attempt, its SEC name shown, no "not fully checked" and its checks listed |
 | AC8 | F6 | Tier 2 build, synthetic company with the synthetic benchmarks | The scorecard opens | P4 pass, P5 fail, D2 pass (share price USD 30.00); each benchmark shows the industry group, the route used, the number of firms and the source file | open |
 | AC9 | F7 | Tier 2 build, synthetic company, share price USD 30.00 | The scorecard opens | Fair value USD 20.13 per share (equity method); scores 5 of 6, 4 of 6, 6 of 6, 3 of 6 (SPEC v2.3 Appendix A; fair value signed off by C, scores by E, 21 November) | open |
 | AC10 | F7 | Any company, no share price | The scorecard opens | The valuation area shows "insufficient data" and asks for a share price; the other areas still show | open |
@@ -38,8 +38,8 @@ P/E 20.0 (industry) and 24.0 (whole US market), P/B 4.0, market dividend yield 1
 **Rule 14.5:** these values may be used in tests only after the owner named in each row has recalculated them by
 hand or in Excel and signed off in slice S0c. In code: `tests.fixtures.synthetic.expected_check("P3")` refuses to
 return a value until A has recorded its owner's sign-off (a review comment on the S0c pull request) under
-`sign_off` in `app/tests/fixtures/synthetic_co.yaml`. Owners: B for P and H rows and the strengths and
-points to watch, C for D, V, W and F rows, D for AC3, E for CALC-S. If a recalculation disagrees, the recalculation wins and SPEC
+`sign_off` in `app/tests/fixtures/synthetic_co.yaml`. Owners: B for P and H rows and, with a separate record
+(`B_statements`), the strengths and points to watch, C for D, V, W and F rows, D for AC3, E for CALC-S. If a recalculation disagrees, the recalculation wins and SPEC
 Appendix A is corrected by pull request. Tolerance: half a unit of the last digit shown.
 
 Independent cross-checks (not sign-offs): the version 2.3 rows below were recomputed by Claude in a separate script
@@ -51,18 +51,18 @@ terminal value 1,101.7463.
 
 | Id | Number | Hand working (SPEC Appendix A) | Expected | Owner | Status |
 |---|---|---|---|---|---|
-| CALC-P1 | Years profitable | Net income 100, 115, 105, 128, 140: all > 0 | 5 of 5 → pass | B | open, sign-off pending |
-| CALC-P2 | Earnings grew | 140 > 100 and 140 > 0 | pass | B | open, sign-off pending |
-| CALC-P3 | Growth accelerating | 140 ÷ 128 − 1 = 9.375%; (140 ÷ 100)^(1/4) − 1 = 8.776% | 9.375% > 8.776% → pass | B | open, sign-off pending |
-| CALC-P4 | ROE vs industry | 140 ÷ ((750 + 820) ÷ 2) = 140 ÷ 785 | 17.83% > 15% → pass | B | open, sign-off pending |
-| CALC-P5 | Margin vs industry | 208 ÷ 1,300 | 16.00% < 18% → fail | B | open, sign-off pending |
-| CALC-P6 | Return on capital improved | 208 ÷ (1,750 − 360) = 208 ÷ 1,390; FY-3: 170 ÷ (1,480 − 310) = 170 ÷ 1,170 | 14.96% > 14.53% → pass | B | open, sign-off pending |
-| CALC-H1 | Short-term cover | 540 > 360 | pass | B | open, sign-off pending |
-| CALC-H2 | Long-term cover | 540 against 930 − 360 = 570 | fail | B | open, sign-off pending |
-| CALC-H3 | Moderate debt | (450 − 120) ÷ 820 = 330 ÷ 820 | 40.24% ≥ 40% → fail | B | open, sign-off pending |
-| CALC-H4 | Debt falling | 450 ÷ 820 = 54.88% against 400 ÷ 600 = 66.67% | pass | B | open, sign-off pending |
-| CALC-H5 | Debt covered by cash flow | 215 ÷ 450 | 47.78% ≥ 20% → pass | B | open, sign-off pending |
-| CALC-H6 | Interest covered | 208 ÷ 26 | 8.0 ≥ 5 → pass | B | open, sign-off pending |
+| CALC-P1 | Years profitable | Net income 100, 115, 105, 128, 140: all > 0 | 5 of 5 (at least 4) → pass | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
+| CALC-P2 | Earnings grew | 140 > 100 and 140 > 0 | pass | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
+| CALC-P3 | Growth accelerating | 140 ÷ 128 − 1 = 9.375%; (140 ÷ 100)^(1/4) − 1 = 8.776% | 9.375% > 8.776% → pass | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
+| CALC-P4 | ROE vs industry | 140 ÷ ((750 + 820) ÷ 2) = 140 ÷ 785 | 17.83% > 15% → pass | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
+| CALC-P5 | Margin vs industry | 208 ÷ 1,300 | 16.00% < 18% → fail | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
+| CALC-P6 | Return on capital improved | 208 ÷ (1,750 − 360) = 208 ÷ 1,390; FY-3: 170 ÷ (1,480 − 310) = 170 ÷ 1,170 | 14.96% > 14.53% → pass | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
+| CALC-H1 | Short-term cover | 540 > 360 | pass | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
+| CALC-H2 | Long-term cover | 540 against 930 − 360 = 570 | fail | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
+| CALC-H3 | Moderate debt | (450 − 120) ÷ 820 = 330 ÷ 820 | 40.24% ≥ 40% → fail | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
+| CALC-H4 | Debt falling | 450 ÷ 820 = 54.88% against 400 ÷ 600 = 66.67% | pass | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
+| CALC-H5 | Debt covered by cash flow | 215 ÷ 450 | 47.78% ≥ 20% → pass | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
+| CALC-H6 | Interest covered | 208 ÷ 26 | 8.0 ≥ 5 → pass | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
 | CALC-D1 | Pays a dividend | 56 > 0 | pass | C | passing (test: test_appendix_a_synthetic_company[D1]); signed off by C on PR #5 |
 | CALC-D2 | Yield above market | 56 ÷ (30.00 × 100) = 56 ÷ 3,000 | 1.867% > 1.5% → pass | C | signed off by C on PR #5; open: D2 is "not assessed" until S9 adds the share price and the market yield (test: test_appendix_a_d2_is_not_assessed_without_share_price_and_benchmark) |
 | CALC-D3 | No large cut | Changes: +10%, +9.09%, −6.25% (48 to 45), +24.44% | largest fall −6.25% → pass | C | passing (test: test_appendix_a_synthetic_company[D3]); signed off by C on PR #5 |
