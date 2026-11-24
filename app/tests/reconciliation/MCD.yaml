@@ -1,0 +1,36 @@
+# McDonald's, read by hand from its 10-K for fiscal year 2025 (slice S15). Owner: D.
+# Format and rules: README.md in this folder. Never edit a figure to match the app: a mismatch is a bug.
+company: MCD
+read_by: Simon (D)
+date_read: 2026-11-23
+how_read: Read by hand from the printed pages of the 10-K below.
+accession: 0000063908-26-000035
+filed: 2026-02-24
+fiscal_year_end: 2025-12-31
+document: https://www.sec.gov/Archives/edgar/data/63908/000006390826000035/mcd-20251231.htm
+unit: USD millions
+figures:
+  revenue:
+    value: 26885
+    page: 40
+    line_in_filing: Total revenues
+  operating_income:
+    value: 12393
+    page: 40
+    line_in_filing: Operating income
+  net_income:
+    value: 8563
+    page: 40
+    line_in_filing: Net income
+  total_assets:
+    value: 59515
+    page: 41
+    line_in_filing: Total assets
+  operating_cash_flow:
+    value: 10551
+    page: 42
+    line_in_filing: Cash provided by operations
+  dividends_paid:
+    value: 5115  # shown in parentheses as a cash outflow; written as the positive amount paid
+    page: 42
+    line_in_filing: Common stock dividends

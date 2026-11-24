@@ -34,7 +34,7 @@ All metric cells come from the workbook's `Industry Averages` sheet.
 | `unlevered_beta` | [betas.xls](https://pages.stern.nyu.edu/~adamodar/pc/datasets/betas.xls) | Unlevered beta | Ordinary unlevered beta for cost of equity, not the cash-corrected column |
 | `roe` | [roe.xls](https://pages.stern.nyu.edu/~adamodar/pc/datasets/roe.xls) | ROE (unadjusted) | P4; stated net income/book equity, without capitalising R&D |
 | `operating_margin` | [margin.xls](https://pages.stern.nyu.edu/~adamodar/pc/datasets/margin.xls) | Pre-tax Unadjusted Operating Margin | P5; stated operating income/revenue before tax, including stock compensation |
-| `pe` | [pedata.xls](https://pages.stern.nyu.edu/~adamodar/pc/datasets/pedata.xls) | Current PE (D) | V3/V4; latest fiscal-year EPS, not forward earnings; proposed G change remains unresolved below |
+| `pe` | [pedata.xls](https://pages.stern.nyu.edu/~adamodar/pc/datasets/pedata.xls) | Current PE (D) | V3/V4; latest fiscal-year EPS, not forward earnings; column G checked and not used (see below) |
 | `pb` | [pbvdata.xls](https://pages.stern.nyu.edu/~adamodar/pc/datasets/pbvdata.xls) | PBV | V5; market equity/stated book equity |
 | `dividend_yield` | [divfund.xls](https://pages.stern.nyu.edu/~adamodar/pc/datasets/divfund.xls) | Dividend Yield | D2; dividends/market equity, not dividend payout/earnings |
 
@@ -97,29 +97,10 @@ instruction. An unknown metric raises `KeyError`. The loader has no network or `
 From `app/`, preview with `.venv/bin/python -c 'from src.benchmarks.loader import load_benchmarks; print(load_benchmarks("KO"))'`;
 run `.venv/bin/python -m pytest -q tests/unit/test_benchmarks_b.py` for loader checks.
 
-## Unresolved: aggregate P/E column G
+## P/E column: D kept, G checked (decided 24 November 2026)
 
-Flo proposes G for V3 and V4, accepting its unspecified earnings period with a disclosed
-limitation. This needs explicit team/SPEC adoption; publication retains D under the
-current SPEC and Igor's instruction. The original `pedata.xls`, rechecked on 23 November,
-defines it in `Variables & FAQ!B9:C9` as summed market equity / summed net income
-across all firms, including losses. Its checksum matches the CSV's cited workbook.
-These verified values are research only; the CSV, loader and settings still use D:
-
-| Industry/group | Cell | G value (multiple) |
-|---|---|---:|
-| Beverage (Soft) | G18 | 26.924737541014668 |
-| Computers/Peripherals | G29 | 36.18062098268398 |
-| Semiconductor | G86 | 77.4164147724544 |
-| Restaurant/Dining | G77 | 36.35796947677858 |
-| Retail (General) | G81 | 43.042549035410175 |
-| Total Market (without financials) | G104 | 38.629311655272794 |
-
-The FAQ specifies latest fiscal-year EPS for D (`B6`) and trailing-twelve-month EPS
-for E (`B7`), but not G's earnings period. The workbook has no formulas to trace it;
-the [public table](https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/pedata.html)
-also leaves it unspecified. The [general January methodology](https://pages.stern.nyu.edu/adamodar/New_Home_Page/datacurrent.html)
-says updates generally use recent trailing figures; applying that to G is an inference.
-Switch only after source clarification, or an explicit team/SPEC decision accepting the
-published aggregate benchmark with its period unspecified and disclosed. Do not label
-G as confirmed fiscal-year or trailing P/E. Igor owns the shared SPEC change.
+Flo proposed column G (aggregate P/E: summed market equity ÷ summed net income, `Variables & FAQ!B9:C9`).
+Greg checked G in the original `pedata.xls` on 23 November; the workbook does not state G's earnings period.
+Column D ("Current PE") was kept for V3 and V4 because its period is documented (`Variables & FAQ!B6`: latest
+fiscal-year EPS) and matches the company P/E, which uses the latest fiscal year's net income (SPEC §7 V4).
+Decided by Igor (A) with Greg (B) on 24 November 2026, PR #27.
