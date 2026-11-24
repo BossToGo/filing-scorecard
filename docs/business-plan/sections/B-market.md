@@ -17,7 +17,7 @@ year and unit, and never says "buy" or "sell" (SPEC §3).
 research is offered on InvestoPro, the trading platform launched by MarketWall and Intesa Sanpaolo (section C).
 Whether a bank will pay for this particular feature is untested (section C).
 
-**Out of scope.** The product covers no banks, insurers or property companies (SPEC §2).
+**Out of scope.** The product covers no banks, insurers or real estate investment trusts (SPEC §2).
 
 ### How big the market is
 
