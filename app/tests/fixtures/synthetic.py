@@ -140,8 +140,17 @@ def expected_scores() -> dict:
 
 
 def expected_statements() -> dict:
-    """Which strengths and points to watch are shown (SPEC §9, Appendix A), once owner B has signed off."""
+    """Which strengths and points to watch are shown (SPEC §9, Appendix A), once owner B has signed off these too.
+
+    B's sign-off of the P and H rows does not cover them: they have their own record, `B_statements`.
+    """
     _require_sign_off("B", "The expected strengths and points to watch")
+    if not _load()["sign_off"].get("B_statements"):
+        raise NotSignedOff(
+            "The expected strengths and points to watch (CALC-G) belong to member B, whose sign-off so far covers "
+            "the P and H rows only: B posts a recalculation of CALC-G as a review on the S0c pull request; A records "
+            "it under `sign_off: B_statements` in tests/fixtures/synthetic_co.yaml."
+        )
     return {key: dict(entry) for key, entry in _load()["expected_statements"].items()}
 
 
