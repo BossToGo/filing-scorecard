@@ -12,8 +12,10 @@ src.data.sec_client (SPEC §11; a layering test enforces it):
 The risk-free rate comes from here too (slice S2b; a problem with FRED never stops the app: FRED's five-year
 average, else the dated value saved in settings.yaml, see src/data/fred.py):
 
-    from src.data.company import risk_free_rate
+    from src.data.company import risk_free_rate, FRED_NOTICE
     rate = risk_free_rate(demo=True)           # a Fact: value 0.0412 means 4.12%
+
+FRED's terms require `FRED_NOTICE` on screen wherever the rate is shown.
 """
 
 from __future__ import annotations
@@ -23,6 +25,7 @@ from datetime import datetime
 from pathlib import Path
 
 from src.contracts import CompanyData
+from src.data.fred import NOTICE as FRED_NOTICE
 from src.data.fred import risk_free_rate
 from src.data.resolver import resolve
 from src.data.sec_client import (
@@ -36,7 +39,7 @@ from src.data.sec_client import (
     UnknownTicker,
 )
 
-__all__ = ["load_company", "risk_free_rate", "DEMO_TICKERS", "DEMO_DIR", "SecError", "SourceUnreachable", "SecRefused",
+__all__ = ["load_company", "risk_free_rate", "FRED_NOTICE", "DEMO_TICKERS", "DEMO_DIR", "SecError", "SourceUnreachable", "SecRefused",
            "MissingUserAgent", "UnknownTicker", "NotFound", "InvalidCik"]
 
 DEMO_DIR = Path(__file__).resolve().parents[2] / "evidence" / "demo"

@@ -415,3 +415,13 @@ def test_the_interface_gets_the_rate_from_the_company_module():
     from src.data.company import risk_free_rate
 
     assert risk_free_rate is fred.risk_free_rate
+
+
+def test_the_interface_gets_freds_notice_from_the_company_module():
+    # FRED's terms require the notice on screen; the interface may import only src.data.company (layering test).
+    from src.data import company
+
+    assert company.FRED_NOTICE == (
+        "This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis."
+    )
+    assert "FRED_NOTICE" in company.__all__
