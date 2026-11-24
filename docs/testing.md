@@ -9,6 +9,6 @@ Greg adopted Flo's four rule changes on 23 November:
 - H6: reported zero debt with missing interest passes; interest stays missing and no ratio is invented.
 Missing/assumed/derived zero debt cannot invoke H6's exception; known interest still uses coverage.
 Saved-demo regressions cover MCD P4/H3/H4 and AAPL's missing-interest H6.
-Tests failed before the fixes; final suite on main `b5520b6`: 819 passed; run `.venv/bin/python -m pytest -q` from `app/`.
+Tests failed before the fixes; final suite on main `b5520b6`: 823 passed; run `.venv/bin/python -m pytest -q` from `app/`.
 Personal calculations, source reading, Explain-backs and fixture-gated acceptance remain pending.
 Shared rule/status records, G methodology, formal approval and merge remain open; browser journey reported separately.
