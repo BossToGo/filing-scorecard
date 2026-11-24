@@ -178,3 +178,20 @@ def test_every_demo_has_all_six_metrics_and_no_analyst_forecast_column():
     with DATA.open(newline="", encoding="utf-8") as source:
         columns = {row["source_column"].lower() for row in csv.DictReader(source)}
     assert not any("forward" in column or "expected" in column or "peg" in column for column in columns)
+
+
+# --- Igor's review of #27 (24 November 2026) ----------------------------------------------------------------------
+
+def test_ratios_are_decimals_not_percent_numbers():
+    # A margin typed as 22.48 instead of 0.2248 would show as 2,248%. Ratios must lie between -1 and 1.
+    with DATA.open(encoding="utf-8", newline="") as f:
+        rows = [r for r in csv.DictReader(f) if r["metric"] in ("roe", "operating_margin", "dividend_yield")]
+    assert len(rows) == 3 * 5 + 3  # five industries and the market row, for each of the three ratios
+    for row in rows:
+        assert -1 <= float(row["value"]) <= 1, row
+
+
+def test_a_missing_industry_figure_is_explained_in_plain_words():
+    # The note reaches customers through the valuation engine ("industry beta: ...").
+    note = load_benchmarks("MSFT").fact("unlevered_beta").note
+    assert note == "No industry figure: industry benchmarks cover only the five demo companies."

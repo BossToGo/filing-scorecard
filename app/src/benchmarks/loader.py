@@ -63,14 +63,16 @@ class BenchmarkData:
         if metric not in SOURCE_COLUMNS:
             raise KeyError(f"Unknown benchmark metric {metric!r}")
         return next((f for f in self.industry_facts if f.metric == metric),
-                    _missing(metric, "Industry benchmark missing: no cited demo-company match or metric row."))
+                    _missing(metric, "No industry figure: industry benchmarks cover only the five demo companies."
+                             if self.industry is None else
+                             f"No industry figure: the {metric.replace('_', ' ')} of {self.industry} is not in the benchmark table."))
 
     def market_fact(self, metric: str) -> Fact:
         """Metric's specified market group; unknown companies retain market comparisons."""
         if metric not in SOURCE_COLUMNS:
             raise KeyError(f"Unknown benchmark metric {metric!r}")
         return next((f for f in self.market_facts if f.metric == metric),
-                    _missing(metric, "Whole US market benchmark missing: no Total Market metric row."))
+                    _missing(metric, f"No whole-US-market figure for {metric.replace('_', ' ')} in the benchmark table."))
 
 
 def _positive_integer(text: str) -> int:

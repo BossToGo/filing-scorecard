@@ -1,7 +1,7 @@
 # Industry and US-market benchmarks
 
-The app reads `app/data/benchmarks_us_2026.csv`: 36 selected cells covering six metrics
-for KO, AAPL, NVDA, MCD and AMZN, plus six market cells. It never downloads data or
+The app reads `app/data/benchmarks_us_2026.csv`: 36 cells in all, six metrics for the industries of
+KO, AAPL, NVDA, MCD and AMZN (30 cells) plus one whole-market cell per metric (6 cells). It never downloads data or
 opens Excel at runtime. Ratios are decimals, multiples are unscaled, and both use unit `pure`.
 
 ## Sources and CSV schema
@@ -41,10 +41,12 @@ All metric cells come from the workbook's `Industry Averages` sheet.
 **V4 uses `Total Market (without financials)`, `pedata.xls!D104`:**
 60.258294591721196, 4,822 firms. **D2 uses `Total Market`, `divfund.xls!F103`:**
 0.011040267773068387, 5,994 firms, including non-payers. The other market metrics
-also use `Total Market`; market group selection is metric-specific.
+also use `Total Market`; market group selection is metric-specific. Only the market P/E (V4) and the
+market dividend yield (D2) are used by a check (SPEC §9.1). The market beta, ROE, operating margin and P/B rows
+are kept for reference only: **they are not a fallback** for a missing industry figure (SPEC §8.6).
 
 Current PE is an equal-weight average over profitable firms; industry ROE and margins
-use aggregate amounts. Company P4 uses average opening/closing equity, so its comparison
+are used as published by Damodaran. Company P4 uses average opening/closing equity, so its comparison
 with the source's book-equity definition is approximate. Retain source definitions and
 dates in the display. **ROE limitation:** Computers/Peripherals is about **−0.17%**
 (`roe.xls`, row 29; decimal −0.0017413160406024974), and Restaurant/Dining is about
