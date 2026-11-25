@@ -40,6 +40,8 @@ SYNTHETIC = "SYNTHETIC DATA"
 MARK_CLASSES = {"pass": "pass", "fail": "fail", "insufficient_data": "wait", "not_applicable": "none"}
 MARK_WORDS = {"pass": "Passed", "fail": "Failed", "insufficient_data": "Not assessed",
               "not_applicable": "Does not apply"}
+# Words in a check's explanation that already say the result word (Igor's review of #54, point 3: C's "Not applicable")
+SAME_AS = {"Does not apply": ("not applicable",)}
 _SVG = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="{}"/></svg>'
 GLYPHS = {"pass": _SVG.format("M2.5 6.3 5 8.6 9.5 3.6"), "fail": _SVG.format("M3.2 3.2l5.6 5.6M8.8 3.2 3.2 8.8"),
           "not_applicable": _SVG.format("M3.5 6h5")}
@@ -161,7 +163,8 @@ def _word_before(word: str, explanation: str) -> str:
     """"Not assessed. " before the explanation, or "" when its first clause already says the word (Simon, 25 November
     2026: not "Not assessed. This check is not assessed yet: ..."); used by the row and the mark alike."""
     first_clause = re.split(r"[:.]", explanation, maxsplit=1)[0].lower()
-    return "" if word.lower() in first_clause else f"{word}. "
+    said = (word.lower(), *SAME_AS.get(word, ()))
+    return "" if any(words in first_clause for words in said) else f"{word}. "
 
 
 def _block(status: str | None, title: str = "") -> str:

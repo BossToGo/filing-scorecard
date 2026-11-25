@@ -337,10 +337,25 @@ def test_does_not_apply_shows_the_check_s_own_explanation_unchanged():
 
     Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
     check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
-    changed."""
+    changed.
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026, Igor's review of #54 point 3): "Not
+    applicable" already says "Does not apply", so the row no longer shows both labels; Flo's text stays unchanged.
+    A does-not-apply explanation that does not say it still gets the word."""
     assert closed_row("D2", "not_applicable", None, None, (), "Not applicable: no dividend paid (D1).") == (
-        f":gray[:material/indeterminate_check_box:] **{name_of('D2')}.** :gray[Does not apply. Not applicable: no dividend paid "
-        "(D1).]")
+        f":gray[:material/indeterminate_check_box:] **{name_of('D2')}.** :gray[Not applicable: no dividend paid (D1).]")
+    assert closed_row("D2", "not_applicable", None, None, (), "No dividend was paid.") == (
+        f":gray[:material/indeterminate_check_box:] **{name_of('D2')}.** :gray[Does not apply. No dividend was paid.]")
+
+
+def test_amazon_dividend_rows_show_one_label():
+    """Igor's review of #54, point 3: Amazon's D2 to D6 read "Does not apply. Not applicable: ...", two labels for one
+    state; on the marks' hover text too."""
+    pytest.importorskip("src.checks.dividend", reason="needs C's dividend module (merged in #23)")
+    app = show("AMZN")
+    rows = [e.label for e in app.expander if "Not applicable" in e.label]
+    assert len(rows) == 5 and not any("Does not apply" in label for label in rows)
+    assert "Does not apply. Not applicable" not in chart(app)
 
 
 def test_an_open_check_shows_its_figures_with_units_and_fiscal_year_ac4():
