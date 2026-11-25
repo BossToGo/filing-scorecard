@@ -197,6 +197,16 @@ def test_amazon_d1_says_no_dividend_paid_never_usd_0_m():
     assert d1.startswith(f"{FAILED_ICON} **D1.** Failed. No dividend paid in the fiscal year ended 31 December 2025")
 
 
+def test_amazon_d1_shows_its_explanation_once_in_the_row():
+    """Simon, 25 November 2026: a passed or failed check whose row already shows its explanation (an assumed figure)
+    does not repeat it under "How it is calculated" in the open detail (Igor's review of #35: once)."""
+    pytest.importorskip("src.checks.dividend", reason="needs C's dividend module (merged in #23)")
+    d1 = next(e for e in show("AMZN").expander if "**D1.**" in e.label)
+    shown = [d1.label, *(m.value for m in d1.markdown)]
+    assert sum("No dividend paid in the fiscal year ended 31 December 2025" in line for line in shown) == 1
+    assert not any(m.value.startswith("**How it is calculated:**") for m in d1.markdown)
+
+
 def test_the_word_is_not_repeated_when_the_explanation_already_says_it():
     """Simon's look of 25 November 2026: not "Not assessed. This check is not assessed yet: ...". The word is left out
     when the explanation's first clause already contains it."""

@@ -233,7 +233,10 @@ def render_check(data: CompanyData, result: CheckResult, texts: Mapping) -> None
     result and the figures, "Passed. USD 31,044 m against USD 21,281 m."; not assessed or does not apply: the word
     and the check's own explanation, unchanged."""
     word = MARK_WORDS[result.status]
-    if result.status in ("pass", "fail") and any(f.kind == "assumption" for f in result.inputs):
+    # The row shows the explanation when the check is not assessed, does not apply, or uses an assumed figure; the
+    # open detail then does not repeat it (Igor's review of #35: once; Simon, 25 November 2026)
+    in_row = result.status not in ("pass", "fail") or any(f.kind == "assumption" for f in result.inputs)
+    if result.status in ("pass", "fail") and in_row:
         # A figure is an assumption (e.g. dividends treated as nil): the check's own words, never "USD 0 m" (Flo's
         # rule, plan Q1; Simon's look of 25 November 2026)
         sentence = f"{word}. {result.explanation.translate(_MARKDOWN)}"
@@ -247,12 +250,9 @@ def render_check(data: CompanyData, result: CheckResult, texts: Mapping) -> None
         sentence = f":gray[{said}{result.explanation.translate(_MARKDOWN)}]"
     with st.expander(f"{ICONS[result.status]} **{_plain_name(result.check_id, texts)}.** {sentence}"):
         rule = texts.get(result.check_id, {}).get("rule")
-        # Not assessed or does not apply: its explanation is the reason, shown once, in the closed row (Igor's review
-        # of #35; Simon, 25 November 2026)
-        not_assessed = result.status in ("insufficient_data", "not_applicable")
         if rule:
             st.markdown(f"**Rule:** {rule}")
-        if not not_assessed:
+        if not in_row:
             st.markdown(f"**How it is calculated:** {result.explanation}")
         if result.value is not None or result.threshold is not None:
             shown, against = check_value(result.check_id, result.value, result.threshold)
