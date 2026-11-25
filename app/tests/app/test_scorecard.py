@@ -211,8 +211,23 @@ def test_synthetic_data_mark_v3():
     assert "SYNTHETIC DATA" in "\n".join(w.value for w in run_synthetic().warning)
 
 
-FAILED_ICON = ":material/disabled_by_default:"
-WAIT_ICON = ":gray[:material/check_box_outline_blank:]"
+# Test change (rule 14.6, Simon's written agreement of 25 November 2026, Igor's review of #54 point 4): the row icons
+# have no box, so they no longer look like form checkboxes; same colours as before. Tests that look for the icon text
+# in a row look for these names (were check_box, disabled_by_default, check_box_outline_blank, indeterminate_check_box).
+FAILED_ICON = ":material/close:"
+WAIT_ICON = ":gray[:material/more_horiz:]"
+NONE_ICON = ":gray[:material/remove:]"
+
+
+def test_the_row_icons_have_no_box():
+    """Igor's review of #54, point 4, with Simon's choice of 25 November 2026: Material icons without a box, so a
+    not-assessed check does not look like a box to tick. Drawn marks were not used: an expander label takes no HTML,
+    and styling it from Streamlit's internal class names is too fragile the day before the freeze."""
+    from ui.scorecard import ICONS
+
+    assert ICONS == {"pass": ":primary[:material/check:]", "fail": FAILED_ICON, "insufficient_data": WAIT_ICON,
+                     "not_applicable": NONE_ICON}
+    assert not any("box" in icon for icon in ICONS.values())
 
 
 def test_a_closed_check_row_shows_mark_result_and_check_ac4():
@@ -343,9 +358,9 @@ def test_does_not_apply_shows_the_check_s_own_explanation_unchanged():
     applicable" already says "Does not apply", so the row no longer shows both labels; Flo's text stays unchanged.
     A does-not-apply explanation that does not say it still gets the word."""
     assert closed_row("D2", "not_applicable", None, None, (), "Not applicable: no dividend paid (D1).") == (
-        f":gray[:material/indeterminate_check_box:] **{name_of('D2')}.** :gray[Not applicable: no dividend paid (D1).]")
+        f"{NONE_ICON} **{name_of('D2')}.** :gray[Not applicable: no dividend paid (D1).]")
     assert closed_row("D2", "not_applicable", None, None, (), "No dividend was paid.") == (
-        f":gray[:material/indeterminate_check_box:] **{name_of('D2')}.** :gray[Does not apply. No dividend was paid.]")
+        f"{NONE_ICON} **{name_of('D2')}.** :gray[Does not apply. No dividend was paid.]")
 
 
 def test_amazon_dividend_rows_show_one_label():

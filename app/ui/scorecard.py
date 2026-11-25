@@ -45,10 +45,10 @@ SAME_AS = {"Does not apply": ("not applicable",)}
 _SVG = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="{}"/></svg>'
 GLYPHS = {"pass": _SVG.format("M2.5 6.3 5 8.6 9.5 3.6"), "fail": _SVG.format("M3.2 3.2l5.6 5.6M8.8 3.2 3.2 8.8"),
           "not_applicable": _SVG.format("M3.5 6h5")}
-# Icon of each result in a check row (design spec §4): shape and word, never colour alone (issue #32 point 11).
-ICONS = {"pass": ":primary[:material/check_box:]", "fail": ":material/disabled_by_default:",
-         "insufficient_data": ":gray[:material/check_box_outline_blank:]",
-         "not_applicable": ":gray[:material/indeterminate_check_box:]"}
+# Icon of each result in a check row (design spec §4): shape and word, never colour alone (issue #32 point 11). No
+# box, so a row does not look like a form checkbox (Igor's review of #54, point 4; icons chosen by Simon).
+ICONS = {"pass": ":primary[:material/check:]", "fail": ":material/close:",
+         "insufficient_data": ":gray[:material/more_horiz:]", "not_applicable": ":gray[:material/remove:]"}
 _MARKDOWN = str.maketrans({c: "\\" + c for c in "\\*_[]$`~"})  # a check's text shown as written, not as markdown
 
 
