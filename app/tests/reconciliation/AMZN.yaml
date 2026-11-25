@@ -1,0 +1,39 @@
+# Amazon, read by hand from its 10-K for fiscal year 2025 (slice S15). Owner: E.
+# Format and rules: README.md in this folder. Never edit a figure to match the app: a mismatch is a bug.
+company: AMZN
+read_by: Emma (E)
+date_read: 2026-11-21
+how_read: >-
+  Read by hand by Emma on the printed pages of the 10-K; afterwards checked against the PDF with an AI assistant
+  (Claude), no difference. Line names pre-filled by Claude from the PDF and confirmed by Emma on the page.
+accession: 0001018724-26-000004
+filed: 2026-02-06
+fiscal_year_end: 2025-12-31
+document: https://www.sec.gov/Archives/edgar/data/1018724/000101872426000004/amzn-20251231.htm
+unit: USD millions
+figures:
+  revenue:
+    value: 716924
+    page: 37
+    line_in_filing: Total net sales
+  operating_income:
+    value: 79975
+    page: 37
+    line_in_filing: Operating income
+  net_income:
+    value: 77670
+    page: 37
+    line_in_filing: Net income
+  total_assets:
+    value: 818042
+    page: 39
+    line_in_filing: Total assets
+  operating_cash_flow:
+    value: 139514
+    page: 36
+    line_in_filing: Net cash provided by (used in) operating activities
+  dividends_paid:
+    value: null
+    page: 36
+    line_in_filing: none
+    note: No dividends line in the financing activities of the cash flow statement.
