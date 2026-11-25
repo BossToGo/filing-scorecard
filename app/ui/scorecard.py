@@ -111,14 +111,15 @@ def _style() -> str:
 .fs-bar {{display:inline-flex; gap:4px}}
 .fs-mk {{width:20px; height:20px; border-radius:4px; box-sizing:border-box; display:inline-grid; place-items:center}}
 .fs-mk svg {{width:12px; height:12px; fill:none; stroke:var(--fs-page); stroke-width:2.5; stroke-linecap:round}}
-.fs-pass {{background:var(--fs-accent)}}  .fs-fail {{background:currentColor}}
+.fs-pass {{background:var(--fs-accent)}}  .fs-fail {{background:var(--fs-text)}}
 .fs-wait {{border:1.5px dashed var(--fs-muted)}}  .fs-none {{border:1px solid var(--fs-line)}}  .fs-none svg {{stroke:var(--fs-muted)}}
 .stMarkdown table.fs-kv {{width:100%; border-collapse:collapse}}
 .stMarkdown table.fs-kv td {{padding:8px 0; border:0; border-bottom:1px solid var(--fs-line)}}
 .stMarkdown table.fs-kv td:last-child {{text-align:right}}
 /* Until item 5: the old six-block bar, in the new colours */
 .fs-area {{width:9.5rem; font-weight:600}}  .fs-blocks {{display:flex; gap:4px}}
-.fs-block {{min-width:6.2rem; height:32px; padding:0 8px; border-radius:4px; font-size:12px; white-space:nowrap;
+.fs-block {{min-width:6.2rem; min-height:40px; padding:4px 8px; border-radius:4px; font-size:12px; line-height:16px;
+  white-space:nowrap; text-align:center; flex-direction:column;
   display:flex; align-items:center; justify-content:center; box-sizing:border-box}}
 .fs-block.fs-pass {{color:var(--fs-page)}}  .fs-block.fs-fail {{color:var(--fs-page)}}
 .fs-insufficient_data, .fs-empty {{border:1.5px dashed var(--fs-muted)}}  .fs-not_applicable {{border:1px solid var(--fs-line)}}

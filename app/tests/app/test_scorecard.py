@@ -178,6 +178,25 @@ def test_a_check_names_its_filing_number_with_dashes_as_on_the_sources_page():
     assert shown and all(re.fullmatch(r"\d{10}-\d{2}-\d{6}", a) and a in accessions for a in shown)
 
 
+def test_a_failed_block_is_filled_in_the_text_colour_of_both_themes():
+    """SPEC §3: a failed block is filled in a second colour, with a cross. Simon's look of 25 November: the fill was
+    `currentColor`, which is the page colour inside a block whose text has the page colour, so D6 disappeared."""
+    import re
+    import tomllib
+
+    from ui.scorecard import _style
+
+    theme = tomllib.loads((Path(MAIN).parent / ".streamlit" / "config.toml").read_text(encoding="utf-8"))["theme"]
+    css = _style()
+    fills = re.findall(r"\.fs-fail \{\{?background:([^;}]+)", css)
+    assert fills == ["var(--fs-text)"]  # one fill, named, never currentColor
+    assert f"--fs-text:light-dark({theme['textColor']}, {theme['dark']['textColor']})" in css
+
+    chart = next(m.value for m in show("KO").markdown if "fs-row" in m.value)
+    d6 = re.search(r'<div class="([^"]*)" title="D6[^"]*">([^<]*)', chart)
+    assert "fs-fail" in d6.group(1).split() and "✕" in d6.group(2)
+
+
 def test_a_typed_price_is_repeated_next_to_valuation():
     assert "At the price you typed: USD 182.50" in texts(show("KO", "182,50"))
 
