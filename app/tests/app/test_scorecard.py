@@ -151,6 +151,27 @@ def test_the_failed_list_stays_in_its_column_and_long_names_wrap():
     assert re.search(r"ul\.fs-failed \{[^}]*max-width:100%", css)
 
 
+def test_area_rows_grow_and_the_note_drops_below_the_score():
+    """Igor's review of #54, point 1: at 1024 px, 1280x720 and 125% zoom "4 passed of 4 assessed" and "1 not assessed
+    yet" wrapped inside fixed 40 px rows and spilled over the lines. Rows now have a minimum height, the score and its
+    note sit in one wrapping box (the note drops below), and the failed list's rows have the same minimum height and
+    padding, so both columns line up when nothing wraps."""
+    import re
+
+    from ui.scorecard import _style
+
+    css = _style()
+    area_row = re.search(r"\.fs-row \{([^}]*)\}", css).group(1)
+    failed_row = re.search(r"ul\.fs-failed li \{([^}]*)\}", css).group(1)
+    for rule in (area_row, failed_row):
+        assert "min-height:40px" in rule and not re.search(r"(?<!-)height:40px", rule)
+        assert "box-sizing:border-box" in rule and "padding:6px 0" in rule
+    assert "flex-wrap:wrap" in re.search(r"\.fs-label \{([^}]*)\}", css).group(1)
+    past = row(run_synthetic(), "Past performance")
+    assert re.search(r'<span class="fs-label"><span class="fs-score">[^<]*</span><span class="fs-sub">[^<]*</span>'
+                     r'</span></div>$', past)
+
+
 def test_a_mark_s_hover_text_does_not_repeat_the_word():
     """Simon, 25 November 2026: same rule as the row. Not "Not assessed. This check is not assessed yet: ..." on D2's
     mark; the word stays when the explanation does not say it (P4)."""

@@ -130,7 +130,9 @@ def _style() -> str:
 .fs-price {{text-align:right; font-size:14px}}  .fs-price strong {{font-size:16px}}
 h1:has(.fs-ticker) [data-testid="stHeaderActionElements"] {{display:none}}
 .fs-muted {{color:var(--fs-muted)}}  .fs-ticker {{font-size:16px; font-weight:400; color:var(--fs-muted); margin-left:8px}}
-.fs-row {{display:flex; align-items:center; gap:16px; height:40px; border-bottom:1px solid var(--fs-line)}}
+.fs-row {{display:flex; align-items:center; gap:16px; min-height:40px; box-sizing:border-box; padding:6px 0;
+  border-bottom:1px solid var(--fs-line)}}
+.fs-label {{display:flex; flex-wrap:wrap; align-items:baseline; column-gap:16px; flex:1; min-width:0; line-height:20px}}
 .fs-bar {{display:inline-flex; gap:4px}}
 .fs-mk {{width:20px; height:20px; border-radius:4px; box-sizing:border-box; display:inline-grid; place-items:center}}
 .fs-mk svg {{width:12px; height:12px; fill:none; stroke:var(--fs-page); stroke-width:2.5; stroke-linecap:round}}
@@ -147,7 +149,7 @@ h1:has(.fs-ticker) [data-testid="stHeaderActionElements"] {{display:none}}
 .fs-key {{display:inline-flex; align-items:center; gap:8px}}
 ul.fs-failed {{list-style:none; margin:0; padding:0; max-width:100%}}
 ul.fs-failed li {{display:grid; grid-template-columns:20px minmax(0, 1fr) auto; align-items:center; column-gap:12px;
-  min-height:40px; box-sizing:border-box; padding:6px 0; margin:0; line-height:20px; overflow-wrap:anywhere;
+  min-height:40px; box-sizing:border-box; padding:6px 0; margin:0; line-height:20px; overflow-wrap:anywhere;  /* as .fs-row */
   border-bottom:1px solid var(--fs-line)}}
 ul.fs-failed li:not(:has(.fs-mk)) {{display:block; padding-top:10px}}
 ul.fs-failed li.fs-hd {{border-top:1px solid var(--fs-line); font-weight:600}}
@@ -219,8 +221,8 @@ def render_score_chart(results: Mapping[str, Sequence[CheckResult] | None]) -> N
         aria = html.escape(f"{AREA_TITLES[area]}: {said[:1].lower()}{said[1:]}", quote=True)
         rows.append(f'<div class="fs-row"><span class="fs-area">{AREA_TITLES[area]}</span>'
                     f'<span class="fs-bar" role="img" aria-label="{aria}">{marks}</span>'
-                    f'<span class="fs-score">{html.escape(score)}</span><span class="fs-sub">{html.escape(sub)}</span>'
-                    f'</div>')
+                    f'<span class="fs-label"><span class="fs-score">{html.escape(score)}</span>'
+                    f'<span class="fs-sub">{html.escape(sub)}</span></span></div>')
     chart, failed = st.columns([2, 1], gap="large")
     chart.markdown(_style() + "".join(rows) + _legend(), unsafe_allow_html=True)
     failed.markdown(_failed_list(results, texts), unsafe_allow_html=True)
