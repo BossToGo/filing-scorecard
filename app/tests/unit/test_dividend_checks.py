@@ -449,12 +449,12 @@ def d2(dividends_fy0: float, *, price=20.0, shares=100, market_yield=MARKET_YIEL
                                                    market_dividend_yield=market_yield)}["D2"]
 
 
-def test_e9_yield_equal_to_the_market_yield_fails():
+def test_s9_e9_yield_equal_to_the_market_yield_fails():
     result = d2(30)  # 30 ÷ (20.00 × 100) = 1.50%, against 1.50%
     assert (result.status, result.value, result.threshold) == ("fail", pytest.approx(0.015), 0.015)
 
 
-def test_e10_yield_below_the_market_yield_fails():
+def test_s9_e10_yield_below_the_market_yield_fails():
     result = d2(20)  # 20 ÷ (20.00 × 100) = 1.00%, against 1.50%
     assert (result.status, result.value, result.threshold) == ("fail", pytest.approx(0.010), 0.015)
 
@@ -515,7 +515,7 @@ def test_r_d2_yields_that_round_to_the_same_number_are_shown_with_more_decimals(
     result = d2(29.998)
     assert result.status == "fail"
     assert "1.4999%" in result.explanation and "1.5000%" in result.explanation
-    e9 = d2(30).explanation  # exactly equal (E9): two decimals
+    e9 = d2(30).explanation  # exactly equal (S9-E9): two decimals
     assert "Dividend yield 1.50% " in e9 and "against 1.50% for the US market" in e9
 
 
@@ -532,10 +532,10 @@ def test_appendix_a_dividend_area_score_with_d2():
     assert (score.passed, score.assessed) == (synthetic.expected_scores()["dividend"], 6)
 
 
-# --- Review round 2 (Flo: option A, 25 November): a yield equal to the market's by hand fails (as E9) ---------------
-# Flo's hand working: 30,150 ÷ (2.01 × 1,000,000) = 30,150 ÷ 2,010,000 = 0.015, exactly 1.5% (row T2).
+# --- Review round 2 (Flo: option A, 25 November): a yield equal to the market's by hand fails (as S9-E9) ---------------
+# Flo's hand working: 30,150 ÷ (2.01 × 1,000,000) = 30,150 ÷ 2,010,000 = 0.015, exactly 1.5% (row S9-T2).
 
-def test_t2_a_yield_equal_to_the_market_yield_by_hand_fails():
+def test_s9_t2_a_yield_equal_to_the_market_yield_by_hand_fails():
     result = d2(0.03015, price=2.01, shares=1)
     assert result.status == "fail"
     assert "Dividend yield 1.50% " in result.explanation and "against 1.50% for the US market" in result.explanation
@@ -544,3 +544,22 @@ def test_t2_a_yield_equal_to_the_market_yield_by_hand_fails():
 def test_t_d2_differences_of_one_part_in_a_trillion_are_ties_and_one_in_a_million_counts():
     assert d2(30 * (1 + 1e-12)).status == "fail"
     assert d2(30 * (1 + 1e-6)).status == "pass"
+
+
+# --- Igor's review of #52 (25 November; Flo: option (a), "yes, (a) and plan") ---------------------------------------
+
+def test_igor_2_without_the_price_and_market_yield_d2_is_not_assessed_yet():
+    # Until S10b the screen calls dividend_checks(data, settings): the old wording, "not assessed yet" (Flo's (a)).
+    result = d2(30, price=None, market_yield=None)
+    assert result.explanation == ("This check is not assessed yet: it needs the share price and the US market "
+                                  "dividend yield.")
+    assert "not assessed yet" in d2(30, price=None).explanation
+
+
+def test_igor_1_a_yield_that_is_not_a_tie_never_prints_like_the_market_yield():
+    # 1.5% × (1 + 5 billionths) against 1.5%: not a tie under option A, but equal to six decimals.
+    import re
+
+    text = d2(30 * (1 + 5e-9)).explanation
+    shown, market = re.search(r"Dividend yield (\S+) .* against (\S+) for", text).groups()
+    assert shown != market, text

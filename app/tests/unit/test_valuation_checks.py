@@ -11,6 +11,9 @@ Never from running `src/checks/valuation.py` or `src/valuation/equity_method.py`
 
 from __future__ import annotations
 
+import dataclasses
+import math
+import re
 from datetime import date
 
 import pytest
@@ -82,8 +85,9 @@ def test_appendix_a_valuation_area_score():
 
 
 def test_appendix_a_gap_to_the_estimate_for_g7_and_w8():
-    # Flo's Excel model (25 November 2026): (30.00 − unrounded estimate) ÷ unrounded estimate = 49.0% above (one
-    # decimal, as SPEC Appendix A shows it for W8). docs/acceptance.md, S9 edge cases, row E-W8.
+    # Flo's value (25 November 2026), his hand working in docs/acceptance.md row S9-W8 (the unrounded estimate from his
+    # Excel model, Valuation!G17): (30.00 − unrounded estimate) ÷ unrounded estimate = 49.0% above (one
+    # decimal, as SPEC Appendix A shows it for W8). docs/acceptance.md, S9 edge cases, row S9-W8.
     data = synthetic.company_data()
     v = value_company(data, SETTINGS, share_price=PRICE, risk_free_rate=RISK_FREE, unlevered_beta=BETA)
     assert estimate_gap(PRICE, v.fair_value.value) * 100 == pytest.approx(49.0, abs=0.05)
@@ -122,7 +126,7 @@ def figure(metric: str, millions: float | None, unit: str = "USD") -> Fact:
 
 
 def company(*, net_income: float | None = 100, equity: float | None = 500, shares: float | None = 100) -> CompanyData:
-    """A test company for V3–V5 (E5, E7): FY0 net income and equity in USD millions, shares in millions."""
+    """A test company for V3–V5 (S9-E5, S9-E7): FY0 net income and equity in USD millions, shares in millions."""
     items = {"revenue": {YEAR_END: figure("revenue", 1000)},
              "net_income": {YEAR_END: figure("net_income", net_income)},
              "equity": {YEAR_END: figure("equity", equity)}}
@@ -149,14 +153,14 @@ def outcome(result) -> tuple:
     return result.status, result.value, result.threshold
 
 
-# E1–E4: the price against the estimate (V1, V2, V6) and the gap for G7 and W8
+# S9-E1 to S9-E4: the price against the estimate (V1, V2, V6) and the gap for G7 and W8
 
-def test_e1_gap_below_the_estimate():
+def test_s9_e1_gap_below_the_estimate():
     assert estimate_gap(15.0, 20.0) == pytest.approx(-0.25)
     assert "25.0% below the estimate" in checks(estimate(20.0), price=15.0)["V1"].explanation
 
 
-def test_e2_price_equal_to_the_estimate_and_to_the_estimate_at_the_cap():
+def test_s9_e2_price_equal_to_the_estimate_and_to_the_estimate_at_the_cap():
     r = checks(estimate(20.0, 20.0, g1=CAP), price=20.0)
     assert outcome(r["V1"]) == ("fail", 20.0, 20.0)
     assert (r["V2"].status, r["V2"].value) == ("fail", 20.0) and r["V2"].threshold == pytest.approx(16.0)
@@ -165,13 +169,13 @@ def test_e2_price_equal_to_the_estimate_and_to_the_estimate_at_the_cap():
     assert "% above" not in r["V1"].explanation and "% below" not in r["V1"].explanation
 
 
-def test_e3_price_exactly_at_80_percent_of_the_estimate():
+def test_s9_e3_price_exactly_at_80_percent_of_the_estimate():
     r = checks(estimate(20.0), price=16.0)
     assert outcome(r["V1"]) == ("pass", 16.0, 20.0)
     assert (r["V2"].status, r["V2"].value) == ("pass", 16.0) and r["V2"].threshold == pytest.approx(16.0)
 
 
-def test_e4_price_equal_to_the_estimate_at_the_cap():
+def test_s9_e4_price_equal_to_the_estimate_at_the_cap():
     assert outcome(checks(estimate(20.0, 25.0), price=25.0)["V6"]) == ("pass", 25.0, 25.0)
 
 
@@ -182,16 +186,16 @@ def test_v6_says_when_starting_growth_is_already_at_the_cap():
     assert line not in checks(estimate(20.0, 25.0, g1=0.05), price=15.0)["V6"].explanation
 
 
-# E5–E8: price to earnings and price to book (V3, V4, V5)
+# S9-E5 to S9-E8: price to earnings and price to book (V3, V4, V5)
 
-def test_e5_price_to_earnings_equal_to_both_benchmarks_fails():
+def test_s9_e5_price_to_earnings_equal_to_both_benchmarks_fails():
     r = checks(price=20.0)
     assert outcome(r["V3"]) == ("fail", pytest.approx(20.0), 20.0)
     assert outcome(r["V4"]) == ("fail", pytest.approx(20.0), 20.0)
 
 
 @pytest.mark.parametrize("earnings, words", [(0, "zero"), (-50, "loss")])
-def test_e6_no_earnings_fails_v3_and_v4_without_a_ratio(earnings, words):
+def test_s9_e6_no_earnings_fails_v3_and_v4_without_a_ratio(earnings, words):
     r = checks(data=company(net_income=earnings))
     for check_id in ("V3", "V4"):
         assert (r[check_id].status, r[check_id].value, r[check_id].threshold) == ("fail", None, None)
@@ -199,18 +203,18 @@ def test_e6_no_earnings_fails_v3_and_v4_without_a_ratio(earnings, words):
         assert "pe" not in [f.metric for f in r[check_id].inputs]  # decision c: the benchmark was not used
 
 
-def test_e6_no_earnings_fails_even_without_benchmarks():
+def test_s9_e6_no_earnings_fails_even_without_benchmarks():
     # Decision c (Flo): net income ≤ 0 fails before a missing benchmark is looked at.
     r = checks(data=company(net_income=-50), industry_pe=None, market_pe=None)
     assert (r["V3"].status, r["V4"].status) == ("fail", "fail")
 
 
-def test_e7_price_to_book_equal_to_the_benchmark_fails():
+def test_s9_e7_price_to_book_equal_to_the_benchmark_fails():
     assert outcome(checks()["V5"]) == ("fail", pytest.approx(4.0), 4.0)
 
 
 @pytest.mark.parametrize("book, words", [(0, "equity is zero"), (-1791, "negative equity")])
-def test_e8_zero_or_negative_equity_fails_v5_without_a_ratio(book, words):
+def test_s9_e8_zero_or_negative_equity_fails_v5_without_a_ratio(book, words):
     for pb in (4.0, None):  # also without the benchmark (decision c)
         v5 = checks(data=company(equity=book), industry_pb=pb)["V5"]
         assert (v5.status, v5.value, v5.threshold) == ("fail", None, None)
@@ -242,7 +246,7 @@ def test_v1_v2_v6_take_the_engines_status_and_reason(status):
     r = checks(Valuation(status, reason, ()))
     for check_id in ("V1", "V2", "V6"):
         assert (r[check_id].status, r[check_id].value, r[check_id].explanation) == (status, None, reason)
-    assert [r[c].status for c in ("V3", "V4", "V5")] == ["fail", "fail", "fail"]  # E5 and E7, still assessed
+    assert [r[c].status for c in ("V3", "V4", "V5")] == ["fail", "fail", "fail"]  # S9-E5 and S9-E7, still assessed
 
 
 # Missing figures and benchmarks: "insufficient data", naming them
@@ -280,7 +284,7 @@ def test_price_to_earnings_and_to_book_double_when_the_share_count_doubles():
 
 
 # --- Review of 25 November (code and test reviewers; Flo: "yes, as recommended") -------------------------------------
-# Expected results are the rules themselves (a bad input gives "insufficient data" naming it), except R9, Flo's
+# Expected results are the rules themselves (a bad input gives "insufficient data" naming it), except S9-R9, Flo's
 # confirmed hand working: 0.5 × 20.00 = 10.00; 12.00 > 10.00, so V2 fails.
 
 @pytest.mark.parametrize("price", [0.0, -5.0, float("nan"), float("inf")])
@@ -329,7 +333,7 @@ def test_r6_ratios_that_round_to_the_same_number_are_shown_with_more_decimals():
     assert "Price to earnings 19.999 " in v3.explanation and "against 20.000 for the industry" in v3.explanation
     v4 = checks(price=19.999)["V4"].explanation
     assert "Price to earnings 19.999 " in v4 and "against 20.000 for the US market" in v4
-    assert "Price to earnings 20.00 " in checks(price=20.0)["V3"].explanation  # exactly equal: two decimals (E5)
+    assert "Price to earnings 20.00 " in checks(price=20.0)["V3"].explanation  # exactly equal: two decimals (S9-E5)
 
 
 def test_r7_v2_and_v6_say_above_below_or_equal():
@@ -344,7 +348,7 @@ def test_r7_v2_and_v6_say_above_below_or_equal():
     assert "is equal to the estimate with starting growth at the 30% cap (USD 25.00)." in e4.explanation
 
 
-def test_r9_v2_reads_its_share_of_the_estimate_from_the_settings():
+def test_s9_r9_v2_reads_its_share_of_the_estimate_from_the_settings():
     half = {**SETTINGS, "valuation": {**SETTINGS["valuation"], "well_below_fair_value": 0.5}}
     v2 = checks(estimate(20.0), price=12.0, settings=half)["V2"]
     assert (v2.status, v2.value) == ("fail", 12.0) and v2.threshold == pytest.approx(10.0)
@@ -353,9 +357,9 @@ def test_r9_v2_reads_its_share_of_the_estimate_from_the_settings():
 # --- Review round 2 (Flo: option A, 25 November): values that differ only by computer rounding are equal ------------
 # A relative difference below one billionth counts as equal (as growth within 1e-10 of a limit is "at the limit" in
 # the engine): the strict checks (V1, V3, V4, V5) fail, the "at or below" checks (V2, V6) pass, both numbers are shown
-# with two decimals. Flo's hand working: 2.01 × 1,000,000 = 2,010,000; ÷ 100,000 = 20.1 exactly (row T1).
+# with two decimals. Flo's hand working: 2.01 × 1,000,000 = 2,010,000; ÷ 100,000 = 20.1 exactly (row S9-T1).
 
-def test_t1_a_price_to_earnings_equal_to_the_benchmark_by_hand_fails():
+def test_s9_t1_a_price_to_earnings_equal_to_the_benchmark_by_hand_fails():
     v3 = checks(data=company(net_income=0.1, shares=1), price=2.01, industry_pe=20.1)["V3"]
     assert v3.status == "fail"
     assert "Price to earnings 20.10 " in v3.explanation and "against 20.10 for the industry" in v3.explanation
@@ -370,7 +374,7 @@ def test_t_differences_of_one_part_in_a_trillion_are_ties(noise):
     assert checks(estimate(20.0), price=16.0 * tie)["V2"].status == "pass"
     v6 = checks(estimate(20.0, 25.0), price=25.0 * tie)["V6"]
     assert v6.status == "pass" and "is equal to the estimate" in v6.explanation
-    r = checks(price=20.0 * tie)  # P/E 20 and P/B 4 against 20 and 4 (E5, E7), up to the noise
+    r = checks(price=20.0 * tie)  # P/E 20 and P/B 4 against 20 and 4 (S9-E5, S9-E7), up to the noise
     assert [r[c].status for c in ("V3", "V4", "V5")] == ["fail", "fail", "fail"]
     assert "Price to book 4.00 " in r["V5"].explanation
 
@@ -382,3 +386,80 @@ def test_t_differences_of_one_part_in_a_million_still_count():
     assert checks(estimate(20.0), price=16.0 / near)["V2"].status == "fail"
     assert checks(estimate(20.0, 25.0), price=25.0 / near)["V6"].status == "fail"
     assert checks(price=20.0 * near)["V3"].status == "pass"
+
+
+# --- Igor's review of #52 (25 November; Flo: "yes, (a) and plan") ---------------------------------------------------
+# Expected results are the rules themselves: two different values never print as the same number, the estimate is
+# among the inputs, the engine's own status and reason reach V1, V2 and V6 unchanged, a tie has no "−0.0%".
+
+def prices(text: str) -> list[str]:
+    """The amounts "USD …" in a text, in order."""
+    return re.findall(r"USD ([0-9][0-9,]*\.[0-9]+)", text)
+
+
+@pytest.mark.parametrize("check_id, valuation, price", [
+    ("V1", estimate(20.1295), 20.13),                      # the estimate itself
+    ("V2", estimate(18.563), 14.85),                       # 80% of 18.563 is 14.8504
+    ("V6", estimate(20.0, 38.0801), 38.08),                # the estimate at the cap
+    ("V1", estimate(20.0), 20.0 * (1 + 5e-9)),             # not a tie (option A), but equal to 6 decimals
+])
+def test_igor_1_a_price_and_a_different_estimate_never_print_the_same(check_id, valuation, price):
+    shown = prices(checks(valuation, price=price)[check_id].explanation)
+    assert len(shown) >= 2 and shown[0] != shown[1], shown
+
+
+def test_igor_1_equal_prices_keep_two_decimals():
+    assert prices(checks(estimate(20.0), price=16.0)["V2"].explanation)[:2] == ["16.00", "16.00"]
+    assert prices(checks(estimate(20.0, 25.0), price=25.0)["V6"].explanation)[:2] == ["25.00", "25.00"]
+
+
+def test_igor_1_a_ratio_that_is_not_a_tie_never_prints_like_its_benchmark():
+    # P/E 20.0000001 against 20: not a tie under option A (5 billionths apart), but equal to six decimals.
+    text = checks(price=20.0 * (1 + 5e-9))["V3"].explanation
+    ratio, benchmark = re.search(r"Price to earnings (\S+) .* against (\S+) for", text).groups()
+    assert ratio != benchmark, text
+
+
+def test_igor_4_zero_earnings_fail_even_without_benchmarks():
+    # Decision c with net income exactly 0 (the −50 case is test_s9_e6_no_earnings_fails_even_without_benchmarks).
+    r = checks(data=company(net_income=0), industry_pe=None, market_pe=None)
+    assert (r["V3"].status, r["V4"].status) == ("fail", "fail")
+
+
+def test_igor_5_v1_v2_and_v6_carry_the_estimate_in_their_inputs():
+    v = estimate(20.0, 25.0)
+    r = checks(v, price=15.0)
+    assert v.fair_value in r["V1"].inputs and v.fair_value in r["V2"].inputs
+    assert v.fair_value_at_growth_cap in r["V6"].inputs
+
+
+def synthetic_with(metric: str, years: tuple[int, ...], millions: float | None) -> CompanyData:
+    """The synthetic company with one line item replaced in some years; None makes it `missing`, never zero."""
+    data = synthetic.company_data()
+    items = {m: dict(by_year) for m, by_year in data.items.items()}
+    for year in years:
+        old = items[metric][date(year, 12, 31)]
+        items[metric][old.period_end] = (
+            dataclasses.replace(old, value=None, kind="missing", tag=None, form=None, accession=None,
+                                note=f"no annual 10-K figure for {metric} (test)")
+            if millions is None else dataclasses.replace(old, value=millions * MILLION))
+    return dataclasses.replace(data, items=items)
+
+
+@pytest.mark.parametrize("data, status", [
+    (lambda: synthetic_with("capital_expenditure", (2023, 2024, 2025), 10_000), "not_applicable"),  # no free cash flow
+    (lambda: synthetic_with("revenue", (2021,), None), "insufficient_data"),                        # revenue FY-4 missing
+])
+def test_igor_6_the_real_engines_status_and_reason_reach_v1_v2_and_v6(data, status):
+    company_data = data()
+    v = value_company(company_data, SETTINGS, share_price=PRICE, risk_free_rate=RISK_FREE, unlevered_beta=BETA)
+    assert v.status == status and v.reason
+    r = valuation_checks(company_data, SETTINGS, v, share_price=PRICE, industry_pe=INDUSTRY_PE, market_pe=MARKET_PE,
+                         industry_pb=INDUSTRY_PB)
+    for result in (r[0], r[1], r[5]):  # V1, V2, V6
+        assert (result.status, result.value, result.explanation) == (status, None, v.reason)
+
+
+def test_estimate_gap_is_plain_zero_on_a_tie():
+    gap = estimate_gap(20.0 * (1 - 1e-12), 20.0)  # a tie under option A
+    assert gap == 0.0 and math.copysign(1.0, gap) == 1.0 and f"{gap:.1%}" == "0.0%"

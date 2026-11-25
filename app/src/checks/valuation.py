@@ -56,12 +56,16 @@ from src.valuation.equity_method import Valuation, _day, _limit, _usd
 
 PRICE_CHECKS = ("V1", "V2", "V6")  # the checks that need the estimate (SPEC §8.6)
 TIE = 1e-9  # two values this close (relative) are equal: computer rounding, not a real difference (review round 2)
+MAX_DECIMALS = 15  # enough for two values that are not a tie (more than TIE apart) to print differently
 
 
 def estimate_gap(share_price: float, estimate: float) -> float:
     """(price − estimate) ÷ estimate: above zero means the price is above the estimate (G7, W8; SPEC §9).
 
-    Call it only when V1 was assessed (the engine returned an estimate, `Valuation.status == "ok"`)."""
+    Call it only when V1 was assessed (the engine returned an estimate, `Valuation.status == "ok"`). A tie (equal up
+    to computer rounding, option A) is plain 0, never −0.0% (Igor's review of #52)."""
+    if _equal(share_price, estimate):
+        return 0.0
     return (share_price - estimate) / estimate
 
 
@@ -111,19 +115,22 @@ def _price_checks(v: Valuation, price: float, s: Mapping) -> tuple[CheckResult, 
 
     estimate = v.fair_value.value
     inputs = v.inputs + (v.fair_value,)
-    you = f"The share price you typed, {_price(price)},"
-
+    # Each text prints the price and what it is compared with by `_two_prices`: two different amounts never read the
+    # same (Igor's review of #52: "USD 14.85, is above USD 14.85").
+    shown, other = _two_prices(price, estimate)
     v1 = CheckResult("V1", "pass" if _below(price, estimate) else "fail", price, estimate, inputs,
-                     f"{you} is {_gap_text(price, estimate)} of {_price(estimate)} per share.")
+                     f"The share price you typed, {shown}, is {_gap_text(price, estimate)} of {other} per share.")
 
     limit = s["well_below_fair_value"] * estimate
+    shown, other = _two_prices(price, limit)
     v2 = CheckResult("V2", "pass" if not _above(price, limit) else "fail", price, limit, inputs,
-                     f"{you} is {_versus(price, limit)} {_price(limit)}, which is "
+                     f"The share price you typed, {shown}, is {_versus(price, limit)} {other}, which is "
                      f"{_limit(s['well_below_fair_value'])} of the estimate ({_price(estimate)}).")
 
     at_cap = v.fair_value_at_growth_cap
-    text = (f"{you} is {_versus(price, at_cap.value)} the estimate with starting growth at the "
-            f"{_limit(s['growth_cap'])} cap ({_price(at_cap.value)}).")
+    shown, other = _two_prices(price, at_cap.value)
+    text = (f"The share price you typed, {shown}, is {_versus(price, at_cap.value)} the estimate with starting growth "
+            f"at the {_limit(s['growth_cap'])} cap ({other}).")
     if v.starting_growth is not None and v.starting_growth.value == s["growth_cap"]:
         text += (f" The company's starting growth is already at the {_limit(s['growth_cap'])} cap, so V6 uses the "
                  "same estimate as V1.")
@@ -246,9 +253,19 @@ def _insufficient(check_id: str, inputs: tuple[Fact, ...], why: str) -> CheckRes
 def _two_numbers(value: float, benchmark: float) -> tuple[str, str]:
     """Both numbers with two decimals, or with more when two would show different numbers as the same (19.999
     against 20 reads "19.999 against 20.000", never "20.00 against 20.00" next to a pass). Equal numbers keep two."""
-    for decimals in range(2, 7):
+    for decimals in range(2, MAX_DECIMALS + 1):
         a, b = (f"{x:.{decimals}f}" for x in (value, benchmark))
         if a != b or _equal(value, benchmark):
+            return a, b
+    return a, b
+
+
+def _two_prices(price: float, other: float) -> tuple[str, str]:
+    """Two amounts in USD with cents, or with more decimals when cents would show different amounts as the same
+    ("USD 14.8500 against USD 14.8504"); equal amounts (up to computer rounding) keep cents."""
+    for decimals in range(2, MAX_DECIMALS + 1):
+        a, b = (f"USD {x:,.{decimals}f}".replace("-", "−") for x in (price, other))
+        if a != b or _equal(price, other):
             return a, b
     return a, b
 

@@ -18,7 +18,7 @@ The rules, in order:
 Decisions (Flo, 22 November 2026):
 - D2 is "not assessed" (status insufficient_data, plan Q9) without the share price or the US market dividend yield
   (B's benchmark file); switched on in slice S9 (25 November): dividends paid FY0 ÷ (share price × shares) > market
-  yield, strictly (a yield equal to the market's fails, Flo's E9; equal up to computer rounding, `TIE`, review
+  yield, strictly (a yield equal to the market's fails, Flo's S9-E9; equal up to computer rounding, `TIE`, review
   round 2). A missing share count is "insufficient data".
 - D3: a cut is "this year < (1 − max_dividend_cut) × last year", so no division and a rise from a year of zero is
   never a cut. Its value is the lowest year-on-year change among the years whose previous year is above zero.
@@ -115,7 +115,9 @@ def _d2(dividends: Fact, shares: Fact | None, price: float | None, market_yield:
             why += f" ({market_yield.note})"
         elif market_yield is not None and market_yield.value <= 0:  # review of 25 November, as for V3–V5
             why += f" (the figure given is zero or negative: {_pct(market_yield.value)})"
-        return CheckResult("D2", "insufficient_data", None, None, known, f"This check is not assessed: it needs {why}.")
+        # "yet": until S10b the screen calls dividend_checks(data, settings) without them (Flo's (a), Igor's review).
+        return CheckResult("D2", "insufficient_data", None, None, known,
+                           f"This check is not assessed yet: it needs {why}.")
     if shares is None or shares.kind == "missing" or shares.value <= 0:
         return CheckResult("D2", "insufficient_data", None, None, known,
                            "Insufficient data: the share count is missing or not above zero"
@@ -125,7 +127,7 @@ def _d2(dividends: Fact, shares: Fact | None, price: float | None, market_yield:
         return blocked
     market_value = price * shares.value
     dividend_yield = dividends.value / market_value
-    tie = math.isclose(dividend_yield, market_yield.value, rel_tol=TIE, abs_tol=0.0)  # a tie fails, as E9
+    tie = math.isclose(dividend_yield, market_yield.value, rel_tol=TIE, abs_tol=0.0)  # a tie fails, as S9-E9
     status = "pass" if dividend_yield > market_yield.value and not tie else "fail"
     shown, market = _two_percents(dividend_yield, market_yield.value)
     return CheckResult("D2", status, dividend_yield, market_yield.value, (dividends, shares, market_yield),
@@ -271,7 +273,7 @@ def _pct(ratio: float) -> str:
 def _two_percents(value: float, benchmark: float) -> tuple[str, str]:
     """Both in percent with two decimals, or more when two would show different numbers as the same (1.4999%
     against 1.5% reads "1.4999% against 1.5000%", never "1.50% against 1.50%" next to a fail)."""
-    for decimals in range(2, 7):
+    for decimals in range(2, 16):  # up to 15, enough for two yields that are not a tie (more than TIE apart)
         a, b = (f"{x:.{decimals}%}".replace("-", "−") for x in (value, benchmark))
         if a != b or math.isclose(value, benchmark, rel_tol=TIE, abs_tol=0.0):
             return a, b
