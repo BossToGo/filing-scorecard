@@ -208,10 +208,10 @@ These tags are a starting list written from memory of the US accounting taxonomy
 |---|---|---|
 | H1 | Short-term cover | Current assets > current liabilities |
 | H2 | Long-term cover | Current assets > total liabilities − current liabilities |
-| H3 | Moderate debt | (Debt − cash) ÷ equity < 40%. Equity ≤ 0: fail |
-| H4 | Debt is falling | Debt ÷ equity FY0 < FY-4. No debt in both years: pass |
+| H3 | Moderate debt | (Debt − cash) ÷ equity < 40%. Known equity ≤ 0: fail with "negative equity", before missing debt or cash |
+| H4 | Debt is falling | Debt ÷ equity FY0 < FY-4. Known equity ≤ 0 in FY0 or FY-4: fail with "negative equity", before missing inputs or the zero-debt exception; no ratio is calculated. Otherwise known zero debt in both years: pass |
 | H5 | Debt covered by cash flow | Operating cash flow ÷ debt ≥ 20%. No debt: pass |
-| H6 | Interest covered | Operating income ÷ interest expense ≥ 5. No debt and no interest: pass. Interest expense reported as 0: pass. Debt but no interest figure: insufficient data |
+| H6 | Interest covered | Operating income ÷ interest expense ≥ 5. Interest expense reported as 0: pass. Explicitly reported zero financial debt with missing interest: pass without calculating a ratio; the interest figure stays missing. Missing, assumed or derived zero debt does not establish this exception. Known positive interest uses normal coverage even when debt is zero or missing; negative interest is insufficient data. Without the exception, missing operating income or interest gives insufficient data |
 
 ### Dividend
 
