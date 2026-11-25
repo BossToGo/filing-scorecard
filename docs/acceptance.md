@@ -18,9 +18,9 @@ Each criterion is checkable: a starting state, an action, an expected result. St
 | AC9 | F7 | Tier 2 build, synthetic company, share price USD 30.00 | The scorecard opens | Fair value USD 20.13 per share (equity method); scores 5 of 6, 4 of 6, 6 of 6, 3 of 6 (SPEC v2.3 Appendix A; fair value signed off by C, scores by E, 21 November) | open |
 | AC10 | F7 | Any company, no share price | The scorecard opens | The valuation area shows "insufficient data" and asks for a share price; the other areas still show | open |
 | AC11 | F8 | Synthetic company loaded | The user downloads the Excel file | A test reopens it: two sheets (the scorecard; the figures with their sources, §3 item 8); every figure equals the screen | open |
-| AC12 | F2 | Demo mode, Coca-Cola (KO) | The scorecard opens | The overview above the tabs shows revenue USD 47.94 bn (+1.9% vs FY2024), operating margin 28.7% (+7.5 pp), net income USD 13.11 bn (+23.3%), free cash flow USD 5.30 bn (+11.7%), each marked reported or derived; dividend coverage 60.3%, dividends USD 3.48 bn above free cash flow; current ratio 1.46× (hand working below, "Overview (S10c)") | passing on branch `a/S10c-overview` (`tests/unit/test_overview.py`, `tests/app/test_overview_screen.py`); hand working to be checked by Igor |
-| AC13 | F2 | Demo mode, Amazon (AMZN) | The scorecard opens | Dividend coverage reads "No dividend paid", never 0% | passing on branch `a/S10c-overview` (`tests/unit/test_overview.py`, `tests/app/test_overview_screen.py`); hand working to be checked by Igor |
-| AC14 | F2 | Any company with a figure missing | The scorecard opens | Each overview figure that needs it shows "n/a" with the reason, never 0; the five-year chart leaves a gap and its table shows "n/a" | passing on branch `a/S10c-overview` (`tests/unit/test_overview.py`, `tests/app/test_overview_screen.py`); hand working to be checked by Igor |
+| AC12 | F2 | Demo mode, Coca-Cola (KO) | The scorecard opens | The overview above the tabs shows revenue USD 47.94 bn (+1.9% vs FY2024), operating margin 28.7% (+7.5 pp), net income USD 13.11 bn (+23.3%), free cash flow USD 5.30 bn (+11.7%), each marked reported or derived; dividend coverage 60.3%, dividends USD 3.48 bn above free cash flow; current ratio 1.46× (hand working below, "Overview (S10c)") | passing on branch `a/S10c-overview` (`tests/unit/test_overview.py`, `tests/app/test_overview_screen.py`); hand working checked by Igor, 25 November |
+| AC13 | F2 | Demo mode, Amazon (AMZN) | The scorecard opens | Dividend coverage reads "No dividend paid", never 0% | passing on branch `a/S10c-overview` (`tests/unit/test_overview.py`, `tests/app/test_overview_screen.py`); hand working checked by Igor, 25 November |
+| AC14 | F2 | Any company with a figure missing | The scorecard opens | Each overview figure that needs it shows "n/a" with the reason, never 0; the five-year chart leaves a gap and its table shows "n/a" | passing on branch `a/S10c-overview` (`tests/unit/test_overview.py`, `tests/app/test_overview_screen.py`); hand working checked by Igor, 25 November |
 | AC12 | F9 | Tier 3 build, synthetic company, share price USD 30.00 | The scorecard opens | Strengths G1, G2, G3, G5, G6; points to watch W3, W4, W8, all minor; each opens its check (SPEC v2.3 §9 and Appendix A; B's recalculation pending) | open |
 
 ## Screens (how each was checked)
@@ -186,7 +186,7 @@ give "n/a" with the reason; a dividend treated as nil reads "No dividend paid".
 | Dividend coverage | 5,296 ÷ 8,779 = 0.60326; 8,779 − 5,296 = 3,483 | 60.3%; dividends USD 3.48 bn above free cash flow |
 | Current ratio | 31,044 ÷ 21,281 = 1.4588 | 1.46× |
 
-Checked by hand: Igor (A), pending (rule 14.5).
+Checked by hand: Igor (A), 25 November 2026, every value above with a calculator from the listed figures; all match (rule 14.5).
 
 ## Edge cases and errors
 
