@@ -83,8 +83,7 @@ if gate.stop is not None:  # "Not supported": the reason, no scores (AC2, E2, E3
     st.stop()
 
 results = check_results(data)
-scorecard_tab, sources_tab = st.tabs(["Scorecard", "Sources"])
-with scorecard_tab:
-    render_scorecard(data, results, price, warnings=header_warnings(gate, gates))
+# Header and summary, then one tab per area and the Sources tab last (SPEC 2.4.2 §3)
+sources_tab = render_scorecard(data, results, price, warnings=header_warnings(gate, gates))
 with sources_tab:
     render_sources(data, results)

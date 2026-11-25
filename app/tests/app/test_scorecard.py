@@ -40,8 +40,8 @@ def synthetic_page(statuses):
             for cid in AREA_CHECKS[area])
         for area in AREAS
     }
-    render_scorecard(data, results, None)
-    render_sources(data, results)
+    with render_scorecard(data, results, None):  # the Sources tab, filled as main.py does
+        render_sources(data, results)
 
 
 def run_synthetic() -> AppTest:
@@ -136,6 +136,17 @@ def test_amazon_dividend_row_reads_no_dividend_paid_0_passed_of_1_assessed():
     dividend = row(show("AMZN"), "Dividend")
     assert "No dividend paid" in dividend and "0 passed of 1 assessed" in dividend
     assert len(re.findall(r'class="fs-mk fs-none"', dividend)) == 5
+
+
+def test_one_tab_per_area_and_the_sources_last():
+    """SPEC 2.4.2 §3 item 5: one tab per area, the sources page last; the summary stays above the tabs."""
+    app = run_synthetic()
+    assert [t.label for t in app.tabs] == ["Past performance", "Financial health", "Dividend", "Valuation", "Sources"]
+    past, health, dividend, valuation, sources = app.tabs
+    assert [e.label for e in health.expander][2].count("H3") == 1 and len(health.expander) == 6
+    assert len(past.expander) == len(dividend.expander) == 6 and not valuation.expander
+    assert "Not part of this version" in "\n".join(str(m.value) for m in valuation.markdown)
+    assert sources.dataframe and not any("fs-row" in m.value for t in app.tabs for m in t.markdown)
 
 
 def test_synthetic_data_mark_v3():

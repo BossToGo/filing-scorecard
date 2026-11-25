@@ -32,6 +32,7 @@ NOTHING_ASSESSED = "open each check for its reason"
 CHART_NOTE = ("Each mark is one yes/no test on the company's annual reports. It is not a rating of the share and not "
               "advice.")
 FAILED_TITLE = "Failed checks"
+SOURCES_TAB = "Sources"
 NO_FAILED = "No check failed."
 SYNTHETIC = "SYNTHETIC DATA"
 # The four looks of a mark (SPEC 2.4.2 §3): CSS class, word, and the glyph drawn on it (docs/design/mockup.html).
@@ -254,19 +255,24 @@ def render_check(data: CompanyData, result: CheckResult, texts: Mapping) -> None
                 st.markdown(f"**Filing:** none ({SYNTHETIC})")
 
 
-def render_checks(data: CompanyData, results: Mapping[str, Sequence[CheckResult] | None]) -> None:
+def render_checks(data: CompanyData, results: Mapping[str, Sequence[CheckResult] | None]):
+    """One tab per area, the Sources tab last (SPEC 2.4.2 §3 item 5); returns the Sources tab for `main.py`."""
     texts = load_texts()
-    for area in AREAS:
+    *area_tabs, sources_tab = st.tabs([*(AREA_TITLES[area] for area in AREAS), SOURCES_TAB])
+    for area, tab in zip(AREAS, area_tabs):
         area_results = results.get(area)
-        if not area_results:
-            continue
-        st.subheader(AREA_TITLES[area])
-        for result in area_results:
-            render_check(data, result, texts)
+        with tab:
+            if not area_results:  # no module yet: the same words as its row in the chart
+                st.markdown(f'<span class="fs-sub">{_label(area, area_results)[1]}</span>', unsafe_allow_html=True)
+                continue
+            for result in area_results:
+                render_check(data, result, texts)
+    return sources_tab
 
 
 def render_scorecard(data: CompanyData, results: Mapping[str, Sequence[CheckResult] | None],
-                     price: float | None, warnings: Sequence[str] = ()) -> None:
+                     price: float | None, warnings: Sequence[str] = ()):
+    """Header, score chart, then the tabs; returns the Sources tab, which `main.py` fills with `render_sources`."""
     render_header(data, warnings, price)
     render_score_chart(results)
-    render_checks(data, results)
+    return render_checks(data, results)
