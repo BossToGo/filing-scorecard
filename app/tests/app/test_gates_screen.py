@@ -89,6 +89,7 @@ def test_an_empty_other_ticker_asks_for_one_and_loads_nothing(monkeypatch):
     assert [e.value for e in app.error] == ["Type a ticker first."]
     assert calls == []
     assert not app.header and not app.expander
+    assert not any(m.value.startswith("<h1") for m in app.markdown)  # no company heading either (S10 design)
 
 
 def test_an_invalid_price_still_says_how_to_type_it_v2():

@@ -72,15 +72,22 @@ def is_synthetic(data: CompanyData) -> bool:
     return SYNTHETIC in data.name or any(w.startswith(SYNTHETIC) for w in data.warnings)
 
 
-def render_header(data: CompanyData, warnings: Sequence[str] = ()) -> None:
+def render_header(data: CompanyData, warnings: Sequence[str] = (), price: float | None = None) -> None:
+    """SEC name with the muted ticker, one meta line, the typed price on the right (design spec §3)."""
     if is_synthetic(data):
         st.warning(f"{SYNTHETIC}: an invented company for tests (SPEC Appendix A), not a real company.")
-    st.header(data.name)  # as the SEC lists it (SPEC 2.4.1 §3)
-    industry = f"{data.sic_description}, SEC code {data.sic}" if data.sic else "n/a"
-    st.caption(
-        f"Industry: {industry} · Latest fiscal year ended {_latest_fiscal_year_end(data)} · "
-        f"Latest annual report (10-K): {_day(data.latest_10k_filed)} · Data retrieved: {_day(data.retrieved)}"
+    company, typed = st.columns([4, 1], vertical_alignment="bottom")
+    # The name as the SEC lists it (SPEC 2.4.1 §3); the SEC code stays in the meta line until #27 (Igor, #39).
+    company.markdown(f'<h1>{html.escape(data.name)}<span class="fs-ticker">{html.escape(data.ticker)}</span></h1>',
+                     unsafe_allow_html=True)
+    industry = f"{data.sic_description}, SEC code {data.sic}" if data.sic else "Industry n/a"
+    company.caption(
+        f"{industry} · Latest fiscal year ended {_latest_fiscal_year_end(data)} · "
+        f"Latest annual report filed {_day(data.latest_10k_filed)} · Data retrieved {_day(data.retrieved)}"
     )
+    if price is not None:
+        typed.markdown(f'<div class="fs-price"><span class="fs-muted">Share price you typed</span><br>'
+                       f'<strong>USD {price:,.2f}</strong></div>', unsafe_allow_html=True)
     for warning in warnings:  # only "not fully checked" and "latest annual report is old" (SPEC §10, src/gates.py)
         st.warning(warning)
 
@@ -106,6 +113,7 @@ def _style() -> str:
 [data-testid="stExpander"] details {{border:0; border-bottom:1px solid var(--fs-line); border-radius:0}}
 [data-testid="stExpander"] summary span[role="img"] {{font-size:20px; vertical-align:-4px}}
 [data-testid="stTab"][aria-selected="true"], [data-testid="stTab"][aria-selected="true"] p {{color:var(--fs-text)}}
+.fs-price {{text-align:right; font-size:14px}}  .fs-price strong {{font-size:16px}}
 .fs-muted {{color:var(--fs-muted)}}  .fs-ticker {{font-size:16px; font-weight:400; color:var(--fs-muted); margin-left:8px}}
 .fs-row {{display:flex; align-items:center; gap:16px; height:40px; border-bottom:1px solid var(--fs-line)}}
 .fs-bar {{display:inline-flex; gap:4px}}
@@ -215,6 +223,6 @@ def render_checks(data: CompanyData, results: Mapping[str, Sequence[CheckResult]
 
 def render_scorecard(data: CompanyData, results: Mapping[str, Sequence[CheckResult] | None],
                      price: float | None, warnings: Sequence[str] = ()) -> None:
-    render_header(data, warnings)
+    render_header(data, warnings, price)
     render_score_chart(results, price)
     render_checks(data, results)

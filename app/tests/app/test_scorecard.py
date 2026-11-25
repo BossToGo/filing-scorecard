@@ -133,11 +133,28 @@ def test_the_ticker_field_takes_space_only_for_another_ticker():
     assert [t.label for t in app.text_input] == ["Ticker", "Share price (USD)"] and len(app.columns) == 5
 
 
+def heading(app: AppTest) -> str:
+    """The page heading: the company name as a 28 px h1 in markdown (design spec §3, §4)."""
+    return next(m.value for m in app.markdown if m.value.startswith("<h1"))
+
+
 def test_coca_cola_header_shows_the_sec_name_ac1():
+    """Label change (rule 14.6, Simon's written agreement of 25 November 2026): the name is looked for in the page
+    heading, no longer in `st.header`, because the design shows it as the 28 px h1 with the ticker beside it
+    (`st.header` is 18 px). The expected name and industry are unchanged; the SEC code stays until #27 (Igor, #39)."""
     app = show("KO")
     assert not app.exception
-    assert "COCA COLA CO" in [h.value for h in app.header]
+    assert ">COCA COLA CO<" in heading(app)
     assert "Beverages, SEC code 2080" in texts(app)
+
+
+def test_the_header_shows_the_ticker_muted_and_the_typed_price():
+    """Design spec §3: muted ticker beside the SEC name; the typed price on the right."""
+    app = show("KO", "65.40")
+    assert '<span class="fs-ticker">KO</span>' in heading(app)
+    shown = texts(app)
+    assert "Share price you typed" in shown and "USD 65.40" in shown
+    assert "Share price you typed" not in texts(show("KO"))  # no price typed: nothing on the right
 
 
 def test_header_shows_the_latest_fiscal_year_end_from_the_data():
