@@ -88,31 +88,40 @@ def render_header(data: CompanyData, warnings: Sequence[str] = ()) -> None:
 # --- score chart ------------------------------------------------------------------------------------------------
 
 
-def _colours() -> dict[str, str]:
-    """Theme colours from config.toml; without a theme (tests) the browser's own colours."""
-    def option(name: str, fallback: str) -> str:
-        try:
-            return st.get_option(f"theme.{name}") or fallback
-        except Exception:  # an unknown option name in another Streamlit version
-            return fallback
-    return {"accent": option("primaryColor", "currentColor"), "text": option("textColor", "currentColor"),
-            "page": option("backgroundColor", "Canvas"), "soft": option("secondaryBackgroundColor", "transparent")}
+def _theme(key: str) -> str:
+    """A theme colour as CSS: light-dark(light, dark), so it follows the active theme (design spec §4). Without a
+    theme file (tests) the browser's own text colour."""
+    light = st.get_option(f"theme.{key}") or "currentColor"
+    dark = st.get_option(f"theme.dark.{key}") or light
+    return f"light-dark({light}, {dark})"
 
 
 def _style() -> str:
-    c = _colours()
+    """The one CSS block of the page (design spec §4). Colours come from the theme file, never from here."""
     return f"""<style>
-.fs-row {{display:flex; align-items:center; gap:.75rem; margin:.35rem 0; flex-wrap:wrap}}
-.fs-area {{width:9.5rem; font-weight:600}}
-.fs-blocks {{display:flex; gap:.25rem}}
-.fs-block {{min-width:6.2rem; min-height:2.8rem; padding:.3rem .5rem; border-radius:.3rem; font-size:.75rem;
-  line-height:1.2; white-space:nowrap; text-align:center; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; box-sizing:border-box}}
-.fs-pass {{background:{c['accent']}; color:{c['page']}}}
-.fs-fail {{background:{c['text']}; color:{c['page']}}}
-.fs-insufficient_data, .fs-empty {{border:2px dashed {c['text']}; color:{c['text']}}}
-.fs-not_applicable {{border:1px solid {c['text']}; background:{c['page']}; color:{c['text']}}}
-.fs-label {{font-size:.9rem}}
+.stApp {{--fs-accent:{_theme('primaryColor')}; --fs-page:{_theme('backgroundColor')}; --fs-text:{_theme('textColor')};
+  --fs-muted:color-mix(in srgb, currentColor 68%, transparent); --fs-line:color-mix(in srgb, currentColor 20%, transparent);
+  font-variant-numeric:tabular-nums}}
+[data-testid="stMainBlockContainer"] {{max-width:1200px; padding-left:32px; padding-right:32px}}
+[data-testid="stExpander"] details {{border:0; border-bottom:1px solid var(--fs-line); border-radius:0}}
+[data-testid="stExpander"] summary span[role="img"] {{font-size:20px; vertical-align:-4px}}
+[data-testid="stTab"][aria-selected="true"], [data-testid="stTab"][aria-selected="true"] p {{color:var(--fs-text)}}
+.fs-muted {{color:var(--fs-muted)}}  .fs-ticker {{font-size:16px; font-weight:400; color:var(--fs-muted); margin-left:8px}}
+.fs-row {{display:flex; align-items:center; gap:16px; height:40px; border-bottom:1px solid var(--fs-line)}}
+.fs-bar {{display:inline-flex; gap:4px}}
+.fs-mk {{width:20px; height:20px; border-radius:4px; box-sizing:border-box; display:inline-grid; place-items:center}}
+.fs-mk svg {{width:12px; height:12px; fill:none; stroke:var(--fs-page); stroke-width:2.5; stroke-linecap:round}}
+.fs-pass {{background:var(--fs-accent)}}  .fs-fail {{background:currentColor}}
+.fs-wait {{border:1.5px dashed var(--fs-muted)}}  .fs-none {{border:1px solid var(--fs-line)}}  .fs-none svg {{stroke:var(--fs-muted)}}
+.stMarkdown table.fs-kv {{width:100%; border-collapse:collapse}}
+.stMarkdown table.fs-kv td {{padding:8px 0; border:0; border-bottom:1px solid var(--fs-line)}}
+.stMarkdown table.fs-kv td:last-child {{text-align:right}}
+/* Until item 5: the old six-block bar, in the new colours */
+.fs-area {{width:9.5rem; font-weight:600}}  .fs-blocks {{display:flex; gap:4px}}
+.fs-block {{min-width:6.2rem; height:32px; padding:0 8px; border-radius:4px; font-size:12px; white-space:nowrap;
+  display:flex; align-items:center; justify-content:center; box-sizing:border-box}}
+.fs-block.fs-pass {{color:var(--fs-page)}}  .fs-block.fs-fail {{color:var(--fs-page)}}
+.fs-insufficient_data, .fs-empty {{border:1.5px dashed var(--fs-muted)}}  .fs-not_applicable {{border:1px solid var(--fs-line)}}
 </style>"""
 
 
