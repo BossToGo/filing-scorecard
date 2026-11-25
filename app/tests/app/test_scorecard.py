@@ -134,6 +134,23 @@ def test_coca_cola_dividend_is_one_not_assessed_yet():
     assert "4 passed of 5 assessed" in row(app, "Dividend") and "1 not assessed yet" in row(app, "Dividend")
 
 
+def test_the_failed_list_stays_in_its_column_and_long_names_wrap():
+    """Simon's look of 25 November 2026: the failed checks ran off the right edge and their area names were cut. Each
+    row is a grid: the mark, the name (may shrink to nothing and wrap), the area kept whole on the right; a row grows
+    taller instead of spilling over its border (no fixed 40 px height)."""
+    import re
+
+    from ui.scorecard import _style
+
+    css = _style()
+    rule = re.search(r"ul\.fs-failed li \{([^}]*)\}", css).group(1)
+    assert "display:grid" in rule and "grid-template-columns:20px minmax(0, 1fr) auto" in rule
+    assert "min-height:40px" in rule and not re.search(r"(?<!-)height:40px", rule)
+    assert "overflow-wrap:anywhere" in rule
+    assert "white-space:nowrap" in re.search(r"ul\.fs-failed li \.fs-sub \{([^}]*)\}", css).group(1)
+    assert re.search(r"ul\.fs-failed \{[^}]*max-width:100%", css)
+
+
 def test_a_mark_s_hover_text_does_not_repeat_the_word():
     """Simon, 25 November 2026: same rule as the row. Not "Not assessed. This check is not assessed yet: ..." on D2's
     mark; the word stays when the explanation does not say it (P4)."""

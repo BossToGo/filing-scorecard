@@ -145,10 +145,13 @@ h1:has(.fs-ticker) [data-testid="stHeaderActionElements"] {{display:none}}
 .fs-legend {{display:flex; align-items:center; flex-wrap:wrap; gap:8px 16px; margin-top:12px; font-size:14px;
   line-height:20px; color:var(--fs-muted)}}
 .fs-key {{display:inline-flex; align-items:center; gap:8px}}
-ul.fs-failed {{list-style:none; margin:0; padding:0}}
-ul.fs-failed li {{display:flex; align-items:center; gap:12px; height:40px; margin:0; border-bottom:1px solid var(--fs-line)}}
+ul.fs-failed {{list-style:none; margin:0; padding:0; max-width:100%}}
+ul.fs-failed li {{display:grid; grid-template-columns:20px minmax(0, 1fr) auto; align-items:center; column-gap:12px;
+  min-height:40px; box-sizing:border-box; padding:6px 0; margin:0; line-height:20px; overflow-wrap:anywhere;
+  border-bottom:1px solid var(--fs-line)}}
+ul.fs-failed li:not(:has(.fs-mk)) {{display:block; padding-top:10px}}
 ul.fs-failed li.fs-hd {{border-top:1px solid var(--fs-line); font-weight:600}}
-ul.fs-failed li .fs-sub {{margin-left:auto}}
+ul.fs-failed li .fs-sub {{white-space:nowrap; text-align:right}}
 </style>"""
 
 
