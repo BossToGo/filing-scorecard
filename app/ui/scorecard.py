@@ -152,6 +152,13 @@ ul.fs-failed li .fs-sub {{margin-left:auto}}
 </style>"""
 
 
+def _word_before(word: str, explanation: str) -> str:
+    """"Not assessed. " before the explanation, or "" when its first clause already says the word (Simon, 25 November
+    2026: not "Not assessed. This check is not assessed yet: ..."); used by the row and the mark alike."""
+    first_clause = re.split(r"[:.]", explanation, maxsplit=1)[0].lower()
+    return "" if word.lower() in first_clause else f"{word}. "
+
+
 def _block(status: str | None, title: str = "") -> str:
     """One 20 px mark: shape and fill differ per look, so colour is never alone (design spec §4). `None`: dashed."""
     look = MARK_CLASSES[status or "insufficient_data"]
@@ -199,9 +206,10 @@ def render_score_chart(results: Mapping[str, Sequence[CheckResult] | None]) -> N
         if area_results is None:
             marks = "".join(_block(None) for _ in AREA_CHECKS[area])
         else:
-            marks = "".join(_block(r.status, f"{_plain_name(r.check_id, texts)}: {MARK_WORDS[r.status]}"
-                                   + (f". {r.explanation}" if r.status in ("insufficient_data", "not_applicable")
-                                      else ""))
+            marks = "".join(_block(r.status, f"{_plain_name(r.check_id, texts)}: "
+                                   + (f"{_word_before(MARK_WORDS[r.status], r.explanation)}{r.explanation}"
+                                      if r.status in ("insufficient_data", "not_applicable")
+                                      else MARK_WORDS[r.status]))
                             for r in area_results)
         score, sub = _label(area, area_results)
         said = ", ".join(part for part in (score, sub) if part)  # "Dividend: no dividend paid, 0 passed of 1 assessed"
@@ -247,9 +255,7 @@ def render_check(data: CompanyData, result: CheckResult, texts: Mapping) -> None
         figures = "" if result.value is None else f" {shown}" + (f" against {against}" if against else "") + "."
         sentence = f"{word}.{figures}"
     else:  # the word only when the explanation's first clause does not already say it (Simon, 25 November 2026)
-        first_clause = re.split(r"[:.]", result.explanation, maxsplit=1)[0].lower()
-        said = "" if word.lower() in first_clause else f"{word}. "
-        sentence = f":gray[{said}{result.explanation.translate(_MARKDOWN)}]"
+        sentence = f":gray[{_word_before(word, result.explanation)}{result.explanation.translate(_MARKDOWN)}]"
     with st.expander(f"{ICONS[result.status]} **{_plain_name(result.check_id, texts)}.** {sentence}"):
         rule = texts.get(result.check_id, {}).get("rule")
         if rule:

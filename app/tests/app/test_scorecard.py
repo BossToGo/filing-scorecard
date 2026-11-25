@@ -134,6 +134,16 @@ def test_coca_cola_dividend_is_one_not_assessed_yet():
     assert "4 passed of 5 assessed" in row(app, "Dividend") and "1 not assessed yet" in row(app, "Dividend")
 
 
+def test_a_mark_s_hover_text_does_not_repeat_the_word():
+    """Simon, 25 November 2026: same rule as the row. Not "Not assessed. This check is not assessed yet: ..." on D2's
+    mark; the word stays when the explanation does not say it (P4)."""
+    pytest.importorskip("src.checks.dividend", reason="needs C's dividend module (merged in #23)")
+    shown = chart(show("KO"))
+    assert "Not assessed. This check is not assessed yet" not in shown
+    assert f'title="{name_of("D2")}: This check is not assessed yet: ' in shown
+    assert f'title="{name_of("P4")}: Not assessed. ' in shown
+
+
 def test_amazon_dividend_row_reads_no_dividend_paid_0_passed_of_1_assessed():
     """Simon's hand check of 25 November 2026 (SPEC §3): D1 failed, five does-not-apply marks."""
     import re
