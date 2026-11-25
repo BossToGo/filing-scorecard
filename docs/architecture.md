@@ -30,14 +30,14 @@ filing-scorecard/
 └── app/
     ├── README.md  requirements.txt  .env.example  settings.yaml (A; one section per owner)
     ├── main.py               Streamlit entry point (D)
-    ├── ui/                   Streamlit pages and components (D); texts.yaml (E)
+    ├── ui/                   Streamlit pages and components (D); texts.yaml (E); overview.py (A, with D's agreement)
     ├── src/
     │   ├── contracts.py      shared data shapes (A; changes need every affected owner's approval)
     │   ├── data/             SEC client, cache, tag_map.yaml, resolver, FRED (A)
     │   ├── benchmarks/       benchmark loader, industry map (B)
     │   ├── checks/           past.py, health.py (B); dividend.py, valuation.py (C)
     │   ├── valuation/        cost of equity, free cash flow forecast with growth decay, terminal value, fair value (C)
-    │   ├── highlights.py (B)  gates.py, scores.py (D)  export.py (E)
+    │   ├── highlights.py (B)  gates.py, scores.py (D)  export.py (E)  overview.py (A)
     ├── scripts/              extract_benchmarks.py (B); coverage.py (A)
     ├── data/                 benchmarks_us_2026.csv, industry_lookup_us_2026.csv, sic_to_damodaran.csv (B);
     │                         universe.csv (A; coverage evidence, not read by the app)
@@ -150,3 +150,6 @@ filing-scorecard/
 | 2026-11-24 | On screen the valuation's result is "the estimate" ("the cash-flow estimate" where it needs context), never "fair value"; V1 "Price below the cash-flow estimate", V2 "Price at or below 80% of the estimate"; IDs, logic and thresholds of V1, V2 and V6 unchanged; the code keeps `fair_value` (SPEC §3, §7) | "Fair value" and "below fair value" read like "undervalued", which SPEC §3 bans; the comparison stays explicit | Igor, on Flo's proposal (#32); Emma adds the words to the banned-words test (#17) |
 | 2026-11-24 | P/E benchmarks for V3 and V4: Damodaran's column D ("Current PE", latest fiscal-year earnings) kept; column G (aggregate, earnings period not documented) not adopted | Same basis as our company P/E from FY0 net income; D's period is documented in the workbook's FAQ | Igor, on Greg's question (#27) |
 | 2026-11-24 | Product name "Filing Scorecard" (SPEC title, §16 item 7); the business plan assumes a European retail bank with France as the example market, cites author-year with one reference list, and describes S12 and S13 as next steps | Emma's questions for harmonising the business plan (#51) | Igor (#51) |
+| 2026-11-25 | The overview above the tabs (S10c): `src/overview.py` (A) works out every figure and its text; `ui/overview.py` (A, in D's folder) only lays it out; D calls `render_overview` above the tabs | Igor's look at v0.1 (#47); Simon agreed on #47 to A building it in `ui/overview.py` and placing it himself after #54, S10b and S17 | Igor, with Simon (#47) |
+| 2026-11-25 | Overview edge rules: a change from a year at or below zero is "not meaningful"; negative free cash flow shows both amounts and "free cash flow was negative", never a negative coverage; no margin or current ratio when revenue or current liabilities are missing or at or below zero; a nil dividend reads "No dividend paid"; amounts from USD 1 bn in USD bn with two decimals, below in USD m | Missing data is never zero, and a percentage change from a loss misleads (as P3's note) | Igor |
+| 2026-11-25 | Overview chart colours: blue `#3A86CC`, teal `#1FA08B`, magenta `#BD5A97` (free cash flow dashed), each at least 3:1 on a white and on a navy page; they never mean good or bad; the theme's `chartCategoricalColors` replaces them when D sets it | Streamlit's default third colour is red, which would read as a judgement | Igor |
