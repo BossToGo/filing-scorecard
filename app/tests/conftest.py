@@ -6,6 +6,8 @@ reach the network fails, even if its code catches the error. Use the saved files
 `app/tests/fixtures/` instead.
 """
 
+from pathlib import Path
+
 import pytest
 
 from tests import network_guard
@@ -26,6 +28,23 @@ def _fail_if_the_test_tried_the_network():
     tried = network_guard.ATTEMPTS[before:]
     if tried:
         pytest.fail(f"This test tried to reach the network ({sorted(set(map(str, tried)))}); SPEC rule 14.10.")
+
+
+ABSENT_ENV = Path(__file__).resolve().parent / "fixtures" / "absent.env"  # never created
+
+
+@pytest.fixture(autouse=True)
+def _no_real_fred_key(monkeypatch):
+    """No test reads the student's real FRED key (app/.env or the environment), so a test behaves the same on a
+    laptop with a key as in CI without one; the FRED rates kept in memory are cleared around every test. A test that
+    needs a key writes its own file and passes it in (tests/unit/test_fred.py)."""
+    from src.data import fred
+
+    monkeypatch.delenv("FRED_API_KEY", raising=False)
+    monkeypatch.setattr(fred, "ENV_FILE", ABSENT_ENV)
+    fred.forget()
+    yield
+    fred.forget()
 
 
 def pytest_sessionfinish(session, exitstatus):

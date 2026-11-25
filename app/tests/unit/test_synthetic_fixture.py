@@ -261,7 +261,10 @@ def test_each_owner_s_values_stay_locked_until_they_sign_off(monkeypatch, owner,
 
 
 def test_there_are_five_sign_offs_counting_a_who_collects_them():
-    assert set(FIXTURE["sign_off"]) == {"B", "C", "D", "E"}
+    # Rule 14.6, agreed by Igor on 24 November 2026: B's sign-off of that day covers CALC-P1–P6 and CALC-H1–H6 only,
+    # so the strengths and points to watch (CALC-G, also B's) get their own record, B_statements, and stay locked
+    # until B checks them. Before, one record "B" unlocked all three.
+    assert set(FIXTURE["sign_off"]) == {"B", "B_statements", "C", "D", "E"}
 
 
 def test_a_recorded_sign_off_names_the_person_the_date_and_the_comment_on_the_pull_request():
@@ -294,8 +297,20 @@ def test_expected_values_are_available_after_sign_off(monkeypatch):
     assert synthetic.tolerance(synthetic.expected_check("P3")) == pytest.approx(0.0005)
 
 
+def test_the_statements_stay_locked_after_b_signs_off_only_the_p_and_h_rows(monkeypatch):
+    monkeypatch.setitem(FIXTURE["sign_off"], "B", "Test Person, 2026-11-24")
+    monkeypatch.setitem(FIXTURE["sign_off"], "B_statements", None)
+    monkeypatch.setattr(synthetic, "_load", lambda: FIXTURE)
+    assert synthetic.expected_check("P3")["value"] == 9.375
+    with pytest.raises(synthetic.NotSignedOff, match="strengths and points to watch"):
+        synthetic.expected_statements()
+
+
 def test_the_statements_are_handed_out_after_b_signs_off(monkeypatch):
+    # Rule 14.6, agreed by Igor on 24 November 2026: the statements now need their own record, B_statements
+    # (see test_there_are_five_sign_offs_counting_a_who_collects_them); before, B's record alone handed them out.
     monkeypatch.setitem(FIXTURE["sign_off"], "B", "Test Person, 2026-11-22")
+    monkeypatch.setitem(FIXTURE["sign_off"], "B_statements", "Test Person, 2026-11-22")
     monkeypatch.setattr(synthetic, "_load", lambda: FIXTURE)
     statements = synthetic.expected_statements()
     assert statements["W8"] == {"shown": True, "value": 49.0, "unit": "%", "decimals": 1}
