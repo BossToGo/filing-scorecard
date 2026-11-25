@@ -314,3 +314,64 @@ def overview(data: CompanyData) -> Overview:
         balance=_balance(data, fy0),
         filing=_filing(data, fy0),
     )
+
+
+# --- the scorecard panel: totals, the share per area for the radar, checks by area ------------------------------
+
+AREA_LABELS = {"past_performance": "Past performance", "financial_health": "Financial health",
+               "dividend": "Dividend", "valuation": "Valuation"}
+CHECKS_PER_AREA = 6
+MARKS = {"pass": "pass", "fail": "fail", "insufficient_data": "not_assessed", "not_applicable": "not_applicable"}
+
+
+@dataclass(frozen=True)
+class AreaSummary:
+    area: str
+    label: str
+    marks: tuple[str, ...]  # per check, in order: pass, fail, not_assessed or not_applicable
+    passed: int
+    assessed: int
+    failed: int
+    not_assessed: int
+    share: float | None  # passed ÷ assessed for the radar; None when nothing is assessed (left off the shape)
+    share_text: str  # "100%" or "Not assessed"
+    count_text: str  # "4 passed of 4 assessed", "Not assessed", "No dividend paid · 0 passed of 1 assessed"
+
+
+@dataclass(frozen=True)
+class Scorecard:
+    areas: tuple[AreaSummary, ...]
+    passed: int
+    assessed: int
+    failed: int
+    not_assessed: int
+    headline: tuple[str, str] | None  # ("11", "15") for "11 / 15"; None when nothing is assessed
+    focus: AreaSummary | None  # the weakest assessed area: the one to read first
+
+
+def _area_summary(area: str, results) -> AreaSummary:
+    marks = (tuple(MARKS.get(r.status, "not_assessed") for r in results) if results
+             else ("not_assessed",) * CHECKS_PER_AREA)
+    passed, failed = marks.count("pass"), marks.count("fail")
+    assessed = passed + failed
+    share = passed / assessed if assessed else None
+    if not assessed:
+        count = "Not assessed"
+    else:
+        count = f"{passed} passed of {assessed} assessed"
+        if area == "dividend" and marks == ("fail",) + ("not_applicable",) * (len(marks) - 1):
+            count = f"No dividend paid · {count}"
+    return AreaSummary(area, AREA_LABELS.get(area, area.replace("_", " ").capitalize()), marks, passed, assessed,
+                       failed, marks.count("not_assessed"), share,
+                       "Not assessed" if share is None else f"{share * 100:.0f}%", count)
+
+
+def scorecard(results) -> Scorecard:
+    """`results` maps each area to its check results in order, or None for an area not part of this version (as
+    `ui.results.check_results` returns). Counts only: which check passes is decided by the checks themselves."""
+    areas = tuple(_area_summary(area, results.get(area)) for area in AREA_LABELS)
+    passed, assessed = sum(a.passed for a in areas), sum(a.assessed for a in areas)
+    scored = [a for a in areas if a.share is not None]
+    focus = min(scored, key=lambda a: a.share) if scored else None  # ties: the first in area order
+    return Scorecard(areas, passed, assessed, sum(a.failed for a in areas), sum(a.not_assessed for a in areas),
+                     (str(passed), str(assessed)) if assessed else None, focus)

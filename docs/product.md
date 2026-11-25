@@ -42,7 +42,7 @@ colour, no gradients, glow, shadows or emoji; a light and a dark theme with the 
 viewer's system setting; the viewer switches in the app menu); colours defined once in `app/.streamlit/config.toml` so
 a bank can apply its brand (§3). Layout, marks, texts and states: `docs/design/design-spec.md` and its mockup. Used on a phone: no (laptop demo). Visual reference: the way Simply Wall St
 presents results (areas, ticks, strengths and risks), in our own design. We do **not** use Simply Wall St's name,
-the word "snowflake", their radar-chart design or their text (§1, rule 14.16). Wording is information, not
+the word "snowflake" or their text (§1, rule 14.16). Wording is information, not
 advice: never "buy", "sell" or "undervalued" (§3).
 
 | Screen | Purpose | The user sees first | Cards / charts / tables (unit, period) | The user can | Loading / empty / error |
@@ -60,7 +60,9 @@ Agreed visuals:
    One row of six marks per area. Passed: accent square with a tick; failed: text-colour square with a cross;
    "not assessed" (insufficient data): dashed outline; "does not apply": thin outline with a dash. Told apart by
    shape and by the label "4 passed of 5 assessed, 1 not assessed", never by colour alone; a legend says the scores
-   are not a rating of the share and not advice. No radar chart.
+   are not a rating of the share and not advice. The overview's scorecard panel adds the total of assessed checks
+   passed and a radar of the four areas (share of assessed checks passed, centre 0%, edge 100%; an area not assessed
+   is labelled and left off the shape), with the checks by area next to it.
 2. **Check details**: tables, not charts. The overview's five-year chart (below) is the one chart so far (#47). Every figure with unit and fiscal year; missing figures shown as "n/a"
    with the reason, never as 0.
 3. The synthetic test company always carries a "SYNTHETIC DATA" mark.
