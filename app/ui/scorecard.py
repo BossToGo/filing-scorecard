@@ -128,6 +128,7 @@ def _style() -> str:
 [data-testid="stExpander"] summary [data-testid="stIconMaterial"] {{font-size:20px; line-height:24px; vertical-align:-5px}}
 [data-testid="stTab"][aria-selected="true"], [data-testid="stTab"][aria-selected="true"] p {{color:var(--fs-text)}}
 .fs-price {{text-align:right; font-size:14px}}  .fs-price strong {{font-size:16px}}
+h1:has(.fs-ticker) [data-testid="stHeaderActionElements"] {{display:none}}
 .fs-muted {{color:var(--fs-muted)}}  .fs-ticker {{font-size:16px; font-weight:400; color:var(--fs-muted); margin-left:8px}}
 .fs-row {{display:flex; align-items:center; gap:16px; height:40px; border-bottom:1px solid var(--fs-line)}}
 .fs-bar {{display:inline-flex; gap:4px}}
@@ -235,7 +236,8 @@ def render_check(data: CompanyData, result: CheckResult, texts: Mapping) -> None
     word = MARK_WORDS[result.status]
     # The row shows the explanation when the check is not assessed, does not apply, or uses an assumed figure; the
     # open detail then does not repeat it (Igor's review of #35: once; Simon, 25 November 2026)
-    in_row = result.status not in ("pass", "fail") or any(f.kind == "assumption" for f in result.inputs)
+    assumed = any(f.kind == "assumption" for f in result.inputs)  # e.g. dividends treated as nil: never "USD 0 m"
+    in_row = result.status not in ("pass", "fail") or assumed
     if result.status in ("pass", "fail") and in_row:
         # A figure is an assumption (e.g. dividends treated as nil): the check's own words, never "USD 0 m" (Flo's
         # rule, plan Q1; Simon's look of 25 November 2026)
@@ -254,7 +256,7 @@ def render_check(data: CompanyData, result: CheckResult, texts: Mapping) -> None
             st.markdown(f"**Rule:** {rule}")
         if not in_row:
             st.markdown(f"**How it is calculated:** {result.explanation}")
-        if result.value is not None or result.threshold is not None:
+        if (result.value is not None or result.threshold is not None) and not assumed:  # the table says it
             shown, against = check_value(result.check_id, result.value, result.threshold)
             st.markdown(f"**Value:** {shown}" + (f" · **compared with:** {against}" if against else ""))
         if result.inputs:

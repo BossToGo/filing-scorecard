@@ -207,6 +207,25 @@ def test_amazon_d1_shows_its_explanation_once_in_the_row():
     assert not any(m.value.startswith("**How it is calculated:**") for m in d1.markdown)
 
 
+def test_amazon_d1_detail_has_no_value_against_threshold_line():
+    """Simon's look of 25 November 2026, same rule as the row: with an assumed figure, no "Value: USD 0 m · compared
+    with: USD 0 m"; the figure table already says "no dividend paid"."""
+    pytest.importorskip("src.checks.dividend", reason="needs C's dividend module (merged in #23)")
+    d1 = next(e for e in show("AMZN").expander if "**D1.**" in e.label)
+    assert not any(m.value.startswith("**Value:**") for m in d1.markdown)
+    assert "USD 0 m" not in "\n".join(m.value for m in d1.markdown)
+    table = d1.table[0].value if d1.table else d1.dataframe[0].value
+    assert "no dividend paid" in table.astype(str).to_string()
+
+
+def test_the_company_heading_has_no_link_icon():
+    """Simon's look of 25 November 2026: Streamlit 1.67 adds a link icon to headings (`stHeaderActionElements`);
+    hidden on the company heading only."""
+    from ui.scorecard import _style
+
+    assert 'h1:has(.fs-ticker) [data-testid="stHeaderActionElements"] {display:none}' in _style()
+
+
 def test_the_word_is_not_repeated_when_the_explanation_already_says_it():
     """Simon's look of 25 November 2026: not "Not assessed. This check is not assessed yet: ...". The word is left out
     when the explanation's first clause already contains it."""
