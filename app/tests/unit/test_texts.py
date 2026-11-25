@@ -1,4 +1,4 @@
-"""`app/ui/texts.yaml`: the plain-language text of every tier 1 check (SPEC §3 item 4, §7, slice S16a).
+"""`app/ui/texts.yaml`: the plain-language text of every check, tier 1 and valuation (SPEC §3 item 4, §7, S16a, S16b).
 
 Owner: E. The texts are E's own words; this test checks that each check has one, that none gives advice, and that
 the thresholds written in the texts still equal the values in `app/settings.yaml`.
@@ -13,7 +13,7 @@ APP = Path(__file__).resolve().parents[2]
 TEXTS = APP / "ui" / "texts.yaml"
 SETTINGS = APP / "settings.yaml"
 
-TIER_1_CHECKS = [f"{area}{n}" for area in "PHD" for n in range(1, 7)]  # P1 ... D6 (SPEC §2, §7)
+CHECKS = [f"{area}{n}" for area in "PHDV" for n in range(1, 7)]  # P1 ... D6 (tier 1), V1 ... V6 (SPEC §2, §7)
 ADVICE_WORDS = re.compile(  # information, not advice; SPEC §3 says "the estimate", never "fair value" (#32, #39)
     r"\b(buy|sell|undervalued|fair\s+value|cheap|expensive)\b", re.IGNORECASE
 )
@@ -35,13 +35,15 @@ THRESHOLDS_IN_TEXTS = {
     "H6": ("financial_health", "min_interest_cover", lambda v: f"{v:g} times"),
     "D3": ("dividend", "max_dividend_cut", percent),
     "D5": ("dividend", "max_payout_ratio", percent),
+    "V2": ("valuation", "well_below_fair_value", percent),
+    "V6": ("valuation", "growth_cap", percent),
 }
 
 
-def test_every_tier_1_check_has_a_name_and_a_rule():
+def test_every_check_has_a_name_and_a_rule():
     texts = load(TEXTS)
     problems = []
-    for check in TIER_1_CHECKS:
+    for check in CHECKS:
         entry = texts.get(check)
         if not isinstance(entry, dict):
             problems.append(f"{check}: no text")
