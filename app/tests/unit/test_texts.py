@@ -14,7 +14,9 @@ TEXTS = APP / "ui" / "texts.yaml"
 SETTINGS = APP / "settings.yaml"
 
 TIER_1_CHECKS = [f"{area}{n}" for area in "PHD" for n in range(1, 7)]  # P1 ... D6 (SPEC §2, §7)
-ADVICE_WORDS = re.compile(r"\b(buy|sell|undervalued)\b", re.IGNORECASE)  # information, not advice
+ADVICE_WORDS = re.compile(  # information, not advice; SPEC §3 says "the estimate", never "fair value" (#32, #39)
+    r"\b(buy|sell|undervalued|fair\s+value|cheap|expensive)\b", re.IGNORECASE
+)
 
 
 def load(path):
