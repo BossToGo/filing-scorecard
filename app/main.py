@@ -21,7 +21,7 @@ OTHER = "Other ticker"
 
 st.set_page_config(page_title="Filing Scorecard", layout="wide")
 START = ("Pick one of the five companies ({tickers}) or choose \"{other}\" and type another US ticker. Add the share "
-         "price in US dollars if you have it, then press Show scorecard. The check reads the company's last five "
+         "price in US dollars if you have it, then press Show scorecard. The scorecard reads the company's last five "
          "annual reports.")
 
 

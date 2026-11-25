@@ -120,6 +120,19 @@ def test_the_legend_names_the_four_marks_and_says_it_is_not_advice():
         assert word in shown
 
 
+def test_the_legend_calls_a_mark_a_check():
+    """Emma's review of #54 (design spec §5 rule 5, one name per thing), wording given by Simon on 25 November 2026."""
+    assert ("Each mark is one check of the company's annual reports. It is not a rating of the share and not advice."
+            in chart(run_synthetic()))
+
+
+def test_the_start_screen_says_the_scorecard_reads_five_annual_reports():
+    """Emma's review of #54: the whole scorecard reads the reports, not one check (wording by Simon, 25 November)."""
+    shown = texts(AppTest.from_file(MAIN).run(timeout=30))
+    assert "The scorecard reads the company's last five annual reports." in shown
+    assert "The check reads" not in shown
+
+
 def test_no_failed_check_says_so():
     app = AppTest.from_function(synthetic_page, kwargs={"statuses": {cid: "pass" for cid in AC3}}).run(timeout=30)
     assert "No check failed." in texts(app)
@@ -443,7 +456,9 @@ def test_coca_cola_header_shows_the_sec_name_ac1():
     app = show("KO")
     assert not app.exception
     assert ">COCA COLA CO<" in heading(app)
-    assert "Beverages, SEC code 2080" in texts(app)
+    # Wording change (Simon's written wording of 25 November 2026, Emma's review of #54): "SEC industry: Beverages
+    # (code 2080)", so it is not confused with the industry group under the valuation detail; same industry and code.
+    assert "SEC industry: Beverages (code 2080)" in texts(app)
 
 
 def test_the_header_shows_the_ticker_muted_and_the_typed_price():

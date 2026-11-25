@@ -30,8 +30,8 @@ SCORE_LABEL = "{passed} passed of {assessed} assessed"
 NOT_IN_THIS_VERSION = "Not part of this version"  # valuation in v0.1 (design spec §6)
 NOT_ASSESSED = "Not assessed"  # an area whose module is not merged yet, or with nothing assessed (Simon, 25 Nov)
 NOTHING_ASSESSED = "open each check for its reason"
-CHART_NOTE = ("Each mark is one yes/no test on the company's annual reports. It is not a rating of the share and not "
-              "advice.")
+CHART_NOTE = ("Each mark is one check of the company's annual reports. It is not a rating of the share and not "
+              "advice.")  # one name per thing (design spec §5 rule 5; Emma's review of #54)
 FAILED_TITLE = "Failed checks"
 SOURCES_TAB = "Sources"
 NO_FAILED = "No check failed."
@@ -93,10 +93,11 @@ def render_header(data: CompanyData, warnings: Sequence[str] = (), price: float 
     if is_synthetic(data):
         st.warning(f"{SYNTHETIC}: an invented company for tests (SPEC Appendix A), not a real company.")
     company, typed = st.columns([4, 1], vertical_alignment="bottom")
-    # The name as the SEC lists it (SPEC 2.4.1 §3); the SEC code stays in the meta line until #27 (Igor, #39).
+    # The name as the SEC lists it (SPEC 2.4.1 §3); the SEC code stays in the meta line until #27 (Igor, #39), named
+    # "SEC industry" so it is not confused with the industry group under the valuation detail (Emma's review of #54).
     company.markdown(f'<h1>{html.escape(data.name)}<span class="fs-ticker">{html.escape(data.ticker)}</span></h1>',
                      unsafe_allow_html=True)
-    industry = f"{data.sic_description}, SEC code {data.sic}" if data.sic else "Industry n/a"
+    industry = f"SEC industry: {data.sic_description} (code {data.sic})" if data.sic else "SEC industry: n/a"
     company.caption(
         f"{industry} · Latest fiscal year ended {_latest_fiscal_year_end(data)} · "
         f"Latest annual report filed {_day(data.latest_10k_filed)} · Data retrieved {_day(data.retrieved)}"
