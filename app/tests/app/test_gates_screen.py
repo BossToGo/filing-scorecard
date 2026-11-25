@@ -45,7 +45,9 @@ def test_jpmorgan_is_not_supported_and_shows_no_score_ac2():
         "Not supported: JPMORGAN CHASE & CO is in an industry these checks do not cover (banks, insurers, real "
         "estate trusts; SEC industry code 6021). Pick one of the five demo companies, or type another ticker."]
     shown = "\n".join(m.value for m in app.markdown)
-    assert "passed of" not in shown and "fs-block" not in shown  # no score chart
+    # Label change (rule 14.6, Simon's written agreement of 25 November 2026): the marks' class is "fs-mk" since the
+    # S10 design (it was "fs-block"); with the old name this check would pass without checking anything.
+    assert "passed of" not in shown and "fs-mk" not in shown  # no score chart
     assert not app.dataframe and not app.expander  # no checks, no sources
 
 

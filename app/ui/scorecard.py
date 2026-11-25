@@ -17,7 +17,7 @@ import streamlit as st
 import yaml
 
 from src.contracts import CheckResult, CompanyData, Fact
-from src.scores import area_score, dividend_note
+from src.scores import area_score, dividend_note, not_assessed
 from ui.format import check_value, fact_value
 from ui.results import AREA_CHECKS, AREAS
 
@@ -26,11 +26,21 @@ AREA_TITLES = {"past_performance": "Past performance", "financial_health": "Fina
                "dividend": "Dividend", "valuation": "Valuation"}
 # The score label, written here only (issue #32 point 3; SPEC §3 wording to follow A's next SPEC pull request).
 SCORE_LABEL = "{passed} passed of {assessed} assessed"
-NOT_IN_THIS_VERSION = "Not assessed in this version"
-VALUATION_V01 = "Not assessed until v0.2"
-NOTHING_ASSESSED = "Insufficient data: none of these checks could be assessed (open each check for its reason)"
-CHART_NOTE = "Each block is one yes/no test on the filings; not a rating of the share, not advice."
+NOT_IN_THIS_VERSION = "Not part of this version"  # valuation in v0.1 (design spec §6)
+NOT_ASSESSED = "Not assessed"  # an area whose module is not merged yet, or with nothing assessed (Simon, 25 Nov)
+NOTHING_ASSESSED = "open each check for its reason"
+CHART_NOTE = ("Each mark is one yes/no test on the company's annual reports. It is not a rating of the share and not "
+              "advice.")
+FAILED_TITLE = "Failed checks"
+NO_FAILED = "No check failed."
 SYNTHETIC = "SYNTHETIC DATA"
+# The four looks of a mark (SPEC 2.4.2 §3): CSS class, word, and the glyph drawn on it (docs/design/mockup.html).
+MARK_CLASSES = {"pass": "pass", "fail": "fail", "insufficient_data": "wait", "not_applicable": "none"}
+MARK_WORDS = {"pass": "Passed", "fail": "Failed", "insufficient_data": "Not assessed",
+              "not_applicable": "Does not apply"}
+_SVG = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="{}"/></svg>'
+GLYPHS = {"pass": _SVG.format("M2.5 6.3 5 8.6 9.5 3.6"), "fail": _SVG.format("M3.2 3.2l5.6 5.6M8.8 3.2 3.2 8.8"),
+          "not_applicable": _SVG.format("M3.5 6h5")}
 # Look of each result: (mark, result word). Text and mark, never colour alone (issue #32 point 11).
 LOOKS = {"pass": ("✓", "Passed"), "fail": ("✕", "Failed"), "insufficient_data": ("⋯", "Not assessed"),
          "not_applicable": ("–", "n/a")}
@@ -44,6 +54,11 @@ def load_texts(path: Path = TEXTS_FILE) -> dict:
     if not path.exists():
         return {}
     return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+
+
+def _plain_name(check_id: str, texts: Mapping) -> str:
+    """E's name of a check, or its id until her texts (#17) are merged."""
+    return texts.get(check_id, {}).get("name") or check_id
 
 
 def _name(check_id: str, texts: Mapping) -> str:
@@ -124,51 +139,80 @@ def _style() -> str:
 .stMarkdown table.fs-kv {{width:100%; border-collapse:collapse}}
 .stMarkdown table.fs-kv td {{padding:8px 0; border:0; border-bottom:1px solid var(--fs-line)}}
 .stMarkdown table.fs-kv td:last-child {{text-align:right}}
-/* Until item 5: the old six-block bar, in the new colours */
-.fs-area {{width:9.5rem; font-weight:600}}  .fs-blocks {{display:flex; gap:4px}}
-.fs-block {{min-width:6.2rem; min-height:40px; padding:4px 8px; border-radius:4px; font-size:12px; line-height:16px;
-  white-space:nowrap; text-align:center; flex-direction:column;
-  display:flex; align-items:center; justify-content:center; box-sizing:border-box}}
-.fs-block.fs-pass {{color:var(--fs-page)}}  .fs-block.fs-fail {{color:var(--fs-page)}}
-.fs-insufficient_data, .fs-empty {{border:1.5px dashed var(--fs-muted)}}  .fs-not_applicable {{border:1px solid var(--fs-line)}}
+.fs-row:first-of-type {{border-top:1px solid var(--fs-line)}}
+.fs-area {{width:160px; flex:none; font-weight:600}}  .fs-score {{font-weight:600}}
+.fs-sub {{color:var(--fs-muted); font-size:14px}}  .fs-mk {{flex:none}}
+.fs-legend {{display:flex; align-items:center; flex-wrap:wrap; gap:8px 16px; margin-top:12px; font-size:14px;
+  line-height:20px; color:var(--fs-muted)}}
+.fs-key {{display:inline-flex; align-items:center; gap:8px}}
+ul.fs-failed {{list-style:none; margin:0; padding:0}}
+ul.fs-failed li {{display:flex; align-items:center; gap:12px; height:40px; margin:0; border-bottom:1px solid var(--fs-line)}}
+ul.fs-failed li.fs-hd {{border-top:1px solid var(--fs-line); font-weight:600}}
+ul.fs-failed li .fs-sub {{margin-left:auto}}
 </style>"""
 
 
-def _block(check_id: str, status: str | None, reason: str = "") -> str:
-    if status is None:  # area not assessed in this version
-        return f'<div class="fs-block fs-empty" title="{check_id}: not assessed">{check_id}<br>not assessed</div>'
-    mark, word = LOOKS[status]
-    title = html.escape(f"{check_id}: {word}" + (f": {reason}" if status in ("insufficient_data", "not_applicable")
-                                                 else ""), quote=True)
-    return f'<div class="fs-block fs-{status}" title="{title}">{mark} {check_id}<br>{word.lower()}</div>'
+def _block(status: str | None, title: str = "") -> str:
+    """One 20 px mark: shape and fill differ per look, so colour is never alone (design spec §4). `None`: dashed."""
+    look = MARK_CLASSES[status or "insufficient_data"]
+    glyph = GLYPHS.get(status or "", "")
+    tip = f' title="{html.escape(title, quote=True)}"' if title else ""
+    return f'<span class="fs-mk fs-{look}"{tip}>{glyph}</span>'
 
 
-def _label(area: str, results: Sequence[CheckResult] | None) -> str:
+def _label(area: str, results: Sequence[CheckResult] | None) -> tuple[str, str]:
+    """The row's score and its muted note: ("4 passed of 5 assessed", "1 not assessed yet")."""
     if results is None:
-        return VALUATION_V01 if area == "valuation" else NOT_IN_THIS_VERSION
+        return "", NOT_IN_THIS_VERSION if area == "valuation" else NOT_ASSESSED
     score = area_score(results)
     if score.assessed == 0:
-        return NOTHING_ASSESSED
+        return NOT_ASSESSED, NOTHING_ASSESSED
     label = SCORE_LABEL.format(passed=score.passed, assessed=score.assessed)
     note = dividend_note(results) if area == "dividend" else None
-    return f"{note[0].upper()}{note[1:]} · {label}" if note else label
+    if note:  # "No dividend paid", then the score muted (SPEC §3)
+        return f"{note[0].upper()}{note[1:]}", label
+    waiting = not_assessed(results)
+    if not waiting.count:
+        return label, ""
+    return label, f"{waiting.count} not assessed" + (" yet" if waiting.yet else "")
 
 
-def render_score_chart(results: Mapping[str, Sequence[CheckResult] | None], price: float | None) -> None:
-    rows = [_style()]
+def _legend() -> str:
+    keys = "".join(f'<span class="fs-key">{_block(status)}{word}</span>' for status, word in MARK_WORDS.items())
+    return f'<div class="fs-legend">{keys}<span>{CHART_NOTE}</span></div>'
+
+
+def _failed_list(results: Mapping[str, Sequence[CheckResult] | None], texts: Mapping) -> str:
+    """The failed checks with their area, next to the chart until tier 3 (SPEC §3 item 4)."""
+    rows = [f'<li>{_block("fail")}{html.escape(_plain_name(r.check_id, texts))}'
+            f'<span class="fs-sub">{AREA_TITLES[area]}</span></li>'
+            for area in AREAS for r in (results.get(area) or ()) if r.status == "fail"]
+    return f'<ul class="fs-failed"><li class="fs-hd">{FAILED_TITLE}</li>{"".join(rows) or f"<li>{NO_FAILED}</li>"}</ul>'
+
+
+def render_score_chart(results: Mapping[str, Sequence[CheckResult] | None]) -> None:
+    """One row of six marks per area, the legend, and the failed checks on the right (design spec §3)."""
+    texts = load_texts()
+    rows = []
     for area in AREAS:
         area_results = results.get(area)
         if area_results is None:
-            blocks = "".join(_block(cid, None) for cid in AREA_CHECKS[area])
+            marks = "".join(_block(None) for _ in AREA_CHECKS[area])
         else:
-            blocks = "".join(_block(r.check_id, r.status, r.explanation) for r in area_results)
-        label = html.escape(_label(area, area_results))
-        if area == "valuation" and price is not None:
-            label += f" · At the price you typed: USD {price:,.2f}"
-        rows.append(f'<div class="fs-row"><div class="fs-area">{AREA_TITLES[area]}</div>'
-                    f'<div class="fs-blocks">{blocks}</div><div class="fs-label">{label}</div></div>')
-    st.markdown("\n".join(rows), unsafe_allow_html=True)
-    st.caption(CHART_NOTE)
+            marks = "".join(_block(r.status, f"{_plain_name(r.check_id, texts)}: {MARK_WORDS[r.status]}"
+                                   + (f". {r.explanation}" if r.status in ("insufficient_data", "not_applicable")
+                                      else ""))
+                            for r in area_results)
+        score, sub = _label(area, area_results)
+        said = ", ".join(part for part in (score, sub) if part)  # "Dividend: no dividend paid, 0 passed of 1 assessed"
+        aria = html.escape(f"{AREA_TITLES[area]}: {said[:1].lower()}{said[1:]}", quote=True)
+        rows.append(f'<div class="fs-row"><span class="fs-area">{AREA_TITLES[area]}</span>'
+                    f'<span class="fs-bar" role="img" aria-label="{aria}">{marks}</span>'
+                    f'<span class="fs-score">{html.escape(score)}</span><span class="fs-sub">{html.escape(sub)}</span>'
+                    f'</div>')
+    chart, failed = st.columns([2, 1], gap="large")
+    chart.markdown(_style() + "".join(rows) + _legend(), unsafe_allow_html=True)
+    failed.markdown(_failed_list(results, texts), unsafe_allow_html=True)
 
 
 # --- checks -----------------------------------------------------------------------------------------------------
@@ -224,5 +268,5 @@ def render_checks(data: CompanyData, results: Mapping[str, Sequence[CheckResult]
 def render_scorecard(data: CompanyData, results: Mapping[str, Sequence[CheckResult] | None],
                      price: float | None, warnings: Sequence[str] = ()) -> None:
     render_header(data, warnings, price)
-    render_score_chart(results, price)
+    render_score_chart(results)
     render_checks(data, results)

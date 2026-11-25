@@ -14,6 +14,7 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 MAIN = str(Path(__file__).resolve().parents[2] / "main.py")
+CROSS = '<path d="M3.2 3.2l5.6 5.6M8.8 3.2 3.2 8.8"/>'  # the failed mark's cross (docs/design/mockup.html)
 AC3 = {
     "P1": "pass", "P2": "pass", "P3": "pass", "P4": "insufficient_data", "P5": "insufficient_data", "P6": "pass",
     "H1": "pass", "H2": "fail", "H3": "fail", "H4": "pass", "H5": "pass", "H6": "pass",
@@ -63,13 +64,78 @@ def show(ticker: str, price: str = "") -> AppTest:
 
 
 def test_ac3_scores_on_screen():
+    """Label change (rule 14.6, Simon's written agreement of 25 November 2026): valuation in v0.1 reads "Not part of
+    this version" (SPEC 2.4.2 §3, design spec §6), no longer "Not assessed until v0.2". The scores are unchanged."""
     app = run_synthetic()
     assert not app.exception
     shown = texts(app)
     assert "4 passed of 4 assessed" in shown  # past performance
     assert "4 passed of 6 assessed" in shown  # financial health
     assert "5 passed of 5 assessed" in shown  # dividend
-    assert "Not assessed until v0.2" in shown  # valuation, v0.1
+    assert "Not part of this version" in shown  # valuation, v0.1
+
+
+def chart(app: AppTest) -> str:
+    return next(m.value for m in app.markdown if "fs-row" in m.value)
+
+
+def row(app: AppTest, area: str) -> str:
+    """One area row of the score chart, as HTML."""
+    import re
+
+    return re.search(rf'<div class="fs-row"><span class="fs-area">{area}</span>.*?</div>', chart(app)).group(0)
+
+
+def test_ac3_rows_name_what_is_not_assessed_and_the_failed_checks():
+    """Simon's hand count of 25 November 2026: past 2 not assessed (P4, P5), health 0, dividend 1 (D2); the AC3
+    statuses fail H2 and H3. The hand-built explanations do not say "yet", so no "yet" is shown."""
+    import re
+
+    app = run_synthetic()
+    assert "2 not assessed<" in row(app, "Past performance")
+    assert "not assessed" not in row(app, "Financial health")
+    assert "1 not assessed<" in row(app, "Dividend")
+    assert 'aria-label="Financial health: 4 passed of 6 assessed"' in chart(app)
+    assert 'aria-label="Past performance: 4 passed of 4 assessed, 2 not assessed"' in chart(app)
+    assert len(re.findall(r'class="fs-mk fs-wait"', row(app, "Valuation"))) == 6
+    failed = next(m.value for m in app.markdown if "Failed checks" in m.value)
+    assert re.findall(r"</span>(\w+)<span class=\"fs-sub\">([\w ]+)</span>", failed) == [
+        ("H2", "Financial health"), ("H3", "Financial health")]
+
+
+def test_the_legend_names_the_four_marks_and_says_it_is_not_advice():
+    shown = chart(run_synthetic())
+    for word in ("Passed", "Failed", "Not assessed", "Does not apply", "not a rating of the share and not advice"):
+        assert word in shown
+
+
+def test_no_failed_check_says_so():
+    app = AppTest.from_function(synthetic_page, kwargs={"statuses": {cid: "pass" for cid in AC3}}).run(timeout=30)
+    assert "No check failed." in texts(app)
+
+
+def test_coca_cola_dividend_is_not_assessed_yet_and_areas_without_a_module_are_not_assessed():
+    """C's D2 explanation says "not assessed yet"; past performance and financial health have no module on main yet
+    (B's #28, #29): six dashed marks and "Not assessed" (Simon, 25 November 2026)."""
+    import re
+
+    pytest.importorskip("src.checks.dividend", reason="needs C's dividend module (merged in #23)")
+    app = show("KO")
+    assert "4 passed of 5 assessed" in row(app, "Dividend") and "1 not assessed yet" in row(app, "Dividend")
+    for area in ("Past performance", "Financial health"):
+        if "passed of" not in row(app, area):  # until B's module is merged
+            assert "Not assessed" in row(app, area)
+            assert len(re.findall(r'class="fs-mk fs-wait"', row(app, area))) == 6
+
+
+def test_amazon_dividend_row_reads_no_dividend_paid_0_passed_of_1_assessed():
+    """Simon's hand check of 25 November 2026 (SPEC §3): D1 failed, five does-not-apply marks."""
+    import re
+
+    pytest.importorskip("src.checks.dividend", reason="needs C's dividend module (merged in #23)")
+    dividend = row(show("AMZN"), "Dividend")
+    assert "No dividend paid" in dividend and "0 passed of 1 assessed" in dividend
+    assert len(re.findall(r'class="fs-mk fs-none"', dividend)) == 5
 
 
 def test_synthetic_data_mark_v3():
@@ -209,13 +275,17 @@ def test_a_failed_block_is_filled_in_the_text_colour_of_both_themes():
     assert fills == ["var(--fs-text)"]  # one fill, named, never currentColor
     assert f"--fs-text:light-dark({theme['textColor']}, {theme['dark']['textColor']})" in css
 
-    chart = next(m.value for m in show("KO").markdown if "fs-row" in m.value)
-    d6 = re.search(r'<div class="([^"]*)" title="D6[^"]*">([^<]*)', chart)
-    assert "fs-fail" in d6.group(1).split() and "✕" in d6.group(2)
+    # Since item 5 the cross is the design's drawn cross (two paths), no longer the "✕" character.
+    d6 = re.search(r'<span class="([^"]*)" title="D6[^"]*">(.*?)</span>', chart(show("KO")))
+    assert "fs-fail" in d6.group(1).split() and CROSS in d6.group(2)
 
 
-def test_a_typed_price_is_repeated_next_to_valuation():
-    assert "At the price you typed: USD 182.50" in texts(show("KO", "182,50"))
+def test_a_typed_price_is_repeated_in_the_header():
+    """Label change (rule 14.6, Simon's written agreement of 25 November 2026): the typed price is repeated in the
+    header as "Share price you typed", no longer next to valuation (design spec §3). The price shown is unchanged."""
+    shown = texts(show("KO", "182,50"))
+    assert "Share price you typed" in shown and "USD 182.50" in shown
+    assert "At the price you typed" not in shown
 
 
 def test_an_invalid_price_says_how_to_type_it():
