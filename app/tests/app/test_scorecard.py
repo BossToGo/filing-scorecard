@@ -115,12 +115,22 @@ def test_start_screen_lists_the_five_demo_companies():
         assert ticker in shown
 
 
+def test_the_title_and_start_sentence_show_only_on_the_start_screen():
+    """Design spec §3 and §6: "Filing Scorecard" and one sentence under the inputs, gone once a company is shown."""
+    app = show("KO")
+    assert not app.title
+    assert "press Show scorecard" not in texts(app)
+
+
 def test_the_ticker_field_takes_space_only_for_another_ticker():
-    """Simon's look at the app, 23 November: no empty gap in the input bar."""
+    """Simon's look at the app, 23 November: no empty gap in the input bar.
+
+    Label change (rule 14.6, Simon's written agreement of 25 November 2026): 4 and 5 columns, not 3 and 4, because
+    the design puts the Show scorecard button in the same row (design spec §3, item 3)."""
     app = AppTest.from_file(MAIN).run(timeout=30)
-    assert [t.label for t in app.text_input] == ["Share price (USD)"] and len(app.columns) == 3
+    assert [t.label for t in app.text_input] == ["Share price (USD)"] and len(app.columns) == 4
     app.selectbox(key="company").set_value("Other ticker").run(timeout=30)
-    assert [t.label for t in app.text_input] == ["Ticker", "Share price (USD)"] and len(app.columns) == 4
+    assert [t.label for t in app.text_input] == ["Ticker", "Share price (USD)"] and len(app.columns) == 5
 
 
 def test_coca_cola_header_shows_the_sec_name_ac1():
