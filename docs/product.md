@@ -5,6 +5,8 @@ through the review of the pull request that adds this file. Updated on 2026-11-1
 (Igor's product direction: retail bank customers, fully automatic, strengths and points to watch instead of five
 forces); the group confirms it by approving the SPEC v2.3 pull request. Updated on 2026-11-22 for `SPEC.md`
 version 2.4 (the MVP is the five demo companies, one workflow end to end), approved by the group in pull request #20.
+Updated on 2026-11-23 for `SPEC.md` version 2.4.2 (the screen design of `docs/design/`), approved by the group
+through the pull request that adds that folder.
 
 **`SPEC.md` has the final say.** This file summarises it for the assistant and the team. If the two disagree,
 `SPEC.md` wins and this file is corrected by pull request. Section numbers below (§) point to `SPEC.md`.
@@ -34,16 +36,19 @@ version 2.4 (the MVP is the five demo companies, one workflow end to end), appro
 
 ## Screens and visuals
 
-Look: a dashboard with one score chart, the strengths and points to watch, expandable checks and tables. Calm and
-light, one accent colour, no gradients, glow or emoji; colours defined once in `app/.streamlit/config.toml` so a
-bank can apply its brand (§3). Used on a phone: no (laptop demo). Visual reference: the way Simply Wall St
+Look: a panel in a bank's buy step that reads like a research note: one score chart, the failed checks next to it
+(strengths and points to watch from tier 3), one tab per area with expandable checks and tables. Calm, one accent
+colour, no gradients, glow, shadows or emoji; a light and a dark theme with the same structure (the app follows the
+viewer's system setting; the viewer switches in the app menu); colours defined once in `app/.streamlit/config.toml` so
+a bank can apply its brand (§3). Layout, marks, texts and states: `docs/design/design-spec.md` and its mockup. Used on a phone: no (laptop demo). Visual reference: the way Simply Wall St
 presents results (areas, ticks, strengths and risks), in our own design. We do **not** use Simply Wall St's name,
 the word "snowflake", their radar-chart design or their text (§1, rule 14.16). Wording is information, not
 advice: never "buy", "sell" or "undervalued" (§3).
 
 | Screen | Purpose | The user sees first | Cards / charts / tables (unit, period) | The user can | Loading / empty / error |
 |---|---|---|---|---|---|
-| Scorecard (main page) | First-pass view of one company | Header: company, industry and how it was found, fiscal year end, latest 10-K date, retrieval date, and only two warnings ("not fully checked", "old annual report"; the rest on the sources page, §10); then the score chart | Score chart (4 areas, passes out of 6); 24 checks, each expandable to rule, formula, inputs (USD m, fiscal year) and filing link | Pick one of the five demo companies or type another ticker; type the share price (USD); switch demo mode; open a check | Loading: "Fetching SEC filings…". Unknown ticker, unsupported company (bank, insurer, REIT, non-USD, non-10-K), source unreachable: a message that says how to fix it (§3) |
+| Scorecard (main page) | First-pass view of one company | Header: company, industry and how it was found, fiscal year end, latest 10-K date, retrieval date, and only two warnings ("not fully checked", "old annual report"; the rest on the sources page, §10); then the score chart | Score chart (4 areas, passes out of 6) with a legend; the failed checks next to it; one tab per area: its score, one sentence, key figures and its checks, each a sentence with the company's figures, expandable to rule, working, inputs (USD m, fiscal year) and filing link; the sources page as the last tab | Pick one of the five demo companies or type another ticker; type the share price (USD); switch demo mode; open a check | Loading: "Fetching SEC filings…". Unknown ticker, unsupported company (bank, insurer, REIT, non-USD, non-10-K), source unreachable: a message that says how to fix it (§3) |
+| Overview (above the tabs, tier 2; #47) | See how the company did at a glance | Four key figures for the latest fiscal year, each with its change on the year before and "reported" or "derived" | Key figures (USD bn or m, %, pp); a five-year line chart of revenue, net income and free cash flow (USD, FY-4 to FY0) with a table view; dividend coverage (%); balance sheet figures; filing details | Switch the chart to a table | A missing input gives "n/a" with the reason, never 0; a nil dividend reads "No dividend paid" |
 | Valuation detail (tier 2, on the main page) | Show how the fair value was built | Fair value per share against the share price (USD) | Tables: cost of equity build-up (%), 10-year free cash flow forecast (USD m), actual revenue growth (%); the growth note when the growth limit applies | Nothing to type: the share price in the input bar is the only input | No share price: the whole area shows "insufficient data, enter a share price". Model does not fit (§8.6): no fair value, the reason in plain words |
 | Strengths and points to watch (tier 3, next to the score chart) | Say in plain words what the numbers mean | Up to five strengths and five points to watch, important ones first | List of short statements with the company's numbers, each linked to its check or figures (§9) | Open the check behind a statement | Inputs missing: the statement is not shown (never guessed) |
 | Sources page | Trace every number | One row per figure | Table: metric, value, unit, period, kind, tag, form, accession, filed, retrieved, note | Filter by kind; follow the link to the filing | Missing figures listed with the reason and the checks they block |
@@ -51,13 +56,17 @@ advice: never "buy", "sell" or "undervalued" (§3).
 
 Agreed visuals:
 
-1. **Score chart** [design details to confirm by member D]. Question: "how does the company do in each area?"
-   One bar of six blocks per area (§3). Passes filled; fails, "insufficient data" and "not applicable" told apart
-   by pattern and by a text label such as "4 of 5 assessed, 1 with insufficient data" (§3), never by colour
-   alone. No radar chart.
-2. **Check details**: tables, not charts. Every figure with unit and fiscal year; missing figures shown as "n/a"
+1. **Score chart** (design in `docs/design/`, SPEC 2.4.2 §3). Question: "how does the company do in each area?"
+   One row of six marks per area. Passed: accent square with a tick; failed: text-colour square with a cross;
+   "not assessed" (insufficient data): dashed outline; "does not apply": thin outline with a dash. Told apart by
+   shape and by the label "4 passed of 5 assessed, 1 not assessed", never by colour alone; a legend says the scores
+   are not a rating of the share and not advice. No radar chart.
+2. **Check details**: tables, not charts. The overview's five-year chart (below) is the one chart so far (#47). Every figure with unit and fiscal year; missing figures shown as "n/a"
    with the reason, never as 0.
 3. The synthetic test company always carries a "SYNTHETIC DATA" mark.
+4. **Overview chart** (S10c, agreed on #47). Question: "is the business growing, and does the cash follow the profit?"
+   Lines for revenue, net income and free cash flow (dashed) over the five fiscal years, USD bn; a Chart/Table switch
+   shows the same figures as a table; a missing year is a gap, never 0. Colours never mean good or bad.
 
 Interface rules (§3): a unit on every input and figure; the key result at the top without scrolling; every error
 message says how to fix the problem.
@@ -105,7 +114,7 @@ F1 to F3 are never cut.
 | Ticker → company number | SEC `company_tickers.json` | Downloaded once, cached | SEC fair access: declared User-Agent; we stay at or below 5 requests per second (SEC limit 10) (§4) |
 | Company name, industry code, fiscal year end, filings | SEC `submissions` API | Per company, cached with retrieval time | Same |
 | Financial statement figures | SEC `companyfacts` API (10-K and 10-K/A only) | Per company, cached with retrieval time | Same |
-| Risk-free rate | FRED series `DGS10` | Average of the last five years of daily values, downloaded when needed; a dated fallback in `settings.yaml` for demo mode, a missing key or no network (SPEC §4) | FRED terms [to confirm in slice S2b] |
+| Risk-free rate | FRED series `DGS10` | Average of the last five years of daily values, downloaded when needed and kept in memory for the day; a dated fallback in `settings.yaml` for demo mode, a missing key or no network, computed from the US Treasury's own public-domain file because FRED's terms forbid storing FRED data (SPEC §4) | FRED terms read on 2026-11-24 (S2b): personal, non-commercial use (a bank needs FRED's written consent); the FRED notice and the series citation in `app/README.md`, and on screen next to the rate (D, S10b; importable as `FRED_NOTICE` from `src.data.company`); details in `docs/architecture.md` |
 | Industry benchmarks and company → industry | Damodaran US datasets, January 2026 edition, extracted once to CSV (§4) | Fixed for the project | Allowed by the instructor (reported by Igor, 2026-11-18); attribution in the README; the full `indname.xls` is not committed |
 | Share price | Typed in by the user (USD) | At the moment of use | – |
 | Saved SEC data for the demo | Trimmed company facts for five companies in the repository | Snapshot date recorded | Committing a demo version: allowed for now (Igor, 2026-11-18) |
@@ -116,7 +125,7 @@ F1 to F3 are never cut.
 | Cost of equity | §8.1: risk-free + industry beta re-levered with the company's debt (limits 0.8–2.0) × 5.0% premium | % | FRED or setting, benchmarks, SEC figures, price |
 | Fair value per share | §8.2–8.3 (equity method): starting free cash flow = three-year free-cash-flow margin × latest revenue; 10-year forecast with starting growth = past revenue growth limited to −10%..+30%, its gap to terminal growth halving every 2 years; terminal value; − reported minority interests; ÷ shares. Not shown when the model does not fit (§8.6) | USD per share | SEC figures (operating cash flow, capex, revenue, minority interests, shares), cost of equity |
 | Strengths and points to watch | §9: 15 statements (G1–G7, W1–W8) from the checks, threshold in `settings.yaml` | Statements with the company's numbers | Check results, SEC figures |
-| Area scores | Number of passes, always with the number assessed | "x of y assessed" | Check results |
+| Area scores | Number of passes, always with the number assessed | "x passed of y assessed" | Check results |
 
 Kinds of number (§5.2): `reported`, `derived`, `assumption`, `missing`. **Missing is never zero and never guessed.**
 Known-answer examples: `docs/acceptance.md` (from SPEC Appendix A).
