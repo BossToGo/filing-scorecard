@@ -80,3 +80,6 @@ V5:
 V6:
   name: "Price does not demand heroic growth"
   rule: "The share price you typed is at or below the estimate recalculated as if the company's growth started at 30% a year, the highest the model allows."
+
+# Shown under "Industry: [group] (Damodaran lookup)" and on the sources page (SPEC §9.1; key agreed with D on #56)
+industry_note: "Each company is classified into an industry group by Professor Damodaran (NYU), and the industry averages are calculated from the companies in this group, using his public data."

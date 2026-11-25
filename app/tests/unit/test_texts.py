@@ -14,6 +14,8 @@ TEXTS = APP / "ui" / "texts.yaml"
 SETTINGS = APP / "settings.yaml"
 
 CHECKS = [f"{area}{n}" for area in "PHDV" for n in range(1, 7)]  # P1 ... D6 (tier 1), V1 ... V6 (SPEC §2, §7)
+NOTES = ["industry_note"]  # top-level texts, one or two sentences, no check id (key agreed with Simon on #56)
+CHECK_ID = re.compile(r"\b[PHDV][1-6]\b")
 ADVICE_WORDS = re.compile(  # information, not advice; SPEC §3 says "the estimate", never "fair value" (#32, #39)
     r"\b(buy|sell|undervalued|fair\s+value|cheap|expensive)\b", re.IGNORECASE
 )
@@ -54,13 +56,33 @@ def test_every_check_has_a_name_and_a_rule():
     assert not problems, "\n".join(problems)
 
 
+def every_text(texts):
+    """(where, text) for each check's name and rule and for each top-level note."""
+    for key, entry in texts.items():
+        if isinstance(entry, str):
+            yield key, entry
+        else:
+            for field, text in entry.items():
+                yield f"{key}.{field}", text
+
+
+def test_every_note_is_one_or_two_sentences_without_a_check_id():
+    texts = load(TEXTS)
+    problems = []
+    for key in NOTES:
+        note = texts.get(key)
+        if not isinstance(note, str) or not note.strip():
+            problems.append(f"{key}: missing or empty")
+            continue
+        if CHECK_ID.search(note):
+            problems.append(f"{key}: names a check id ({CHECK_ID.search(note).group()})")
+        if not 1 <= len(re.findall(r"[.!?](?:\s|$)", note.strip())) <= 2:
+            problems.append(f"{key}: should be one or two sentences")
+    assert not problems, "\n".join(problems)
+
+
 def test_no_text_gives_advice():
-    found = [
-        f"{check}.{field}: {text!r}"
-        for check, entry in load(TEXTS).items()
-        for field, text in entry.items()
-        if ADVICE_WORDS.search(text)
-    ]
+    found = [f"{where}: {text!r}" for where, text in every_text(load(TEXTS)) if ADVICE_WORDS.search(text)]
     assert not found, "Information, not advice (SPEC §1):\n" + "\n".join(found)
 
 
