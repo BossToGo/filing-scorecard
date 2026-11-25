@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1366">
+<title>Filing Scorecard mockup</title>
+<style>
+/* ---- Mockup canvas (not part of the design) ---------------------------------------------------------- */
+html { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 16px; }
+body { margin: 0; background: #D9DCE1; color: #121821; font-variant-numeric: tabular-nums; }
+.canvas-note { width: 1366px; box-sizing: border-box; margin: 0 auto; padding: 24px 280px 16px 32px; font-size: 14px; line-height: 20px; color: #3A414B; }
+.canvas-note b { color: #121821; }
+.flag { position: fixed; top: 16px; right: 16px; z-index: 50; background: #B0156B; color: #FFFFFF; font-size: 14px;
+  line-height: 20px; font-weight: 600; padding: 8px 12px; border-radius: 4px; }
+.note { position: absolute; z-index: 5; font-size: 12px; line-height: 16px; color: #B0156B; font-weight: 600; background: #FFFFFFE6;
+  padding: 2px 6px; border: 1px dashed #B0156B; border-radius: 4px; white-space: nowrap; }
+.dark .note { background: #0E1217E6; }
+.fold { position: absolute; left: 0; right: 0; border-top: 2px dashed #B0156B; z-index: 4; }
+.fold span { position: absolute; left: 8px; top: -20px; font-size: 12px; font-weight: 600; color: #B0156B; }
+.later { position: relative; outline: 2px dashed #B0156B; outline-offset: 8px; }
+.later > .note { top: -30px; right: -8px; }
+
+/* ---- Tokens: the same two themes as app/.streamlit/config.toml ---------------------------------------- */
+.light { --bg: #FFFFFF; --surface: #F3F5F8; --text: #121821; --accent: #1D5AA6; --link: #1D5AA6;
+  --warn-bg: #FFFAE5; --warn-text: #956B0F; --err-bg: #FFF1F2; --err-text: #9E303B; }
+.dark { --bg: #0E1217; --surface: #181E26; --text: #E4E8EE; --accent: #3D74C0; --link: #8DB2E8;
+  --warn-bg: #302917; --warn-text: #FBD54F; --err-bg: #412023; --err-text: #F2919A; }
+.light, .dark { --muted: color-mix(in srgb, var(--text) 68%, var(--bg)); --line: color-mix(in srgb, var(--text) 20%, var(--bg));
+  background: var(--bg); color: var(--text); }
+
+/* ---- Frame: the bank's buy step around the Streamlit page --------------------------------------------- */
+.frame { position: relative; width: 1366px; margin: 0 auto 48px; overflow: hidden; }
+.bank { height: 48px; display: flex; align-items: center; gap: 24px; padding: 0 32px; background: var(--surface);
+  border-bottom: 1px solid var(--line); font-size: 14px; color: var(--muted); position: relative; }
+.bank .who { color: var(--text); font-weight: 600; }
+.bank .go { margin-left: auto; border: 1px solid var(--line); border-radius: 8px; padding: 6px 16px; color: var(--text); }
+.st-header { height: 60px; position: relative; }
+.kebab { position: absolute; right: 24px; top: 20px; width: 20px; height: 20px; color: var(--text); }
+.block { max-width: 1136px; margin: 0 auto; padding: 16px 32px 48px; }
+
+/* ---- Streamlit-like widgets -------------------------------------------------------------------------------- */
+.inputs { display: flex; align-items: flex-end; gap: 16px; }
+.field { display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 20px; }
+.box { height: 40px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; padding: 0 12px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px; font-size: 16px; }
+.box svg { width: 16px; height: 16px; stroke: var(--muted); fill: none; stroke-width: 2; }
+.toggle-row { height: 40px; display: flex; align-items: center; gap: 12px; font-size: 14px; }
+.toggle { width: 36px; height: 20px; border-radius: 10px; background: var(--accent); position: relative; }
+.toggle::after { content: ""; position: absolute; right: 2px; top: 2px; width: 16px; height: 16px; border-radius: 8px; background: var(--bg); }
+.btn { height: 40px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 8px; background: var(--accent);
+  color: #FFFFFF; font-size: 16px; font-weight: 500; }
+
+h1 { font-size: 28px; line-height: 36px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+.ticker { font-size: 16px; font-weight: 400; color: var(--muted); margin-left: 8px; letter-spacing: 0; }
+.meta { font-size: 14px; line-height: 20px; color: var(--muted); margin: 4px 0 0; }
+.head { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 24px; }
+.price { text-align: right; }
+.price .meta { margin: 0; }
+.price strong { display: block; font-size: 16px; line-height: 24px; font-weight: 600; }
+
+/* ---- Summary ----------------------------------------------------------------------------------------------- */
+.summary { display: grid; grid-template-columns: 2fr 1fr; gap: 48px; margin-top: 24px; }
+.arow { display: flex; align-items: center; gap: 16px; height: 40px; border-bottom: 1px solid var(--line); }
+.arow:first-child { border-top: 1px solid var(--line); }
+.aname { width: 160px; font-weight: 600; }
+.score { font-weight: 600; }
+.sub { color: var(--muted); font-size: 14px; }
+h3 { font-size: 16px; line-height: 24px; font-weight: 600; margin: 0 0 8px; }
+.failed { list-style: none; margin: 0; padding: 0; }
+.failed li { display: flex; align-items: center; gap: 12px; height: 40px; border-bottom: 1px solid var(--line); }
+.failed li.hd { border-top: 1px solid var(--line); font-weight: 600; }
+.failed li .sub { margin-left: auto; }
+.legend { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; margin-top: 12px; font-size: 14px; line-height: 20px; color: var(--muted); }
+.legend .k { display: inline-flex; align-items: center; gap: 8px; }
+
+/* ---- Marks (the six-block bar) ----------------------------------------------------------------------- */
+.bar { display: inline-flex; gap: 4px; }
+.mk { width: 20px; height: 20px; border-radius: 4px; box-sizing: border-box; display: inline-grid; place-items: center; flex: none; }
+.mk svg { width: 12px; height: 12px; fill: none; stroke: var(--bg); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.pass { background: var(--accent); }
+.fail { background: var(--text); }
+.wait { border: 1.5px dashed var(--muted); }
+.none { border: 1px solid var(--line); }
+.none svg { stroke: var(--muted); }
+
+/* ---- Tabs ----------------------------------------------------------------------------------------------- */
+.tabs { display: flex; gap: 24px; margin-top: 32px; border-bottom: 1px solid var(--line); font-size: 14px; line-height: 20px; }
+.tab { padding: 10px 0; }
+.tab.on { box-shadow: inset 0 -2px 0 var(--accent); font-weight: 600; }
+
+/* ---- Area section -------------------------------------------------------------------------------------- */
+.area { display: grid; grid-template-columns: 2fr 1fr; gap: 48px; margin-top: 24px; }
+.scoreline { display: flex; align-items: center; gap: 12px; }
+.lead { font-size: 16px; line-height: 24px; margin: 12px 0 16px; max-width: 68ch; }
+.checks { border-top: 1px solid var(--line); }
+.chk { border-bottom: 1px solid var(--line); }
+.sum { display: flex; align-items: flex-start; gap: 8px; padding: 12px 16px 12px 8px; font-size: 16px; line-height: 24px; }
+.chev { width: 16px; height: 24px; flex: none; color: var(--text); }
+.chev svg { width: 16px; height: 16px; margin-top: 4px; fill: none; stroke: currentColor; stroke-width: 2; }
+.ic { width: 20px; height: 24px; flex: none; }
+.ic svg { width: 20px; height: 20px; margin-top: 2px; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ic.p svg { stroke: var(--accent); }
+.ic.f svg { stroke: var(--text); }
+.ic.w svg, .ic.n svg { stroke: var(--muted); }
+.open .sum { background: var(--surface); }
+.detail { padding: 16px 16px 16px 60px; font-size: 16px; line-height: 24px; }
+.detail h4 { font-size: 14px; line-height: 20px; font-weight: 600; margin: 0 0 4px; color: var(--muted); }
+.detail p { margin: 0 0 16px; max-width: 68ch; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; line-height: 20px; }
+td, th { padding: 8px 0; border-bottom: 1px solid var(--line); text-align: left; font-weight: 400; }
+th { color: var(--muted); }
+td.v, th.v { text-align: right; padding-right: 24px; }
+.filing { display: flex; align-items: baseline; gap: 12px; margin-top: 16px; font-size: 14px; line-height: 20px; }
+.filing a { color: var(--link); text-decoration: underline; text-underline-offset: 2px; }
+.filing .id { font-size: 12px; color: var(--muted); }
+
+/* ---- Key figures ----------------------------------------------------------------------------------------- */
+.metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0 8px; }
+.metric .l { font-size: 14px; line-height: 20px; }
+.metric .v { font-size: 24px; line-height: 32px; font-weight: 600; }
+.kv td { font-size: 16px; line-height: 24px; }
+.kv td:last-child { text-align: right; }
+.chart { margin-top: 48px; }
+.chart svg text { font-family: inherit; font-size: 12px; fill: var(--muted); }
+.chart .lab { fill: var(--text); font-size: 12px; }
+
+/* ---- Footer ---------------------------------------------------------------------------------------------- */
+.foot { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 14px; line-height: 20px; color: var(--muted); }
+.foot p { margin: 0 0 4px; }
+
+/* ---- States ---------------------------------------------------------------------------------------------- */
+.states { display: grid; grid-template-columns: 1fr 1fr; gap: 32px 48px; padding: 32px 32px 48px; }
+.state { position: relative; padding-top: 28px; }
+.state > .note { top: 0; left: 0; }
+.alert { display: flex; gap: 12px; padding: 16px; border-radius: 8px; font-size: 16px; line-height: 24px; }
+.alert svg { width: 20px; height: 20px; flex: none; margin-top: 2px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.warn { background: var(--warn-bg); color: var(--warn-text); }
+.err { background: var(--err-bg); color: var(--err-text); }
+.spin { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--accent); flex: none; }
+.loading { display: flex; align-items: center; gap: 12px; font-size: 16px; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="m-check" viewBox="0 0 12 12"><path d="M2.5 6.3 5 8.6 9.5 3.6"/></symbol>
+  <symbol id="m-cross" viewBox="0 0 12 12"><path d="M3.2 3.2l5.6 5.6M8.8 3.2 3.2 8.8"/></symbol>
+  <symbol id="m-dash" viewBox="0 0 12 12"><path d="M3.5 6h5"/></symbol>
+  <symbol id="i-pass" viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M6.5 10.2 8.8 12.5 13.5 7.6"/></symbol>
+  <symbol id="i-fail" viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M7.2 7.2l5.6 5.6M12.8 7.2l-5.6 5.6"/></symbol>
+  <symbol id="i-wait" viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="14" rx="2"/></symbol>
+  <symbol id="i-none" viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M7 10h6"/></symbol>
+  <symbol id="chev-r" viewBox="0 0 16 16"><path d="M6 3.5 10.5 8 6 12.5"/></symbol>
+  <symbol id="chev-d" viewBox="0 0 16 16"><path d="M3.5 6 8 10.5 12.5 6"/></symbol>
+  <symbol id="kebab" viewBox="0 0 20 20"><circle cx="10" cy="4" r="1.6"/><circle cx="10" cy="10" r="1.6"/><circle cx="10" cy="16" r="1.6"/></symbol>
+  <symbol id="info" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8"/><path d="M10 9v5M10 6.2v.1"/></symbol>
+  <symbol id="error" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8"/><path d="M10 6v5M10 13.8v.1"/></symbol>
+</svg>
+
+<div class="flag">Mockup, not the running app</div>
+
+<div class="canvas-note">
+  <b>Filing Scorecard, scorecard page.</b> Coca-Cola, real figures from the saved SEC data, share price typed as 65.40, version 0.1
+  (valuation not built). 1366 px wide: the light theme, then the same page in the dark theme. Every element is one Streamlit
+  element or the one CSS block named in design-spec.md. Pink dashed marks are notes for the reader, not part of the design.
+</div>
+
+<!-- =============================================== LIGHT =============================================== -->
+<section class="frame light" aria-label="Light theme">
+  <div class="bank">
+    <span>&lsaquo; Back</span><span>Buy shares</span><span class="who">COCA COLA CO (KO)</span>
+    <span class="go">Continue to order</span>
+    <span class="note" style="left:420px; top:14px">The bank's own buy step: context only, not built by us</span>
+  </div>
+  <div class="st-header">
+    <svg class="kebab" fill="currentColor"><use href="#kebab"/></svg>
+    <span class="note" style="right:56px; top:20px">Streamlit menu: Light, Dark or System</span>
+  </div>
+  <div class="fold" style="top:576px"><span>Fold, 125% zoom</span></div>
+  <div class="fold" style="top:708px"><span>Fold, 1366×768</span></div>
+
+  <main class="block">
+    <div class="inputs">
+      <label class="field" style="width:280px">Company<span class="box">KO<svg viewBox="0 0 16 16"><use href="#chev-d"/></svg></span></label>
+      <label class="field" style="width:200px">Share price (USD)<span class="box">65.40</span></label>
+      <div class="toggle-row"><span class="toggle"></span>Demo mode (saved data)</div>
+      <span class="btn">Show scorecard</span>
+    </div>
+
+    <div class="head">
+      <div>
+        <h1>COCA COLA CO<span class="ticker">KO</span></h1>
+        <p class="meta">Beverages · Fiscal year ends 31 December · Latest annual report filed 20 February 2026 · Data retrieved 18 November 2026</p>
+      </div>
+      <div class="price"><span class="meta">Share price you typed</span><strong>USD 65.40</strong></div>
+    </div>
+
+    <div class="summary">
+      <div>
+        <div class="arow"><span class="aname">Past performance</span>
+          <span class="bar" role="img" aria-label="Past performance: 4 passed of 4 assessed, 2 not assessed yet">
+            <span class="mk pass" title="Consistently profitable: passed"><svg><use href="#m-check"/></svg></span><span class="mk pass" title="Growing profit: passed"><svg><use href="#m-check"/></svg></span><span class="mk pass" title="Profit growth is speeding up: passed"><svg><use href="#m-check"/></svg></span><span class="mk wait" title="Return on equity above its industry: not assessed"></span><span class="mk wait" title="Margin above its industry: not assessed"></span><span class="mk pass" title="Return on capital improved: passed"><svg><use href="#m-check"/></svg></span></span>
+          <span class="score">4 passed of 4 assessed</span><span class="sub">2 not assessed yet</span></div>
+        <div class="arow"><span class="aname">Financial health</span>
+          <span class="bar" role="img" aria-label="Financial health: 3 passed of 6 assessed">
+            <span class="mk pass"><svg><use href="#m-check"/></svg></span><span class="mk fail"><svg><use href="#m-cross"/></svg></span><span class="mk fail"><svg><use href="#m-cross"/></svg></span><span class="mk pass"><svg><use href="#m-check"/></svg></span><span class="mk fail"><svg><use href="#m-cross"/></svg></span><span class="mk pass"><svg><use href="#m-check"/></svg></span></span>
+          <span class="score">3 passed of 6 assessed</span></div>
+        <div class="arow"><span class="aname">Dividend</span>
+          <span class="bar" role="img" aria-label="Dividend: 4 passed of 5 assessed, 1 not assessed yet">
+            <span class="mk pass"><svg><use href="#m-check"/></svg></span><span class="mk wait"></span><span class="mk pass"><svg><use href="#m-check"/></svg></span><span class="mk pass"><svg><use href="#m-check"/></svg></span><span class="mk pass"><svg><use href="#m-check"/></svg></span><span class="mk fail"><svg><use href="#m-cross"/></svg></span></span>
+          <span class="score">4 passed of 5 assessed</span><span class="sub">1 not assessed yet</span></div>
+        <div class="arow"><span class="aname">Valuation</span>
+          <span class="bar" role="img" aria-label="Valuation: not part of this version">
+            <span class="mk wait"></span><span class="mk wait"></span><span class="mk wait"></span><span class="mk wait"></span><span class="mk wait"></span><span class="mk wait"></span></span>
+          <span class="sub">Not part of this version</span></div>
+        <div class="legend">
+      <span class="k"><span class="mk pass"><svg><use href="#m-check"/></svg></span>Passed</span>
+      <span class="k"><span class="mk fail"><svg><use href="#m-cross"/></svg></span>Failed</span>
+      <span class="k"><span class="mk wait"></span>Not assessed</span>
+      <span class="k"><span class="mk none"><svg><use href="#m-dash"/></svg></span>Does not apply</span>
+      <span>Each mark is one yes/no test on the company's annual reports. It is not a rating of the share and not advice.</span>
+    </div>
+      </div>
+      <div>
+        <ul class="failed">
+          <li class="hd">Failed checks</li>
+          <li><span class="mk fail"><svg><use href="#m-cross"/></svg></span>Long-term liabilities covered<span class="sub">Financial health</span></li>
+          <li><span class="mk fail"><svg><use href="#m-cross"/></svg></span>Moderate debt<span class="sub">Financial health</span></li>
+          <li><span class="mk fail"><svg><use href="#m-cross"/></svg></span>Debt covered by cash flow<span class="sub">Financial health</span></li>
+          <li><span class="mk fail"><svg><use href="#m-cross"/></svg></span>Dividend covered by cash<span class="sub">Dividend</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <nav class="tabs" aria-label="Areas">
+      <span class="tab">Past performance</span><span class="tab on">Financial health</span><span class="tab">Dividend</span><span class="tab">Valuation</span><span class="tab">Sources</span>
+    </nav>
+
+    <div class="area">
+      <div>
+        <div class="scoreline">
+          <span class="bar"><span class="mk pass"><svg><use href="#m-check"/></svg></span><span class="mk fail"><svg><use href="#m-cross"/></svg></span><span class="mk fail"><svg><use href="#m-cross"/></svg></span><span class="mk pass"><svg><use href="#m-check"/></svg></span><span class="mk fail"><svg><use href="#m-cross"/></svg></span><span class="mk pass"><svg><use href="#m-check"/></svg></span></span>
+          <span class="score">3 passed of 6 assessed</span>
+        </div>
+        <p class="lead">Net debt is 109.5% of equity, and operating income covers interest 8.3 times.</p>
+
+        <div class="checks">
+          <div class="chk"><div class="sum"><span class="chev"><svg><use href="#chev-r"/></svg></span><span class="ic p"><svg><use href="#i-pass"/></svg></span>
+            <span><b>Short-term liabilities covered.</b> Current assets of USD 31,044 m cover current liabilities of USD 21,281 m.</span></div></div>
+          <div class="chk"><div class="sum"><span class="chev"><svg><use href="#chev-r"/></svg></span><span class="ic f"><svg><use href="#i-fail"/></svg></span>
+            <span><b>Long-term liabilities covered.</b> Current assets of USD 31,044 m do not cover the USD 49,260 m due after one year.</span></div></div>
+          <div class="chk open"><div class="sum"><span class="chev"><svg><use href="#chev-d"/></svg></span><span class="ic f"><svg><use href="#i-fail"/></svg></span>
+            <span><b>Moderate debt.</b> Net debt is 109.5% of equity, above the 40% limit.</span></div>
+            <div class="detail">
+              <h4>The rule</h4>
+              <p>Debt minus cash (net debt) is less than 40% of shareholders' equity.</p>
+              <h4>How it is worked out</h4>
+              <p>(USD 45,492 m − USD 10,270 m) ÷ USD 32,169 m = 109.5%, against a limit of less than 40%.</p>
+              <table>
+                <tr><th>Figure, fiscal year ended 31 December 2025</th><th class="v">Value</th><th>Source</th></tr>
+                <tr><td>Debt</td><td class="v">USD 45,492 m</td><td>Calculated from the balance sheet</td></tr>
+                <tr><td>Cash</td><td class="v">USD 10,270 m</td><td>Reported</td></tr>
+                <tr><td>Equity</td><td class="v">USD 32,169 m</td><td>Reported</td></tr>
+              </table>
+              <div class="filing"><a>Annual report (Form 10-K) filed 20 February 2026</a><span class="sub">0001628280-26-010047</span><span class="id">Check H3</span></div>
+            </div></div>
+          <div class="chk"><div class="sum"><span class="chev"><svg><use href="#chev-r"/></svg></span><span class="ic p"><svg><use href="#i-pass"/></svg></span>
+            <span><b>Debt falling against equity.</b> Debt is 141.4% of equity, down from 185.9% four years earlier.</span></div></div>
+          <div class="chk"><div class="sum"><span class="chev"><svg><use href="#chev-r"/></svg></span><span class="ic f"><svg><use href="#i-fail"/></svg></span>
+            <span><b>Debt covered by cash flow.</b> Operating cash flow is 16.3% of debt, below the 20% minimum.</span></div></div>
+          <div class="chk"><div class="sum"><span class="chev"><svg><use href="#chev-r"/></svg></span><span class="ic p"><svg><use href="#i-pass"/></svg></span>
+            <span><b>Interest well covered.</b> Operating income covers interest 8.3 times, above the minimum of 5.</span></div></div>
+        </div>
+      </div>
+
+      <aside>
+        <h3>Key figures</h3>
+        <p class="meta" style="margin:0">Fiscal year ended 31 December 2025</p>
+        <div class="metrics">
+          <div class="metric"><div class="l">Debt</div><div class="v">USD 45,492 m</div></div>
+          <div class="metric"><div class="l">Equity</div><div class="v">USD 32,169 m</div></div>
+        </div>
+        <table class="kv">
+          <tr><td>Cash</td><td>USD 10,270 m</td></tr>
+          <tr><td>Current assets</td><td>USD 31,044 m</td></tr>
+          <tr><td>Current liabilities</td><td>USD 21,281 m</td></tr>
+          <tr><td>Total liabilities (calculated)</td><td>USD 70,541 m</td></tr>
+          <tr><td>Operating cash flow</td><td>USD 7,408 m</td></tr>
+          <tr><td>Operating income</td><td>USD 13,762 m</td></tr>
+          <tr><td>Interest expense</td><td>USD 1,654 m</td></tr>
+        </table>
+
+        <div class="chart later">
+          <span class="note">Later: needs product.md agreement (Plotly)</span>
+          <h3>Current assets against liabilities, USD m</h3>
+          <svg width="340" height="212" viewBox="0 0 340 212" role="img" aria-label="Current assets USD 31,044 m against current liabilities USD 21,281 m and liabilities due after one year USD 49,260 m">
+            <line x1="0" y1="180" x2="340" y2="180" stroke="var(--line)"/>
+            <rect x="24" y="78" width="56" height="102" fill="var(--accent)"/><text class="lab" x="52" y="70" text-anchor="middle">31,044</text>
+            <rect x="88" y="110" width="56" height="70" fill="var(--muted)"/><text class="lab" x="116" y="102" text-anchor="middle">21,281</text>
+            <rect x="196" y="78" width="56" height="102" fill="var(--accent)"/><text class="lab" x="224" y="70" text-anchor="middle">31,044</text>
+            <rect x="260" y="18" width="56" height="162" fill="var(--muted)"/><text class="lab" x="288" y="12" text-anchor="middle">49,260</text>
+            <text x="84" y="200" text-anchor="middle">Due within a year</text>
+            <text x="256" y="200" text-anchor="middle">Due after one year</text>
+          </svg>
+          <div class="legend" style="margin-top:4px"><span class="k"><span class="mk pass" style="width:12px;height:12px"></span>Current assets</span><span class="k"><span class="mk" style="width:12px;height:12px;background:var(--muted)"></span>Liabilities</span></div>
+        </div>
+      </aside>
+    </div>
+
+    <footer class="foot">
+      <p>Figures come from the company's annual reports (Form 10-K) on SEC EDGAR, read by tested code with no manual changes. The Sources tab lists every figure with its filing.</p>
+      <p>Filing Scorecard, version 0.1. The scoring follows a publicly documented company analysis model, cited in the README.</p>
+    </footer>
+  </main>
+</section>
+
+<!-- =============================================== DARK ================================================ -->
+<section class="frame dark" aria-label="Dark theme">
+  <div class="bank">
+    <span>&lsaquo; Back</span><span>Buy shares</span><span class="who">COCA COLA CO (KO)</span>
+    <span class="go">Continue to order</span>
+    <span class="note" style="left:420px; top:14px">Dark theme: same page, colours from [theme.dark]</span>
+  </div>
+  <div class="st-header"><svg class="kebab" fill="currentColor"><use href="#kebab"/></svg></div>
+
+  <main class="block">
+    <div class="inputs">
+      <label class="field" style="width:280px">Company<span class="box">KO<svg viewBox="0 0 16 16"><use href="#chev-d"/></svg></span></label>
+      <label class="field" style="width:200px">Share price (USD)<span class="box">65.40</span></label>
+      <div class="toggle-row"><span class="toggle"></span>Demo mode (saved data)</div>
+      <span class="btn">Show scorecard</span>
+    </div>
+
+    <div class="head">
+      <div>
+        <h1>COCA COLA CO<span class="ticker">KO</span></h1>
+        <p class="meta">Beverages · Fiscal year ends 31 December · Latest annual report filed 20 February 2026 · Data retrieved 18 November 2026</p>
+      </div>
+      <div class="price"><span class="meta">Share price you typed</span><strong>USD 65.40</strong></div>
+    </div>
+
+    <div class="summary">
+      <div>
+        <div class="arow"><span class="aname">Past performance</span>
+          <span class="bar"><span class="mk pass"><svg><use href="#m-check"/></svg></span><span class="mk pass"><svg><use href="#m-check"/></svg></span><span class="mk pass"><svg><use href="#m-check"/></svg></span><span class="mk wait"></span><span class="mk wait"></span><span class="mk pass"><svg><use href="#m-check"/></svg></span></span>
+          <span class="score">4 passed of 4 assessed</span><span class="sub">2 not assessed yet</span></div>
+        <div class="arow"><span class="aname">Financial health</span>
+          <span class="bar"><span class="mk pass"><svg><use href="#m-check"/></svg></span><span class="mk fail"><svg><use href="#m-cross"/></svg></span><span class="mk fail"><svg><use href="#m-cross"/></svg></span><span class="mk pass"><svg><use href="#m-check"/></svg></span><span class="mk fail"><svg><use href="#m-cross"/></svg></span><span class="mk pass"><svg><use href="#m-check"/></svg></span></span>
+          <span class="score">3 passed of 6 assessed</span></div>
+        <div class="arow"><span class="aname">Dividend</span>
+          <span class="bar"><span class="mk pass"><svg><use href="#m-check"/></svg></span><span class="mk wait"></span><span class="mk pass"><svg><use href="#m-check"/></svg></span><span class="mk pass"><svg><use href="#m-check"/></svg></span><span class="mk pass"><svg><use href="#m-check"/></svg></span><span class="mk fail"><svg><use href="#m-cross"/></svg></span></span>
+          <span class="score">4 passed of 5 assessed</span><span class="sub">1 not assessed yet</span></div>
+        <div class="arow"><span class="aname">Valuation</span>
+          <span class="bar"><span class="mk wait"></span><span class="mk wait"></span><span class="mk wait"></span><span class="mk wait"></span><span class="mk wait"></span><span class="mk wait"></span></span>
+          <span class="sub">Not part of this version</span></div>
+        <div class="legend">
+      <span class="k"><span class="mk pass"><svg><use href="#m-check"/></svg></span>Passed</span>
+      <span class="k"><span class="mk fail"><svg><use href="#m-cross"/></svg></span>Failed</span>
+      <span class="k"><span class="mk wait"></span>Not assessed</span>
+      <span class="k"><span class="mk none"><svg><use href="#m-dash"/></svg></span>Does not apply</span>
+      <span>Each mark is one yes/no test on the company's annual reports. It is not a rating of the share and not advice.</span>
+    </div>
+      </div>
+      <div>
+        <ul class="failed">
+          <li class="hd">Failed checks</li>
+          <li><span class="mk fail"><svg><use href="#m-cross"/></svg></span>Long-term liabilities covered<span class="sub">Financial health</span></li>
+          <li><span class="mk fail"><svg><use href="#m-cross"/></svg></span>Moderate debt<span class="sub">Financial health</span></li>
+          <li><span class="mk fail"><svg><use href="#m-cross"/></svg></span>Debt covered by cash flow<span class="sub">Financial health</span></li>
+          <li><span class="mk fail"><svg><use href="#m-cross"/></svg></span>Dividend covered by cash<span class="sub">Dividend</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <nav class="tabs" aria-label="Areas">
+      <span class="tab">Past performance</span><span class="tab on">Financial health</span><span class="tab">Dividend</span><span class="tab">Valuation</span><span class="tab">Sources</span>
+    </nav>
+
+    <div class="area">
+      <div>
+        <div class="scoreline">
+          <span class="bar"><span class="mk pass"><svg><use href="#m-check"/></svg></span><span class="mk fail"><svg><use href="#m-cross"/></svg></span><span class="mk fail"><svg><use href="#m-cross"/></svg></span><span class="mk pass"><svg><use href="#m-check"/></svg></span><span class="mk fail"><svg><use href="#m-cross"/></svg></span><span class="mk pass"><svg><use href="#m-check"/></svg></span></span>
+          <span class="score">3 passed of 6 assessed</span>
+        </div>
+        <p class="lead">Net debt is 109.5% of equity, and operating income covers interest 8.3 times.</p>
+        <div class="checks">
+          <div class="chk"><div class="sum"><span class="chev"><svg><use href="#chev-r"/></svg></span><span class="ic p"><svg><use href="#i-pass"/></svg></span>
+            <span><b>Short-term liabilities covered.</b> Current assets of USD 31,044 m cover current liabilities of USD 21,281 m.</span></div></div>
+          <div class="chk"><div class="sum"><span class="chev"><svg><use href="#chev-r"/></svg></span><span class="ic f"><svg><use href="#i-fail"/></svg></span>
+            <span><b>Long-term liabilities covered.</b> Current assets of USD 31,044 m do not cover the USD 49,260 m due after one year.</span></div></div>
+          <div class="chk open"><div class="sum"><span class="chev"><svg><use href="#chev-d"/></svg></span><span class="ic f"><svg><use href="#i-fail"/></svg></span>
+            <span><b>Moderate debt.</b> Net debt is 109.5% of equity, above the 40% limit.</span></div>
+            <div class="detail">
+              <h4>The rule</h4>
+              <p>Debt minus cash (net debt) is less than 40% of shareholders' equity.</p>
+              <h4>How it is worked out</h4>
+              <p>(USD 45,492 m − USD 10,270 m) ÷ USD 32,169 m = 109.5%, against a limit of less than 40%.</p>
+              <table>
+                <tr><th>Figure, fiscal year ended 31 December 2025</th><th class="v">Value</th><th>Source</th></tr>
+                <tr><td>Debt</td><td class="v">USD 45,492 m</td><td>Calculated from the balance sheet</td></tr>
+                <tr><td>Cash</td><td class="v">USD 10,270 m</td><td>Reported</td></tr>
+                <tr><td>Equity</td><td class="v">USD 32,169 m</td><td>Reported</td></tr>
+              </table>
+              <div class="filing"><a>Annual report (Form 10-K) filed 20 February 2026</a><span class="sub">0001628280-26-010047</span><span class="id">Check H3</span></div>
+            </div></div>
+          <div class="chk"><div class="sum"><span class="chev"><svg><use href="#chev-r"/></svg></span><span class="ic p"><svg><use href="#i-pass"/></svg></span>
+            <span><b>Debt falling against equity.</b> Debt is 141.4% of equity, down from 185.9% four years earlier.</span></div></div>
+          <div class="chk"><div class="sum"><span class="chev"><svg><use href="#chev-r"/></svg></span><span class="ic f"><svg><use href="#i-fail"/></svg></span>
+            <span><b>Debt covered by cash flow.</b> Operating cash flow is 16.3% of debt, below the 20% minimum.</span></div></div>
+          <div class="chk"><div class="sum"><span class="chev"><svg><use href="#chev-r"/></svg></span><span class="ic p"><svg><use href="#i-pass"/></svg></span>
+            <span><b>Interest well covered.</b> Operating income covers interest 8.3 times, above the minimum of 5.</span></div></div>
+        </div>
+      </div>
+      <aside>
+        <h3>Key figures</h3>
+        <p class="meta" style="margin:0">Fiscal year ended 31 December 2025</p>
+        <div class="metrics">
+          <div class="metric"><div class="l">Debt</div><div class="v">USD 45,492 m</div></div>
+          <div class="metric"><div class="l">Equity</div><div class="v">USD 32,169 m</div></div>
+        </div>
+        <table class="kv">
+          <tr><td>Cash</td><td>USD 10,270 m</td></tr>
+          <tr><td>Current assets</td><td>USD 31,044 m</td></tr>
+          <tr><td>Current liabilities</td><td>USD 21,281 m</td></tr>
+          <tr><td>Total liabilities (calculated)</td><td>USD 70,541 m</td></tr>
+          <tr><td>Operating cash flow</td><td>USD 7,408 m</td></tr>
+          <tr><td>Operating income</td><td>USD 13,762 m</td></tr>
+          <tr><td>Interest expense</td><td>USD 1,654 m</td></tr>
+        </table>
+        <div class="chart later">
+          <span class="note">Later: needs product.md agreement (Plotly)</span>
+          <h3>Current assets against liabilities, USD m</h3>
+          <svg width="340" height="212" viewBox="0 0 340 212" role="img" aria-label="Current assets against liabilities">
+            <line x1="0" y1="180" x2="340" y2="180" stroke="var(--line)"/>
+            <rect x="24" y="78" width="56" height="102" fill="var(--accent)"/><text class="lab" x="52" y="70" text-anchor="middle">31,044</text>
+            <rect x="88" y="110" width="56" height="70" fill="var(--muted)"/><text class="lab" x="116" y="102" text-anchor="middle">21,281</text>
+            <rect x="196" y="78" width="56" height="102" fill="var(--accent)"/><text class="lab" x="224" y="70" text-anchor="middle">31,044</text>
+            <rect x="260" y="18" width="56" height="162" fill="var(--muted)"/><text class="lab" x="288" y="12" text-anchor="middle">49,260</text>
+            <text x="84" y="200" text-anchor="middle">Due within a year</text>
+            <text x="256" y="200" text-anchor="middle">Due after one year</text>
+          </svg>
+          <div class="legend" style="margin-top:4px"><span class="k"><span class="mk pass" style="width:12px;height:12px"></span>Current assets</span><span class="k"><span class="mk" style="width:12px;height:12px;background:var(--muted)"></span>Liabilities</span></div>
+        </div>
+      </aside>
+    </div>
+
+    <footer class="foot">
+      <p>Figures come from the company's annual reports (Form 10-K) on SEC EDGAR, read by tested code with no manual changes. The Sources tab lists every figure with its filing.</p>
+      <p>Filing Scorecard, version 0.1. The scoring follows a publicly documented company analysis model, cited in the README.</p>
+    </footer>
+  </main>
+</section>
+
+<!-- =============================================== STATES ============================================== -->
+<section class="frame light" aria-label="States">
+  <div class="bank"><span class="who">States, for the implementer (light theme)</span></div>
+  <div class="states">
+    <div class="state"><span class="note">Start screen, below the input bar</span>
+      <h1>Filing Scorecard</h1>
+      <p class="lead" style="margin-top:8px">Pick one of the five companies or type another US ticker. Add the share price in US dollars if you have it, then press Show scorecard. The check reads the company's last five annual reports.</p>
+    </div>
+    <div class="state"><span class="note">Loading (st.spinner)</span>
+      <div class="loading"><span class="spin"></span>Reading the saved annual reports…</div>
+    </div>
+    <div class="state"><span class="note">Header warning: any ticker other than the five (st.warning)</span>
+      <div class="alert warn"><svg viewBox="0 0 20 20"><use href="#info"/></svg><span><b>Not fully checked.</b> This company's figures were read automatically and not compared by hand with its annual report.</span></div>
+    </div>
+    <div class="state"><span class="note">Error with its next step (st.error, raw message in an expander)</span>
+      <div class="alert err"><svg viewBox="0 0 20 20"><use href="#error"/></svg><span>No company with the ticker KOO files annual reports with the SEC. Check the spelling, or pick one of the five companies.</span></div>
+      <div class="chk"><div class="sum"><span class="chev"><svg><use href="#chev-r"/></svg></span><span class="sub" style="font-size:16px">Technical details</span></div></div>
+    </div>
+    <div class="state" style="grid-column: 1 / -1"><span class="note">Does not apply: Amazon pays no dividend</span>
+      <div class="arow" style="border-top:1px solid var(--line)"><span class="aname">Dividend</span>
+        <span class="bar" role="img" aria-label="Dividend: no dividend paid, 0 passed of 1 assessed"><span class="mk fail"><svg><use href="#m-cross"/></svg></span><span class="mk none"><svg><use href="#m-dash"/></svg></span><span class="mk none"><svg><use href="#m-dash"/></svg></span><span class="mk none"><svg><use href="#m-dash"/></svg></span><span class="mk none"><svg><use href="#m-dash"/></svg></span><span class="mk none"><svg><use href="#m-dash"/></svg></span></span>
+        <span class="score">No dividend paid</span><span class="sub">0 passed of 1 assessed</span></div>
+      <div class="chk"><div class="sum"><span class="chev"><svg><use href="#chev-r"/></svg></span><span class="ic n"><svg><use href="#i-none"/></svg></span>
+        <span><b>Dividend grew.</b> <span class="sub" style="font-size:16px">Does not apply, because no dividend was paid in the last five years.</span></span></div></div>
+    </div>
+    <div class="state"><span class="note">Not assessed: a benchmark arrives in version 0.2</span>
+      <div class="chk" style="border-top:1px solid var(--line)"><div class="sum"><span class="chev"><svg><use href="#chev-r"/></svg></span><span class="ic w"><svg><use href="#i-wait"/></svg></span>
+        <span><b>Return on equity above its industry.</b> <span class="sub" style="font-size:16px">Not assessed yet. It needs the industry average, which comes in the next version.</span></span></div></div>
+    </div>
+    <div class="state"><span class="note">An area not built yet: the Valuation tab in version 0.1</span>
+      <div class="scoreline"><span class="bar"><span class="mk wait"></span><span class="mk wait"></span><span class="mk wait"></span><span class="mk wait"></span><span class="mk wait"></span><span class="mk wait"></span></span><span class="sub" style="font-size:16px">Not part of this version</span></div>
+      <p class="lead">The valuation checks compare the share price you typed (USD 65.40) with an estimate built from the filings. They come in the next version.</p>
+    </div>
+    <div class="state"><span class="note">Invalid share price (error under the input bar)</span>
+      <div class="alert err"><svg viewBox="0 0 20 20"><use href="#error"/></svg><span>Type the share price as a number in US dollars, for example 65.40.</span></div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
