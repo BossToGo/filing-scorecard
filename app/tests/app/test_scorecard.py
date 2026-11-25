@@ -14,11 +14,19 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 MAIN = str(Path(__file__).resolve().parents[2] / "main.py")
+CROSS = '<path d="M3.2 3.2l5.6 5.6M8.8 3.2 3.2 8.8"/>'  # the failed mark's cross (docs/design/mockup.html)
 AC3 = {
     "P1": "pass", "P2": "pass", "P3": "pass", "P4": "insufficient_data", "P5": "insufficient_data", "P6": "pass",
     "H1": "pass", "H2": "fail", "H3": "fail", "H4": "pass", "H5": "pass", "H6": "pass",
     "D1": "pass", "D2": "insufficient_data", "D3": "pass", "D4": "pass", "D5": "pass", "D6": "pass",
 }
+
+
+def name_of(check_id: str) -> str:
+    """E's name of a check, read from texts.yaml, so a test finds the row whatever the name is (her #55 renames some)."""
+    from ui.scorecard import load_texts
+
+    return load_texts()[check_id]["name"]
 
 
 def synthetic_page(statuses):
@@ -39,8 +47,8 @@ def synthetic_page(statuses):
             for cid in AREA_CHECKS[area])
         for area in AREAS
     }
-    render_scorecard(data, results, None)
-    render_sources(data, results)
+    with render_scorecard(data, results, None):  # the Sources tab, filled as main.py does
+        render_sources(data, results)
 
 
 def run_synthetic() -> AppTest:
@@ -63,29 +71,332 @@ def show(ticker: str, price: str = "") -> AppTest:
 
 
 def test_ac3_scores_on_screen():
+    """Label change (rule 14.6, Simon's written agreement of 25 November 2026): valuation in v0.1 reads "Not part of
+    this version" (SPEC 2.4.2 §3, design spec §6), no longer "Not assessed until v0.2". The scores are unchanged."""
     app = run_synthetic()
     assert not app.exception
     shown = texts(app)
     assert "4 passed of 4 assessed" in shown  # past performance
     assert "4 passed of 6 assessed" in shown  # financial health
     assert "5 passed of 5 assessed" in shown  # dividend
-    assert "Not assessed until v0.2" in shown  # valuation, v0.1
+    assert "Not part of this version" in shown  # valuation, v0.1
+
+
+def chart(app: AppTest) -> str:
+    return next(m.value for m in app.markdown if "fs-row" in m.value)
+
+
+def row(app: AppTest, area: str) -> str:
+    """One area row of the score chart, as HTML."""
+    import re
+
+    return re.search(rf'<div class="fs-row"><span class="fs-area">{area}</span>.*?</div>', chart(app)).group(0)
+
+
+def test_ac3_rows_name_what_is_not_assessed_and_the_failed_checks():
+    """Simon's hand count of 25 November 2026: past 2 not assessed (P4, P5), health 0, dividend 1 (D2); the AC3
+    statuses fail H2 and H3. The hand-built explanations do not say "yet", so no "yet" is shown.
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
+    import re
+
+    app = run_synthetic()
+    assert "2 not assessed<" in row(app, "Past performance")
+    assert "not assessed" not in row(app, "Financial health")
+    assert "1 not assessed<" in row(app, "Dividend")
+    assert 'aria-label="Financial health: 4 passed of 6 assessed"' in chart(app)
+    assert 'aria-label="Past performance: 4 passed of 4 assessed, 2 not assessed"' in chart(app)
+    assert len(re.findall(r'class="fs-mk fs-wait"', row(app, "Valuation"))) == 6
+    failed = next(m.value for m in app.markdown if "Failed checks" in m.value)
+    assert re.findall(r"</span>([^<]+)<span class=\"fs-sub\">([\w ]+)</span>", failed) == [
+        (name_of("H2"), "Financial health"), (name_of("H3"), "Financial health")]
+
+
+def test_the_legend_names_the_four_marks_and_says_it_is_not_advice():
+    shown = chart(run_synthetic())
+    for word in ("Passed", "Failed", "Not assessed", "Does not apply", "not a rating of the share and not advice"):
+        assert word in shown
+
+
+def test_the_legend_calls_a_mark_a_check():
+    """Emma's review of #54 (design spec §5 rule 5, one name per thing), wording given by Simon on 25 November 2026."""
+    assert ("Each mark is one check of the company's annual reports. It is not a rating of the share and not advice."
+            in chart(run_synthetic()))
+
+
+def test_the_start_screen_says_the_scorecard_reads_five_annual_reports():
+    """Emma's review of #54: the whole scorecard reads the reports, not one check (wording by Simon, 25 November)."""
+    shown = texts(AppTest.from_file(MAIN).run(timeout=30))
+    assert "The scorecard reads the company's last five annual reports." in shown
+    assert "The check reads" not in shown
+
+
+def test_no_failed_check_says_so():
+    app = AppTest.from_function(synthetic_page, kwargs={"statuses": {cid: "pass" for cid in AC3}}).run(timeout=30)
+    assert "No check failed." in texts(app)
+
+
+def test_coca_cola_dividend_is_one_not_assessed_yet():
+    """C's D2 explanation says "not assessed yet" (Simon, 25 November 2026). The check that past performance and
+    financial health show "Not assessed" without a module was removed with Simon's agreement of 25 November 2026:
+    B's modules are on main since #28 and #29, so it could no longer fail.
+
+    Test change (Simon's written agreement of 25 November 2026, Igor's review of #54 point 5, rule 14.5): only "1 not
+    assessed yet" is asserted, what the test is about; "4 passed of 5 assessed" had no recorded hand working for KO's
+    D3 and D4."""
+    pytest.importorskip("src.checks.dividend", reason="needs C's dividend module (merged in #23)")
+    assert "1 not assessed yet" in row(show("KO"), "Dividend")
+
+
+def test_the_failed_list_stays_in_its_column_and_long_names_wrap():
+    """Simon's look of 25 November 2026: the failed checks ran off the right edge and their area names were cut. Each
+    row is a grid: the mark, the name (may shrink to nothing and wrap), the area kept whole on the right; a row grows
+    taller instead of spilling over its border (no fixed 40 px height)."""
+    import re
+
+    from ui.scorecard import _style
+
+    css = _style()
+    rule = re.search(r"ul\.fs-failed li \{([^}]*)\}", css).group(1)
+    assert "display:grid" in rule and "grid-template-columns:20px minmax(0, 1fr) auto" in rule
+    assert "min-height:40px" in rule and not re.search(r"(?<!-)height:40px", rule)
+    assert "overflow-wrap:anywhere" in rule
+    assert "white-space:nowrap" in re.search(r"ul\.fs-failed li \.fs-sub \{([^}]*)\}", css).group(1)
+    assert re.search(r"ul\.fs-failed \{[^}]*max-width:100%", css)
+
+
+def test_area_rows_grow_and_the_note_drops_below_the_score():
+    """Igor's review of #54, point 1: at 1024 px, 1280x720 and 125% zoom "4 passed of 4 assessed" and "1 not assessed
+    yet" wrapped inside fixed 40 px rows and spilled over the lines. Rows now have a minimum height, the score and its
+    note sit in one wrapping box (the note drops below), and the failed list's rows have the same minimum height and
+    padding, so both columns line up when nothing wraps."""
+    import re
+
+    from ui.scorecard import _style
+
+    css = _style()
+    area_row = re.search(r"\.fs-row \{([^}]*)\}", css).group(1)
+    failed_row = re.search(r"ul\.fs-failed li \{([^}]*)\}", css).group(1)
+    for rule in (area_row, failed_row):
+        assert "min-height:40px" in rule and not re.search(r"(?<!-)height:40px", rule)
+        assert "box-sizing:border-box" in rule and "padding:6px 0" in rule
+    assert "flex-wrap:wrap" in re.search(r"\.fs-label \{([^}]*)\}", css).group(1)
+    past = row(run_synthetic(), "Past performance")
+    assert re.search(r'<span class="fs-label"><span class="fs-score">[^<]*</span><span class="fs-sub">[^<]*</span>'
+                     r'</span></div>$', past)
+
+
+def test_a_mark_s_hover_text_does_not_repeat_the_word():
+    """Simon, 25 November 2026: same rule as the row. Not "Not assessed. This check is not assessed yet: ..." on D2's
+    mark; the word stays when the explanation does not say it (P4)."""
+    pytest.importorskip("src.checks.dividend", reason="needs C's dividend module (merged in #23)")
+    shown = chart(show("KO"))
+    assert "Not assessed. This check is not assessed yet" not in shown
+    assert f'title="{name_of("D2")}: This check is not assessed yet: ' in shown
+    assert f'title="{name_of("P4")}: Not assessed. ' in shown
+
+
+def test_amazon_dividend_row_reads_no_dividend_paid_0_passed_of_1_assessed():
+    """Simon's hand check of 25 November 2026 (SPEC §3): D1 failed, five does-not-apply marks."""
+    import re
+
+    pytest.importorskip("src.checks.dividend", reason="needs C's dividend module (merged in #23)")
+    dividend = row(show("AMZN"), "Dividend")
+    assert "No dividend paid" in dividend and "0 passed of 1 assessed" in dividend
+    assert len(re.findall(r'class="fs-mk fs-none"', dividend)) == 5
+
+
+def test_one_tab_per_area_and_the_sources_last():
+    """SPEC 2.4.2 §3 item 5: one tab per area, the sources page last; the summary stays above the tabs.
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
+    app = run_synthetic()
+    assert [t.label for t in app.tabs] == ["Past performance", "Financial health", "Dividend", "Valuation", "Sources"]
+    past, health, dividend, valuation, sources = app.tabs
+    assert [e.label for e in health.expander][2].count(f"**{name_of('H3')}.**") == 1 and len(health.expander) == 6
+    assert len(past.expander) == len(dividend.expander) == 6 and not valuation.expander
+    assert "Not part of this version" in "\n".join(str(m.value) for m in valuation.markdown)
+    assert sources.dataframe and not any("fs-row" in m.value for t in app.tabs for m in t.markdown)
 
 
 def test_synthetic_data_mark_v3():
     assert "SYNTHETIC DATA" in "\n".join(w.value for w in run_synthetic().warning)
 
 
+# Test change (rule 14.6, Simon's written agreement of 25 November 2026, Igor's review of #54 point 4): the row icons
+# have no box, so they no longer look like form checkboxes; same colours as before. Tests that look for the icon text
+# in a row look for these names (were check_box, disabled_by_default, check_box_outline_blank, indeterminate_check_box).
+FAILED_ICON = ":material/close:"
+WAIT_ICON = ":gray[:material/more_horiz:]"
+NONE_ICON = ":gray[:material/remove:]"
+
+
+def test_the_row_icons_have_no_box():
+    """Igor's review of #54, point 4, with Simon's choice of 25 November 2026: Material icons without a box, so a
+    not-assessed check does not look like a box to tick. Drawn marks were not used: an expander label takes no HTML,
+    and styling it from Streamlit's internal class names is too fragile the day before the freeze."""
+    from ui.scorecard import ICONS
+
+    assert ICONS == {"pass": ":primary[:material/check:]", "fail": FAILED_ICON, "insufficient_data": WAIT_ICON,
+                     "not_applicable": NONE_ICON}
+    assert not any("box" in icon for icon in ICONS.values())
+
+
 def test_a_closed_check_row_shows_mark_result_and_check_ac4():
+    """Label change (rule 14.6, Simon's written agreement of 25 November 2026): the row starts with the design's
+    Material icon, no longer the "✕" or "⋯" character (design spec §4); the result word and the check stay.
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
     labels = [e.label for e in run_synthetic().expander]
     assert len(labels) == 18
-    assert any(label.startswith("✕ Failed") and "H2" in label for label in labels)
-    assert any(label.startswith("⋯ Not assessed") and "P4" in label for label in labels)
+    assert any(label.startswith(f"{FAILED_ICON} **{name_of('H2')}.** Failed") for label in labels)
+    assert any(label.startswith(f"{WAIT_ICON} **{name_of('P4')}.** :gray[Not assessed.") for label in labels)
+
+
+def one_check(result):
+    from tests.fixtures import synthetic
+    from ui.scorecard import load_texts, render_check
+
+    render_check(synthetic.company_data(), result, load_texts())
+
+
+def closed_row(*args) -> str:
+    from src.contracts import CheckResult
+
+    return AppTest.from_function(one_check, args=(CheckResult(*args),)).run(timeout=30).expander[0].label
+
+
+def test_until_e_s_texts_a_closed_check_says_its_result_and_figures():
+    """Simon's sentence of 25 November 2026, kept with E's texts (#17): "Passed. USD 31,044 m against USD 21,281 m."
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
+    assert closed_row("H1", "pass", 31_044e6, 21_281e6, (), "x").endswith(
+        f"**{name_of('H1')}.** Passed. USD 31,044 m against USD 21,281 m.")
+    assert closed_row("H1", "fail", 31_044e6, 49_260e6, (), "x") == (
+        f"{FAILED_ICON} **{name_of('H1')}.** Failed. USD 31,044 m against USD 49,260 m.")
+    # Test change (rule 14.6, Simon's written agreement of 25 November 2026, Igor's review of #54 point 2): a pass or
+    # fail without a value shows the check's explanation in the row (was "Passed." alone, which says nothing).
+    assert closed_row("D3", "pass", None, None, (), "x").endswith(f"**{name_of('D3')}.** Passed. x")
+
+
+def test_mcdonalds_failures_without_a_value_show_their_reason_in_the_row():
+    """Igor's review of #54, point 2: three of McDonald's failures (return on equity above its industry, moderate debt,
+    debt is falling) have no value because its equity is negative; the closed row said only "Failed.". It now shows
+    the check's explanation, as for an assumed figure, and the open detail does not repeat it."""
+    expanders = {e.label.split("**")[1].rstrip("."): e for e in show("MCD").expander}
+    for check_id in ("P4", "H3", "H4"):
+        check = expanders[name_of(check_id)]
+        assert f"**{name_of(check_id)}.** Failed. Negative equity" in check.label
+        assert not any(m.value.startswith("**How it is calculated:**") for m in check.markdown)
+
+
+def test_amazon_d1_says_no_dividend_paid_never_usd_0_m():
+    """Simon's look of 25 November 2026, Flo's rule: a dividend treated as nil is "no dividend paid", never "USD 0 m".
+    When a figure of the check is an assumption, the row shows the check's own explanation instead of the figures.
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
+    pytest.importorskip("src.checks.dividend", reason="needs C's dividend module (merged in #23)")
+    d1 = next(e.label for e in show("AMZN").expander if f"**{name_of('D1')}.**" in e.label)
+    assert "USD 0 m" not in d1
+    assert d1.startswith(f"{FAILED_ICON} **{name_of('D1')}.** Failed. No dividend paid in the fiscal year ended 31 December 2025")
+
+
+def test_amazon_d1_shows_its_explanation_once_in_the_row():
+    """Simon, 25 November 2026: a passed or failed check whose row already shows its explanation (an assumed figure)
+    does not repeat it under "How it is calculated" in the open detail (Igor's review of #35: once).
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
+    pytest.importorskip("src.checks.dividend", reason="needs C's dividend module (merged in #23)")
+    d1 = next(e for e in show("AMZN").expander if f"**{name_of('D1')}.**" in e.label)
+    shown = [d1.label, *(m.value for m in d1.markdown)]
+    assert sum("No dividend paid in the fiscal year ended 31 December 2025" in line for line in shown) == 1
+    assert not any(m.value.startswith("**How it is calculated:**") for m in d1.markdown)
+
+
+def test_amazon_d1_detail_has_no_value_against_threshold_line():
+    """Simon's look of 25 November 2026, same rule as the row: with an assumed figure, no "Value: USD 0 m · compared
+    with: USD 0 m"; the figure table already says "no dividend paid".
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
+    pytest.importorskip("src.checks.dividend", reason="needs C's dividend module (merged in #23)")
+    d1 = next(e for e in show("AMZN").expander if f"**{name_of('D1')}.**" in e.label)
+    assert not any(m.value.startswith("**Value:**") for m in d1.markdown)
+    assert "USD 0 m" not in "\n".join(m.value for m in d1.markdown)
+    table = d1.table[0].value if d1.table else d1.dataframe[0].value
+    assert "no dividend paid" in table.astype(str).to_string()
+
+
+def test_the_company_heading_has_no_link_icon():
+    """Simon's look of 25 November 2026: Streamlit 1.67 adds a link icon to headings (`stHeaderActionElements`);
+    hidden on the company heading only."""
+    from ui.scorecard import _style
+
+    assert 'h1:has(.fs-ticker) [data-testid="stHeaderActionElements"] {display:none}' in _style()
+
+
+def test_the_word_is_not_repeated_when_the_explanation_already_says_it():
+    """Simon's look of 25 November 2026: not "Not assessed. This check is not assessed yet: ...". The word is left out
+    when the explanation's first clause already contains it.
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
+    d2 = "This check is not assessed yet: it needs the share price and the US market dividend yield."
+    assert closed_row("D2", "insufficient_data", None, None, (), d2) == f"{WAIT_ICON} **{name_of('D2')}.** :gray[{d2}]"
+    p4 = "Not assessed: needs a sourced industry return on equity benchmark."
+    assert closed_row("P4", "insufficient_data", None, None, (), p4) == f"{WAIT_ICON} **{name_of('P4')}.** :gray[{p4}]"
+    assert closed_row("P4", "insufficient_data", None, None, (), "P4: built by hand (AC3)") == (
+        f"{WAIT_ICON} **{name_of('P4')}.** :gray[Not assessed. P4: built by hand (AC3)]")
+
+
+def test_does_not_apply_shows_the_check_s_own_explanation_unchanged():
+    """Simon, 25 November 2026: Flo's explanation as it is, under the "Does not apply" label.
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed.
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026, Igor's review of #54 point 3): "Not
+    applicable" already says "Does not apply", so the row no longer shows both labels; Flo's text stays unchanged.
+    A does-not-apply explanation that does not say it still gets the word."""
+    assert closed_row("D2", "not_applicable", None, None, (), "Not applicable: no dividend paid (D1).") == (
+        f"{NONE_ICON} **{name_of('D2')}.** :gray[Not applicable: no dividend paid (D1).]")
+    assert closed_row("D2", "not_applicable", None, None, (), "No dividend was paid.") == (
+        f"{NONE_ICON} **{name_of('D2')}.** :gray[Does not apply. No dividend was paid.]")
+
+
+def test_amazon_dividend_rows_show_one_label():
+    """Igor's review of #54, point 3: Amazon's D2 to D6 read "Does not apply. Not applicable: ...", two labels for one
+    state; on the marks' hover text too."""
+    pytest.importorskip("src.checks.dividend", reason="needs C's dividend module (merged in #23)")
+    app = show("AMZN")
+    rows = [e.label for e in app.expander if "Not applicable" in e.label]
+    assert len(rows) == 5 and not any("Does not apply" in label for label in rows)
+    assert "Does not apply. Not applicable" not in chart(app)
 
 
 def test_an_open_check_shows_its_figures_with_units_and_fiscal_year_ac4():
+    """Simon's AC3 sign-off figures in the open H3 check.
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
     app = run_synthetic()
-    h3 = next(e for e in app.expander if "H3" in e.label)
+    h3 = next(e for e in app.expander if f"**{name_of('H3')}.**" in e.label)
     table = h3.table[0].value if h3.table else h3.dataframe[0].value
     shown = table.astype(str).to_string()
     # Simon's sign-off: financial debt 450, cash 120, equity 820 (USD m, 2025)
@@ -115,19 +426,48 @@ def test_start_screen_lists_the_five_demo_companies():
         assert ticker in shown
 
 
+def test_the_title_and_start_sentence_show_only_on_the_start_screen():
+    """Design spec §3 and §6: "Filing Scorecard" and one sentence under the inputs, gone once a company is shown."""
+    app = show("KO")
+    assert not app.title
+    assert "press Show scorecard" not in texts(app)
+
+
 def test_the_ticker_field_takes_space_only_for_another_ticker():
-    """Simon's look at the app, 23 November: no empty gap in the input bar."""
+    """Simon's look at the app, 23 November: no empty gap in the input bar.
+
+    Label change (rule 14.6, Simon's written agreement of 25 November 2026): 4 and 5 columns, not 3 and 4, because
+    the design puts the Show scorecard button in the same row (design spec §3, item 3)."""
     app = AppTest.from_file(MAIN).run(timeout=30)
-    assert [t.label for t in app.text_input] == ["Share price (USD)"] and len(app.columns) == 3
+    assert [t.label for t in app.text_input] == ["Share price (USD)"] and len(app.columns) == 4
     app.selectbox(key="company").set_value("Other ticker").run(timeout=30)
-    assert [t.label for t in app.text_input] == ["Ticker", "Share price (USD)"] and len(app.columns) == 4
+    assert [t.label for t in app.text_input] == ["Ticker", "Share price (USD)"] and len(app.columns) == 5
+
+
+def heading(app: AppTest) -> str:
+    """The page heading: the company name as a 28 px h1 in markdown (design spec §3, §4)."""
+    return next(m.value for m in app.markdown if m.value.startswith("<h1"))
 
 
 def test_coca_cola_header_shows_the_sec_name_ac1():
+    """Label change (rule 14.6, Simon's written agreement of 25 November 2026): the name is looked for in the page
+    heading, no longer in `st.header`, because the design shows it as the 28 px h1 with the ticker beside it
+    (`st.header` is 18 px). The expected name and industry are unchanged; the SEC code stays until #27 (Igor, #39)."""
     app = show("KO")
     assert not app.exception
-    assert "COCA COLA CO" in [h.value for h in app.header]
-    assert "Beverages, SEC code 2080" in texts(app)
+    assert ">COCA COLA CO<" in heading(app)
+    # Wording change (Simon's written wording of 25 November 2026, Emma's review of #54): "SEC industry: Beverages
+    # (code 2080)", so it is not confused with the industry group under the valuation detail; same industry and code.
+    assert "SEC industry: Beverages (code 2080)" in texts(app)
+
+
+def test_the_header_shows_the_ticker_muted_and_the_typed_price():
+    """Design spec §3: muted ticker beside the SEC name; the typed price on the right."""
+    app = show("KO", "65.40")
+    assert '<span class="fs-ticker">KO</span>' in heading(app)
+    shown = texts(app)
+    assert "Share price you typed" in shown and "USD 65.40" in shown
+    assert "Share price you typed" not in texts(show("KO"))  # no price typed: nothing on the right
 
 
 def test_header_shows_the_latest_fiscal_year_end_from_the_data():
@@ -139,11 +479,19 @@ def test_header_shows_the_latest_fiscal_year_end_from_the_data():
 
 
 def test_a_check_not_assessed_shows_its_explanation_once():
-    """Igor's review of #35: not "Not assessed: ..." and again "How it is calculated: ..."."""
-    p4 = next(e for e in run_synthetic().expander if "P4" in e.label)
-    shown = [m.value for m in p4.markdown]
+    """Igor's review of #35: not "Not assessed: ..." and again "How it is calculated: ...".
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): Igor's intent is kept, the explanation is
+    shown once; only its place moves, from the open detail to the closed row, as in the design (SPEC 2.4.2 §3 item 5).
+    So it is counted across the row and the open detail together, and must be in the row.
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
+    p4 = next(e for e in run_synthetic().expander if f"**{name_of('P4')}.**" in e.label)
+    shown = [p4.label, *(m.value for m in p4.markdown)]
     assert sum("P4: built by hand (AC3)" in line for line in shown) == 1
-    assert any(line.startswith("**Not assessed:**") for line in shown)
+    assert "P4: built by hand (AC3)" in p4.label
 
 
 def test_apple_missing_interest_expense_is_n_a_with_its_reason_never_zero_v4():
@@ -156,20 +504,63 @@ def test_apple_missing_interest_expense_is_n_a_with_its_reason_never_zero_v4():
 
 
 def test_a_check_names_its_filing_number_with_dashes_as_on_the_sources_page():
-    """Simon's request, 23 November: e.g. 0000021344-26-000010, not 000002134426000010."""
+    """Simon's request, 23 November: e.g. 0000021344-26-000010, not 000002134426000010.
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
     import re
 
     pytest.importorskip("src.checks.dividend", reason="needs C's dividend module (merged in #23)")
     app = show("KO")
-    d1 = next(e for e in app.expander if "D1" in e.label)
+    d1 = next(e for e in app.expander if f"**{name_of('D1')}.**" in e.label)
     filing = next(m.value for m in d1.markdown if m.value.startswith("**Filing:**"))
     accessions = set(app.dataframe[-1].value["Accession"]) - {""}
     shown = re.findall(r"\[([^\]]+)\]", filing)
     assert shown and all(re.fullmatch(r"\d{10}-\d{2}-\d{6}", a) and a in accessions for a in shown)
 
 
-def test_a_typed_price_is_repeated_next_to_valuation():
-    assert "At the price you typed: USD 182.50" in texts(show("KO", "182,50"))
+def test_a_failed_block_is_filled_in_the_text_colour_of_both_themes():
+    """SPEC §3: a failed block is filled in a second colour, with a cross. Simon's look of 25 November: the fill was
+    `currentColor`, which is the page colour inside a block whose text has the page colour, so D6 disappeared.
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
+    import re
+    import tomllib
+
+    from ui.scorecard import _style
+
+    theme = tomllib.loads((Path(MAIN).parent / ".streamlit" / "config.toml").read_text(encoding="utf-8"))["theme"]
+    css = _style()
+    fills = re.findall(r"\.fs-fail \{\{?background:([^;}]+)", css)
+    assert fills == ["var(--fs-text)"]  # one fill, named, never currentColor
+    assert f"--fs-text:light-dark({theme['textColor']}, {theme['dark']['textColor']})" in css
+
+    # Since item 5 the cross is the design's drawn cross (two paths), no longer the "✕" character.
+    d6_name = re.escape(name_of("D6"))  # outside the f-string: Python 3.11 forbids its own quote inside {}
+    d6 = re.search(rf'<span class="([^"]*)" title="{d6_name}[^"]*">(.*?)</span>', chart(show("KO")))
+    assert "fs-fail" in d6.group(1).split() and CROSS in d6.group(2)
+
+
+def test_the_check_row_icon_rule_targets_the_icon_streamlit_draws():
+    """Simon's look of 25 November 2026: the icon sat higher than the text. Streamlit 1.67 draws a Material icon as
+    `<span data-testid="stIconMaterial" aria-hidden="true">` (static/js/DynamicIcon), so the design spec's selector
+    `span[role="img"]` matched nothing and the icon kept its default size and position."""
+    from ui.scorecard import _style
+
+    css = _style()
+    assert '[data-testid="stExpander"] summary [data-testid="stIconMaterial"]' in css
+    assert 'role="img"]' not in css
+
+
+def test_a_typed_price_is_repeated_in_the_header():
+    """Label change (rule 14.6, Simon's written agreement of 25 November 2026): the typed price is repeated in the
+    header as "Share price you typed", no longer next to valuation (design spec §3). The price shown is unchanged."""
+    shown = texts(show("KO", "182,50"))
+    assert "Share price you typed" in shown and "USD 182.50" in shown
+    assert "At the price you typed" not in shown
 
 
 def test_an_invalid_price_says_how_to_type_it():
