@@ -346,6 +346,17 @@ def test_a_failed_block_is_filled_in_the_text_colour_of_both_themes():
     assert "fs-fail" in d6.group(1).split() and CROSS in d6.group(2)
 
 
+def test_the_check_row_icon_rule_targets_the_icon_streamlit_draws():
+    """Simon's look of 25 November 2026: the icon sat higher than the text. Streamlit 1.67 draws a Material icon as
+    `<span data-testid="stIconMaterial" aria-hidden="true">` (static/js/DynamicIcon), so the design spec's selector
+    `span[role="img"]` matched nothing and the icon kept its default size and position."""
+    from ui.scorecard import _style
+
+    css = _style()
+    assert '[data-testid="stExpander"] summary [data-testid="stIconMaterial"]' in css
+    assert 'role="img"]' not in css
+
+
 def test_a_typed_price_is_repeated_in_the_header():
     """Label change (rule 14.6, Simon's written agreement of 25 November 2026): the typed price is repeated in the
     header as "Share price you typed", no longer next to valuation (design spec §3). The price shown is unchanged."""

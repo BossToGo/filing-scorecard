@@ -125,7 +125,7 @@ def _style() -> str:
   font-variant-numeric:tabular-nums}}
 [data-testid="stMainBlockContainer"] {{max-width:1200px; padding-left:32px; padding-right:32px}}
 [data-testid="stExpander"] details {{border:0; border-bottom:1px solid var(--fs-line); border-radius:0}}
-[data-testid="stExpander"] summary span[role="img"] {{font-size:20px; vertical-align:-4px}}
+[data-testid="stExpander"] summary [data-testid="stIconMaterial"] {{font-size:20px; line-height:24px; vertical-align:-5px}}
 [data-testid="stTab"][aria-selected="true"], [data-testid="stTab"][aria-selected="true"] p {{color:var(--fs-text)}}
 .fs-price {{text-align:right; font-size:14px}}  .fs-price strong {{font-size:16px}}
 .fs-muted {{color:var(--fs-muted)}}  .fs-ticker {{font-size:16px; font-weight:400; color:var(--fs-muted); margin-left:8px}}
