@@ -251,7 +251,20 @@ def test_until_e_s_texts_a_closed_check_says_its_result_and_figures():
         f"**{name_of('H1')}.** Passed. USD 31,044 m against USD 21,281 m.")
     assert closed_row("H1", "fail", 31_044e6, 49_260e6, (), "x") == (
         f"{FAILED_ICON} **{name_of('H1')}.** Failed. USD 31,044 m against USD 49,260 m.")
-    assert closed_row("D3", "pass", None, None, (), "x").endswith(f"**{name_of('D3')}.** Passed.")
+    # Test change (rule 14.6, Simon's written agreement of 25 November 2026, Igor's review of #54 point 2): a pass or
+    # fail without a value shows the check's explanation in the row (was "Passed." alone, which says nothing).
+    assert closed_row("D3", "pass", None, None, (), "x").endswith(f"**{name_of('D3')}.** Passed. x")
+
+
+def test_mcdonalds_failures_without_a_value_show_their_reason_in_the_row():
+    """Igor's review of #54, point 2: three of McDonald's failures (return on equity above its industry, moderate debt,
+    debt is falling) have no value because its equity is negative; the closed row said only "Failed.". It now shows
+    the check's explanation, as for an assumed figure, and the open detail does not repeat it."""
+    expanders = {e.label.split("**")[1].rstrip("."): e for e in show("MCD").expander}
+    for check_id in ("P4", "H3", "H4"):
+        check = expanders[name_of(check_id)]
+        assert f"**{name_of(check_id)}.** Failed. Negative equity" in check.label
+        assert not any(m.value.startswith("**How it is calculated:**") for m in check.markdown)
 
 
 def test_amazon_d1_says_no_dividend_paid_never_usd_0_m():

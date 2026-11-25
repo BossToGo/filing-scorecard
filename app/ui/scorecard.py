@@ -247,18 +247,18 @@ def render_check(data: CompanyData, result: CheckResult, texts: Mapping) -> None
     result and the figures, "Passed. USD 31,044 m against USD 21,281 m."; not assessed or does not apply: the word
     and the check's own explanation, unchanged."""
     word = MARK_WORDS[result.status]
-    # The row shows the explanation when the check is not assessed, does not apply, or uses an assumed figure; the
-    # open detail then does not repeat it (Igor's review of #35: once; Simon, 25 November 2026)
+    # The row shows the explanation when the check is not assessed, does not apply, uses an assumed figure or has no
+    # value; the open detail then does not repeat it (Igor's review of #35: once; Simon, 25 November 2026)
     assumed = any(f.kind == "assumption" for f in result.inputs)  # e.g. dividends treated as nil: never "USD 0 m"
-    in_row = result.status not in ("pass", "fail") or assumed
+    no_value = result.value is None  # e.g. McDonald's negative equity: "Failed." alone says nothing (Igor, #54)
+    in_row = result.status not in ("pass", "fail") or assumed or no_value
     if result.status in ("pass", "fail") and in_row:
-        # A figure is an assumption (e.g. dividends treated as nil): the check's own words, never "USD 0 m" (Flo's
-        # rule, plan Q1; Simon's look of 25 November 2026)
+        # A figure is an assumption (e.g. dividends treated as nil) or there is no value: the check's own words,
+        # never "USD 0 m" (Flo's rule, plan Q1; Simon's look of 25 November 2026; Igor's review of #54, point 2)
         sentence = f"{word}. {result.explanation.translate(_MARKDOWN)}"
     elif result.status in ("pass", "fail"):
         shown, against = check_value(result.check_id, result.value, result.threshold)
-        figures = "" if result.value is None else f" {shown}" + (f" against {against}" if against else "") + "."
-        sentence = f"{word}.{figures}"
+        sentence = f"{word}. {shown}" + (f" against {against}" if against else "") + "."
     else:  # the word only when the explanation's first clause does not already say it (Simon, 25 November 2026)
         sentence = f":gray[{_word_before(word, result.explanation)}{result.explanation.translate(_MARKDOWN)}]"
     with st.expander(f"{ICONS[result.status]} **{_plain_name(result.check_id, texts)}.** {sentence}"):
