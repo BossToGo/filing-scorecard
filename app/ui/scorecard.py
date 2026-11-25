@@ -8,6 +8,7 @@ Colours come from the theme file `app/.streamlit/config.toml`, never from this f
 from __future__ import annotations
 
 import html
+import re
 from datetime import date, datetime
 from pathlib import Path
 from typing import Mapping, Sequence
@@ -240,8 +241,10 @@ def render_check(data: CompanyData, result: CheckResult, texts: Mapping) -> None
         shown, against = check_value(result.check_id, result.value, result.threshold)
         figures = "" if result.value is None else f" {shown}" + (f" against {against}" if against else "") + "."
         sentence = f"{word}.{figures}"
-    else:
-        sentence = f":gray[{word}. {result.explanation.translate(_MARKDOWN)}]"
+    else:  # the word only when the explanation's first clause does not already say it (Simon, 25 November 2026)
+        first_clause = re.split(r"[:.]", result.explanation, maxsplit=1)[0].lower()
+        said = "" if word.lower() in first_clause else f"{word}. "
+        sentence = f":gray[{said}{result.explanation.translate(_MARKDOWN)}]"
     with st.expander(f"{ICONS[result.status]} **{_plain_name(result.check_id, texts)}.** {sentence}"):
         rule = texts.get(result.check_id, {}).get("rule")
         not_assessed = result.status in ("insufficient_data", "not_applicable")

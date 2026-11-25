@@ -197,6 +197,17 @@ def test_amazon_d1_says_no_dividend_paid_never_usd_0_m():
     assert d1.startswith(f"{FAILED_ICON} **D1.** Failed. No dividend paid in the fiscal year ended 31 December 2025")
 
 
+def test_the_word_is_not_repeated_when_the_explanation_already_says_it():
+    """Simon's look of 25 November 2026: not "Not assessed. This check is not assessed yet: ...". The word is left out
+    when the explanation's first clause already contains it."""
+    d2 = "This check is not assessed yet: it needs the share price and the US market dividend yield."
+    assert closed_row("D2", "insufficient_data", None, None, (), d2) == f"{WAIT_ICON} **D2.** :gray[{d2}]"
+    p4 = "Not assessed: needs a sourced industry return on equity benchmark."
+    assert closed_row("P4", "insufficient_data", None, None, (), p4) == f"{WAIT_ICON} **P4.** :gray[{p4}]"
+    assert closed_row("P4", "insufficient_data", None, None, (), "P4: built by hand (AC3)") == (
+        f"{WAIT_ICON} **P4.** :gray[Not assessed. P4: built by hand (AC3)]")
+
+
 def test_does_not_apply_shows_the_check_s_own_explanation_unchanged():
     """Simon, 25 November 2026: Flo's explanation as it is, under the "Does not apply" label."""
     assert closed_row("D2", "not_applicable", None, None, (), "Not applicable: no dividend paid (D1).") == (
