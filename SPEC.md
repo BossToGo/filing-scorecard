@@ -197,8 +197,8 @@ These tags are a starting list written from memory of the US accounting taxonomy
 |---|---|---|
 | P1 | Consistently profitable | Net income > 0 in at least 4 of the last 5 fiscal years |
 | P2 | Earnings grew | Net income FY0 > net income FY-4, and FY0 > 0 |
-| P3 | Growth is accelerating | Net income growth FY-1 to FY0 > compound annual growth FY-4 to FY0. Net income FY-4 or FY-1 ≤ 0: fail, with the note "growth from a loss is not meaningful" |
-| P4 | Return on equity beats the industry | Net income FY0 ÷ average equity (FY-1, FY0) > industry return on equity. Equity ≤ 0: fail, with the note "negative equity" |
+| P3 | Growth is accelerating | Net income growth FY-1 to FY0 > compound annual growth FY-4 to FY0. Net income FY-4 or FY-1 ≤ 0: fail, with the note "growth from a loss is not meaningful", even when another of the three years is missing. With positive FY-4 and FY-1 profits, a negative FY0 fails with "the latest year is a loss"; FY0 = 0 makes both growth rates −100%, so the strict comparison fails |
+| P4 | Return on equity beats the industry | Net income FY0 ÷ average equity (FY-1, FY0) > industry return on equity. Known equity ≤ 0 in FY-1 or FY0: fail, with the note "negative equity", before checking missing net income, the other equity figure or the industry benchmark |
 | P5 | Margin beats the industry | Operating income ÷ revenue (FY0) > industry pre-tax operating margin |
 | P6 | Return on capital improved | Operating income ÷ (total assets − current liabilities), FY0 > FY-3 |
 
