@@ -5,6 +5,7 @@ A pure function: `CompanyData` and the settings in, six `CheckResult`s out. No n
 
     from src.settings import load_settings
     results = dividend_checks(data, load_settings())     # D1, D2, D3, D4, D5, D6
+    results = dividend_checks(data, load_settings(), share_price=30.0, market_dividend_yield=yield_fact)  # D2 too
 
 The rules, in order:
 1. D1: dividends paid in FY0 > 0. A missing or negative figure gives "insufficient data"; a labelled nil (plan Q1,
@@ -15,7 +16,10 @@ The rules, in order:
    negative dividends paid figure gives "insufficient data".
 
 Decisions (Flo, 22 November 2026):
-- D2 is "not assessed" (status insufficient_data, plan Q9) until slice S9 adds the share price and the market yield.
+- D2 is "not assessed" (status insufficient_data, plan Q9) without the share price or the US market dividend yield
+  (B's benchmark file); switched on in slice S9 (25 November): dividends paid FY0 ÷ (share price × shares) > market
+  yield, strictly (a yield equal to the market's fails, Flo's E9; equal up to computer rounding, `TIE`, review
+  round 2). A missing share count is "insufficient data".
 - D3: a cut is "this year < (1 − max_dividend_cut) × last year", so no division and a rise from a year of zero is
   never a cut. Its value is the lowest year-on-year change among the years whose previous year is above zero.
 - A fiscal year that is not in the data is a missing input (D3 and D4 need five fiscal years, FY-4 to FY0).
@@ -30,6 +34,7 @@ FY0 is the latest fiscal year of revenue and FY-4 the fifth latest, as for every
 
 from __future__ import annotations
 
+import math
 from datetime import date
 from typing import Mapping
 
@@ -38,6 +43,7 @@ from src.contracts import CheckResult, CompanyData, Fact
 NO_DIVIDEND = "no dividend paid"  # what the dividend area shows when D1 fails (SPEC §7)
 PAYMENTS = ("dividends_paid", "capital_expenditure")  # filed as positive amounts; negative means a sign error
 YEARS = 5  # FY-4 to FY0
+TIE = 1e-9  # D2: two yields this close (relative) are equal, computer rounding (review round 2, as in valuation.py)
 LABELS = {
     "dividends_paid": "dividends paid",
     "net_income": "net income",
@@ -46,8 +52,10 @@ LABELS = {
 }
 
 
-def dividend_checks(data: CompanyData, settings: Mapping[str, Mapping]) -> tuple[CheckResult, ...]:
-    """D1 to D6 for one company, in that order."""
+def dividend_checks(data: CompanyData, settings: Mapping[str, Mapping], *, share_price: float | None = None,
+                    market_dividend_yield: Fact | None = None) -> tuple[CheckResult, ...]:
+    """D1 to D6 for one company, in that order. D2 needs the share price the user typed and B's US market dividend
+    yield; without them it is "not assessed"."""
     max_cut = float(settings["dividend"]["max_dividend_cut"])
     max_payout = float(settings["dividend"]["max_payout_ratio"])
     years = data.fiscal_years("revenue")[-YEARS:]
@@ -63,7 +71,7 @@ def dividend_checks(data: CompanyData, settings: Mapping[str, Mapping]) -> tuple
                              for n in range(2, 7))
     return (
         d1,
-        _d2(dividends_fy0),
+        _d2(dividends_fy0, data.latest("shares"), share_price, market_dividend_yield),
         _d3(data, years, max_cut),
         _d4(data, years),
         _d5(data, years[-1], max_payout),
@@ -92,9 +100,38 @@ def _d1(dividends: Fact) -> CheckResult:
                        f"No dividend paid in the fiscal year ended {year}: {why}.")
 
 
-def _d2(dividends: Fact) -> CheckResult:
-    return CheckResult("D2", "insufficient_data", None, None, (dividends,),
-                       "This check is not assessed yet: it needs the share price and the US market dividend yield.")
+def _d2(dividends: Fact, shares: Fact | None, price: float | None, market_yield: Fact | None) -> CheckResult:
+    needs = []
+    if price is None:
+        needs.append("the share price")
+    elif not math.isfinite(price) or price <= 0:  # typed, but not usable (same words as V1–V6, review round 2)
+        needs.append("a share price above zero")
+    if market_yield is None or market_yield.kind == "missing" or market_yield.value <= 0:
+        needs.append("the US market dividend yield")
+    known = tuple(f for f in (dividends, shares, market_yield) if f is not None)
+    if needs:
+        why = " and ".join(needs)
+        if market_yield is not None and market_yield.kind == "missing":
+            why += f" ({market_yield.note})"
+        elif market_yield is not None and market_yield.value <= 0:  # review of 25 November, as for V3–V5
+            why += f" (the figure given is zero or negative: {_pct(market_yield.value)})"
+        return CheckResult("D2", "insufficient_data", None, None, known, f"This check is not assessed: it needs {why}.")
+    if shares is None or shares.kind == "missing" or shares.value <= 0:
+        return CheckResult("D2", "insufficient_data", None, None, known,
+                           "Insufficient data: the share count is missing or not above zero"
+                           + (f" ({shares.note})" if shares is not None and shares.note else "") + ".")
+    blocked = _blocked("D2", (dividends,))
+    if blocked:
+        return blocked
+    market_value = price * shares.value
+    dividend_yield = dividends.value / market_value
+    tie = math.isclose(dividend_yield, market_yield.value, rel_tol=TIE, abs_tol=0.0)  # a tie fails, as E9
+    status = "pass" if dividend_yield > market_yield.value and not tie else "fail"
+    shown, market = _two_percents(dividend_yield, market_yield.value)
+    return CheckResult("D2", status, dividend_yield, market_yield.value, (dividends, shares, market_yield),
+                       f"Dividend yield {shown} (dividends paid {_usd(dividends.value)} in the fiscal "
+                       f"year ended {_day(dividends.period_end)} ÷ (the share price you typed, USD {price:,.2f}, × "
+                       f"{shares.value:,.0f} shares)) against {market} for the US market.")
 
 
 def _d3(data: CompanyData, years: list[date], max_cut: float) -> CheckResult:
@@ -229,6 +266,16 @@ def _usd(value: float) -> str:
 def _pct(ratio: float) -> str:
     """A change or a ratio in percent with two decimals, e.g. "−10.20%"."""
     return f"{ratio:.2%}".replace("-", "−")
+
+
+def _two_percents(value: float, benchmark: float) -> tuple[str, str]:
+    """Both in percent with two decimals, or more when two would show different numbers as the same (1.4999%
+    against 1.5% reads "1.4999% against 1.5000%", never "1.50% against 1.50%" next to a fail)."""
+    for decimals in range(2, 7):
+        a, b = (f"{x:.{decimals}%}".replace("-", "−") for x in (value, benchmark))
+        if a != b or math.isclose(value, benchmark, rel_tol=TIE, abs_tol=0.0):
+            return a, b
+    return a, b
 
 
 def _limit(ratio: float) -> str:

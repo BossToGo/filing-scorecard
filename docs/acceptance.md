@@ -64,24 +64,24 @@ terminal value 1,101.7463.
 | CALC-H5 | Debt covered by cash flow | 215 ÷ 450 | 47.78% ≥ 20% → pass | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
 | CALC-H6 | Interest covered | 208 ÷ 26 | 8.0 ≥ 5 → pass | B | signed off by B (Greg), 24 November 2026: [P4, P5 his own hand working; the other rows Simon's hand working of 19 November, compared by Greg](https://github.com/BossToGo/filing-scorecard/pull/5#pullrequestreview-6039789536) |
 | CALC-D1 | Pays a dividend | 56 > 0 | pass | C | passing (test: test_appendix_a_synthetic_company[D1]); signed off by C on PR #5 |
-| CALC-D2 | Yield above market | 56 ÷ (30.00 × 100) = 56 ÷ 3,000 | 1.867% > 1.5% → pass | C | signed off by C on PR #5; open: D2 is "not assessed" until S9 adds the share price and the market yield (test: test_appendix_a_d2_is_not_assessed_without_share_price_and_benchmark) |
+| CALC-D2 | Yield above market | 56 ÷ (30.00 × 100) = 56 ÷ 3,000 | 1.867% > 1.5% → pass | C | passing on branch `c/S9-valuation-checks` (test: test_appendix_a_d2_with_share_price_and_market_yield); signed off by C on PR #5. Without the share price or the market yield D2 stays "not assessed" (test: test_appendix_a_d2_is_not_assessed_without_share_price_and_benchmark) |
 | CALC-D3 | No large cut | Changes: +10%, +9.09%, −6.25% (48 to 45), +24.44% | largest fall −6.25% → pass | C | passing (test: test_appendix_a_synthetic_company[D3]); signed off by C on PR #5 |
 | CALC-D4 | Dividend grew | 56 > 40 | pass | C | passing (test: test_appendix_a_synthetic_company[D4]); signed off by C on PR #5 |
 | CALC-D5 | Covered by earnings | 56 ÷ 140 | 40% < 90% → pass | C | passing (test: test_appendix_a_synthetic_company[D5]); signed off by C on PR #5 |
 | CALC-D6 | Covered by cash | 56 ≤ 215 − 85 = 130 | pass | C | passing (test: test_appendix_a_synthetic_company[D6]); signed off by C on PR #5 |
-| CALC-V1 | Below fair value | 30.00 against 20.13 | fail | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
-| CALC-V2 | Well below fair value | 30.00 against 0.80 × 20.13 = 16.10 | fail | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
-| CALC-V3 | P/E vs industry | 3,000 ÷ 140 | 21.43 > 20.0 → fail | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
-| CALC-V4 | P/E vs the whole US market (v2.3) | 3,000 ÷ 140 = 21.43 against the synthetic market P/E 24.0 | 21.43 < 24.0 → pass | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
-| CALC-V5 | P/B vs industry | 3,000 ÷ 820 | 3.66 < 4.0 → pass | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the tests come with S7 to S9 |
-| CALC-V6 | Price against the fair value at the growth cap (§7 V6) | Same valuation with g1 = 30% (growth 30%, 21.9%, 16.25%, 12.2%, 9.4%, 7.4%, 5.9%, 4.9%, 4.2%, 3.7%): USD 37.37; 30.00 ≤ 37.37 | pass | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the fair value at the cap (37.37) passes on branch `c/S8-valuation-engine` (test_v6_input_fair_value_with_starting_growth_at_the_cap); the check itself comes with S9 |
+| CALC-V1 | Price below the cash-flow estimate (SPEC §7 wording of 24 November; was "Below fair value") | 30.00 against 20.13 | fail | C | passing on branch `c/S9-valuation-checks` (test: test_appendix_a_synthetic_company[V1]); signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14) |
+| CALC-V2 | Price at or below 80% of the estimate (SPEC §7 wording of 24 November; was "Well below fair value") | 30.00 against 0.80 × 20.13 = 16.10 | fail | C | passing on branch `c/S9-valuation-checks` (test: test_appendix_a_synthetic_company[V2]); signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14) |
+| CALC-V3 | P/E vs industry | 3,000 ÷ 140 | 21.43 > 20.0 → fail | C | passing on branch `c/S9-valuation-checks` (test: test_appendix_a_synthetic_company[V3]); signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14) |
+| CALC-V4 | P/E vs the whole US market (v2.3) | 3,000 ÷ 140 = 21.43 against the synthetic market P/E 24.0 | 21.43 < 24.0 → pass | C | passing on branch `c/S9-valuation-checks` (test: test_appendix_a_synthetic_company[V4]); signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14) |
+| CALC-V5 | P/B vs industry | 3,000 ÷ 820 | 3.66 < 4.0 → pass | C | passing on branch `c/S9-valuation-checks` (test: test_appendix_a_synthetic_company[V5]); signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14) |
+| CALC-V6 | Price against the fair value at the growth cap (§7 V6) | Same valuation with g1 = 30% (growth 30%, 21.9%, 16.25%, 12.2%, 9.4%, 7.4%, 5.9%, 4.9%, 4.2%, 3.7%): USD 37.37; 30.00 ≤ 37.37 | pass | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); the fair value at the cap (37.37) passes on branch `c/S8-valuation-engine` (test_v6_input_fair_value_with_starting_growth_at_the_cap); the check passes on branch `c/S9-valuation-checks` (test: test_appendix_a_synthetic_company[V6]) |
 | CALC-W1 | Levered beta | 0.90 × (1 + 0.79 × 450 ÷ 3,000) = 0.90 × 1.1185; inside the 0.8–2.0 limits | 1.00665 | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); passes on branch `c/S8-valuation-engine` (test_w1_levered_beta) |
 | CALC-W2 | Cost of equity | 4.0% + 1.00665 × 5.0% | 9.03325% | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); passes on branch `c/S8-valuation-engine` (test_w2_cost_of_equity) |
 | CALC-F1 | Starting free cash flow | (75 + 115 + 130) ÷ (1,150 + 1,210 + 1,300) = 320 ÷ 3,660 = 8.7432%; × 1,300 | 113.66 | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); passes on branch `c/S8-valuation-engine` (test_f1_base_free_cash_flows_margin_and_starting_free_cash_flow) |
 | CALC-F2 | Free cash flows, years 1–10 | g(t) = 2.5% + 4.2790% × 0.5^((t − 1) ÷ 2); discounted at 9.03325% | 121.37, 128.07, 134.01, 139.39, 144.37, 149.07, 153.59, 158.01, 162.39, 166.75; discounted 111.31, 107.73, 103.39, 98.63, 93.69, 88.72, 83.84, 79.11, 74.56, 70.22 (sum 911.21) | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); passes on branch `c/S8-valuation-engine` (test_f2_the_ten_forecast_years, test_f2_sum_of_discounted_free_cash_flows) |
 | CALC-F3 | Terminal value | 166.75 × 1.025 ÷ (0.0903325 − 0.025) | 2,616.20; discounted 1,101.75 (54.7% of the total) | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); passes on branch `c/S8-valuation-engine` (test_f3_terminal_value_discounted_and_its_share) |
 | CALC-F4 | Fair value per share | Equity value 911.21 + 1,101.75 − minority interests 0 = 2,012.95; ÷ 100 | USD 20.13 | C | signed off by C (Flo, 21 November 2026, review comment on pull request #5; his Excel model in #14); passes on branch `c/S8-valuation-engine` (test_f4_equity_value_and_fair_value_per_share) |
-| CALC-S | Area scores (tier 2) | Passes per area from the rows above | 5 of 6, 4 of 6, 6 of 6, 3 of 6 (v2.3: V6 now passes) | E (counts the passes of B's and C's rows; the fixture's `expected_scores()` waits for E) | signed off by E (Emma, 21 November 2026, review comment on pull request #5: 5, 4, 6, 3) |
+| CALC-S | Area scores (tier 2) | Passes per area from the rows above | 5 of 6, 4 of 6, 6 of 6, 3 of 6 (v2.3: V6 now passes) | E (counts the passes of B's and C's rows; the fixture's `expected_scores()` waits for E) | signed off by E (Emma, 21 November 2026, review comment on pull request #5: 5, 4, 6, 3); valuation 3 of 6 passing on branch `c/S9-valuation-checks` (test: test_appendix_a_valuation_area_score) |
 | CALC-G | Strengths and points to watch (tier 3) | SPEC v2.3 §9 rules on the rows above; SPEC Appendix A table | Shown: G1, G2 (8.78% a year), G3 (17.83% against 15%), G5 (8.0 times), G6; W3 (H2: 540 against 570), W4 (40.24%), W8 (49.0% above the estimate; V6 passes, so no second clause) | B | open, v2.3 value (assistant), B's recalculation pending |
 
 ### S7 edge cases (test companies)
@@ -149,6 +149,40 @@ script from the SPEC §8 formulas (not the app's code): all agree. Everything no
 
 The other S8 edge cases need no number: the rule itself (a limited value equals its setting; a missing input gives
 "insufficient data" naming it; FCF0 ≤ 0 or equity value ≤ 0 gives "not applicable") or a relation inside one run.
+
+### S9 edge cases (test cases and real companies)
+
+Hand working by Flo (C), 25 November 2026, given in his S9 session; written down here by Claude Code and recomputed by
+Claude Code by hand (all agree). Prices and estimates in USD per share; in E5 to E10 the market value is 20.00 × 100
+million shares = USD 2,000 million. Tests in `app/tests/unit/test_valuation_checks.py` (E1–E8),
+`app/tests/unit/test_dividend_checks.py` (E9, E10) and `app/tests/integration/test_valuation_demo.py` (real companies).
+
+| Id | Case | Hand working | Expected | Test |
+|---|---|---|---|---|
+| T1 | Review round 2 (ties): price 2.01, 1,000,000 shares, net income USD 100,000, industry P/E 20.1 (case found by the code reviewer; worked by Flo) | 2.01 × 1,000,000 = 2,010,000; ÷ 100,000 = 20.1, not below 20.1 | V3 fail, shown "20.10 against 20.10" | `test_t1_a_price_to_earnings_equal_to_the_benchmark_by_hand_fails` |
+| T2 | Review round 2 (ties): dividends USD 30,150, price 2.01, 1,000,000 shares, market yield 1.5% (worked by Flo) | 30,150 ÷ 2,010,000 = 0.015, exactly 1.5%, not above 1.5% | D2 fail, shown "1.50% against 1.50%" | `test_t2_a_yield_equal_to_the_market_yield_by_hand_fails` |
+| R9 | Review of 25 November: V2 with `well_below_fair_value` set to 50%; price 12.00, estimate 20.00 (proposed by Claude Code, confirmed by Flo) | 0.5 × 20.00 = 10.00; 12.00 ≤ 10.00 no | V2 fail, threshold 10.00 | `test_r9_v2_reads_its_share_of_the_estimate_from_the_settings` |
+| E-W8 | Synthetic company (Appendix A), price 30.00; Flo's Excel model, sheet "Valuation", unrounded estimate | (30.00 − estimate) ÷ estimate | 49.0% above the estimate (the G7/W8 figure; SPEC Appendix A shows the same for W8) | `test_appendix_a_gap_to_the_estimate_for_g7_and_w8` |
+| E1 | Price 15.00, estimate 20.00 | (15.00 − 20.00) ÷ 20.00 = −25.0% | "25.0% below the estimate" | `test_e1_gap_below_the_estimate` |
+| E2 | Price 20.00, estimate 20.00, estimate at the cap 20.00 | V1: 20.00 < 20.00 no; V2: 20.00 ≤ 0.80 × 20.00 = 16.00 no; V6: 20.00 ≤ 20.00 yes | V1 fail, V2 fail, V6 pass; "at the estimate" | `test_e2_price_equal_to_the_estimate_and_to_the_estimate_at_the_cap` |
+| E3 | Price 16.00, estimate 20.00 | V1: 16.00 < 20.00; V2: 16.00 ≤ 16.00 (exactly at the threshold) | V1 pass, V2 pass | `test_e3_price_exactly_at_80_percent_of_the_estimate` |
+| E4 | Price 25.00, estimate at the cap 25.00 | 25.00 ≤ 25.00 | V6 pass | `test_e4_price_equal_to_the_estimate_at_the_cap` |
+| E5 | Net income USD 100 million; industry and market P/E 20.0 | 2,000 ÷ 100 = 20.0, not below 20.0 | V3 fail, V4 fail | `test_e5_price_to_earnings_equal_to_both_benchmarks_fails` |
+| E6 | Net income USD 0, then USD −50 million | no earnings / a loss | V3 fail, V4 fail, no P/E (also without benchmarks) | `test_e6_no_earnings_fails_v3_and_v4_without_a_ratio`, `test_e6_no_earnings_fails_even_without_benchmarks` |
+| E7 | Equity USD 500 million; industry P/B 4.0 | 2,000 ÷ 500 = 4.0, not below 4.0 | V5 fail | `test_e7_price_to_book_equal_to_the_benchmark_fails` |
+| E8 | Equity USD 0, then USD −1,791 million | – | V5 fail, no P/B, "equity is zero" / "negative equity" (also without the benchmark) | `test_e8_zero_or_negative_equity_fails_v5_without_a_ratio` |
+| E9 | Dividends USD 30 million; market yield 1.50% | 30 ÷ 2,000 = 1.50%, not above 1.50% | D2 fail | `test_e9_yield_equal_to_the_market_yield_fails` |
+| E10 | Dividends USD 20 million; market yield 1.50% | 20 ÷ 2,000 = 1.00% | D2 fail | `test_e10_yield_below_the_market_yield_fails` |
+| E-MCD | McDonald's, FY2025 10-K (accession 0000063908-26-000035), Consolidated Balance Sheet, printed page 41, "Total shareholders' equity (deficit)" (1,791), read by Flo; the saved SEC data agree | equity USD −1,791 million at 31 December 2025 | V5 fail, "negative equity", even without the benchmark | `test_mcdonalds_negative_equity_fails_v5_even_without_the_benchmark` |
+| E-NVDA | Nvidia, saved SEC data: past growth 68.3% a year (S8-g), above the 30% cap | the estimate at the cap is the estimate itself | a price below it: V1 and V6 pass; above it: both fail; V6 says it uses the same estimate as V1 | `test_nvidia_growth_at_the_cap_v6_uses_the_same_estimate_as_v1` |
+
+Flo's decisions for S9 (25 November 2026), in the docstring of `app/src/checks/valuation.py`: (a) a price equal to
+the estimate fails V1 and reads "at the estimate"; (b) V6 keeps its own ≤ rule when growth is already at the cap and
+says so; (c) a missing share price or share count makes the whole area "insufficient data", then net income ≤ 0 or
+equity ≤ 0 fails before a missing benchmark is looked at; (d) the share price is the user's input, not a `Fact`. The
+missing-figure cases need no number: the rule itself ("insufficient data" naming the figure). Two tests use a
+relation, not a number: doubling the share count doubles P/E and P/B and halves the dividend yield (added after a
+planted bug that ignored the share count passed every other test).
 
 ## Edge cases and errors
 
