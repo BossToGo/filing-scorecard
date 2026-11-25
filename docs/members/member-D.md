@@ -79,12 +79,14 @@ comment. Until then the fixture refuses your rows with the error `NotSignedOff`,
   explanation ("not assessed until …" or the missing input), never a score.
 - The interface **shows** numbers it receives from `app/src/`; it never computes, rounds or fills them in
   (SPEC §11). A missing figure shows "n/a" with the reason, never 0.
-- **Score chart:** one bar of six blocks per area, passes filled, the other results told apart by pattern and
-  text ("4 of 5 assessed, 1 with insufficient data"). **No radar chart, nothing that looks like Simply Wall St**
-  (SPEC §1, rule 14.16): we present results the way they do (areas, ticks, strengths and points to watch) in our
-  own design. Confirm the design in `docs/product.md` (marked "to confirm by member D").
-- **Look (SPEC §3):** calm and light, one accent colour, no gradients, glow or emoji; every colour defined once in
-  `app/.streamlit/config.toml`, so a bank could apply its own brand. Wording is information, not advice: never
+- **Screen design (SPEC 2.4.2 §3, 23 November):** `docs/design/design-spec.md` and `docs/design/mockup.html`
+  (open it in a browser) are the target: one row of six marks per area ("4 passed of 5 assessed, 1 not
+  assessed"), a legend, the failed checks next to the chart, one tab per area, each check a sentence with its
+  figures, a light and a dark theme. Its section 7 is the build list (about a day), item by item, tests green after
+  each. **No radar chart, nothing that looks like Simply Wall St** (SPEC §1, rule 14.16): we present results the
+  way they do (areas, ticks, strengths and points to watch) in our own design.
+- **Look (SPEC §3):** calm, one accent colour, no gradients, glow, shadows or emoji, light and dark themes; every
+  colour defined once in `app/.streamlit/config.toml`, so a bank could apply its own brand. Wording is information, not advice: never
   "buy", "sell" or "undervalued".
 - A unit on every input and figure; the key result visible without scrolling; every error message says how to fix
   it (SPEC §3). The synthetic company always shows "SYNTHETIC DATA".
