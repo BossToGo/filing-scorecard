@@ -153,11 +153,46 @@ def test_synthetic_data_mark_v3():
     assert "SYNTHETIC DATA" in "\n".join(w.value for w in run_synthetic().warning)
 
 
+FAILED_ICON = ":material/disabled_by_default:"
+WAIT_ICON = ":gray[:material/check_box_outline_blank:]"
+
+
 def test_a_closed_check_row_shows_mark_result_and_check_ac4():
+    """Label change (rule 14.6, Simon's written agreement of 25 November 2026): the row starts with the design's
+    Material icon, no longer the "✕" or "⋯" character (design spec §4); the result word and the check stay."""
     labels = [e.label for e in run_synthetic().expander]
     assert len(labels) == 18
-    assert any(label.startswith("✕ Failed") and "H2" in label for label in labels)
-    assert any(label.startswith("⋯ Not assessed") and "P4" in label for label in labels)
+    assert any(label.startswith(f"{FAILED_ICON} **H2.** Failed") for label in labels)
+    assert any(label.startswith(f"{WAIT_ICON} **P4.** :gray[Not assessed.") for label in labels)
+
+
+def one_check(result):
+    from tests.fixtures import synthetic
+    from ui.scorecard import load_texts, render_check
+
+    render_check(synthetic.company_data(), result, load_texts())
+
+
+def closed_row(*args) -> str:
+    from src.contracts import CheckResult
+
+    return AppTest.from_function(one_check, args=(CheckResult(*args),)).run(timeout=30).expander[0].label
+
+
+def test_until_e_s_texts_a_closed_check_says_its_result_and_figures():
+    """Simon's sentence of 25 November 2026, until E's texts (#17): "Passed. USD 31,044 m against USD 21,281 m."."""
+    assert closed_row("H1", "pass", 31_044e6, 21_281e6, (), "x").endswith(
+        "**H1.** Passed. USD 31,044 m against USD 21,281 m.")
+    assert closed_row("H1", "fail", 31_044e6, 49_260e6, (), "x") == (
+        f"{FAILED_ICON} **H1.** Failed. USD 31,044 m against USD 49,260 m.")
+    assert closed_row("D3", "pass", None, None, (), "x").endswith("**D3.** Passed.")
+
+
+def test_does_not_apply_shows_the_check_s_own_explanation_unchanged():
+    """Simon, 25 November 2026: Flo's explanation as it is, under the "Does not apply" label."""
+    assert closed_row("D2", "not_applicable", None, None, (), "Not applicable: no dividend paid (D1).") == (
+        ":gray[:material/indeterminate_check_box:] **D2.** :gray[Does not apply. Not applicable: no dividend paid "
+        "(D1).]")
 
 
 def test_an_open_check_shows_its_figures_with_units_and_fiscal_year_ac4():

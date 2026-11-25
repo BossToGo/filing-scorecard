@@ -42,9 +42,11 @@ MARK_WORDS = {"pass": "Passed", "fail": "Failed", "insufficient_data": "Not asse
 _SVG = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="{}"/></svg>'
 GLYPHS = {"pass": _SVG.format("M2.5 6.3 5 8.6 9.5 3.6"), "fail": _SVG.format("M3.2 3.2l5.6 5.6M8.8 3.2 3.2 8.8"),
           "not_applicable": _SVG.format("M3.5 6h5")}
-# Look of each result: (mark, result word). Text and mark, never colour alone (issue #32 point 11).
-LOOKS = {"pass": ("✓", "Passed"), "fail": ("✕", "Failed"), "insufficient_data": ("⋯", "Not assessed"),
-         "not_applicable": ("–", "n/a")}
+# Icon of each result in a check row (design spec §4): shape and word, never colour alone (issue #32 point 11).
+ICONS = {"pass": ":primary[:material/check_box:]", "fail": ":material/disabled_by_default:",
+         "insufficient_data": ":gray[:material/check_box_outline_blank:]",
+         "not_applicable": ":gray[:material/indeterminate_check_box:]"}
+_MARKDOWN = str.maketrans({c: "\\" + c for c in "\\*_[]$`~"})  # a check's text shown as written, not as markdown
 
 
 # --- texts ------------------------------------------------------------------------------------------------------
@@ -60,11 +62,6 @@ def load_texts(path: Path = TEXTS_FILE) -> dict:
 def _plain_name(check_id: str, texts: Mapping) -> str:
     """E's name of a check, or its id until her texts (#17) are merged."""
     return texts.get(check_id, {}).get("name") or check_id
-
-
-def _name(check_id: str, texts: Mapping) -> str:
-    name = texts.get(check_id, {}).get("name")
-    return f"{check_id} {name}" if name else check_id
 
 
 # --- header -----------------------------------------------------------------------------------------------------
@@ -231,8 +228,17 @@ def _period(fact: Fact) -> str:
 
 
 def render_check(data: CompanyData, result: CheckResult, texts: Mapping) -> None:
-    mark, word = LOOKS[result.status]
-    with st.expander(f"{mark} {word} · {_name(result.check_id, texts)}"):
+    """A closed check shows its icon, its name and one sentence (SPEC 2.4.2 §3 item 5). Until E's texts (#17): the
+    result and the figures, "Passed. USD 31,044 m against USD 21,281 m."; not assessed or does not apply: the word
+    and the check's own explanation, unchanged."""
+    word = MARK_WORDS[result.status]
+    if result.status in ("pass", "fail"):
+        shown, against = check_value(result.check_id, result.value, result.threshold)
+        figures = "" if result.value is None else f" {shown}" + (f" against {against}" if against else "") + "."
+        sentence = f"{word}.{figures}"
+    else:
+        sentence = f":gray[{word}. {result.explanation.translate(_MARKDOWN)}]"
+    with st.expander(f"{ICONS[result.status]} **{_plain_name(result.check_id, texts)}.** {sentence}"):
         rule = texts.get(result.check_id, {}).get("rule")
         not_assessed = result.status in ("insufficient_data", "not_applicable")
         if not_assessed:  # its explanation is the reason, shown once (Igor's review of #35)
