@@ -18,15 +18,24 @@ from src.overview import NA, Coverage, Figure, KeyFigure, Overview, Series, over
 KIND_WORDS = {"reported": "Reported", "derived": "Derived", "assumption": "Assumption", "missing": "Not available"}
 ARROWS = {1: "▲", -1: "▼", 0: ""}
 DASHES = {"Revenue": "solid", "Net income": "solid", "Free cash flow": "dash"}
-# Chart lines: blue, teal and magenta, a colour per series that never means good or bad (no red, no green; design
-# spec §9). Each has at least 3:1 contrast on a white page and on a dark navy one, so one set works in both themes.
-# Used until the theme file sets `chartCategoricalColors`; then the theme's colours win (D's config.toml).
-SERIES_COLOURS = ("#3A86CC", "#1FA08B", "#BD5A97")
 
 
-def _series_colours() -> tuple[str, ...]:
-    themed = st.get_option("theme.chartCategoricalColors")
-    return tuple(themed) if themed else SERIES_COLOURS
+def _series_colours() -> tuple[str | None, ...]:
+    """Line colours from the theme file, never written here (D's rule, tests/app/test_theme.py). The theme's
+    `chartCategoricalColors` when set (design spec §9: blue, teal, magenta); until then the accent for revenue and
+    the text colour for the other two, told apart by the dashed free cash flow line and the legend. Never red or
+    green, so a colour never reads as good or bad. None lets the chart use the page's own colour."""
+    dark = getattr(getattr(st.context, "theme", None), "type", None) == "dark"
+
+    def option(key: str):
+        # the dark theme's value when the viewer sees the dark theme and the theme file has one (#54), else light
+        return (dark and st.get_option(f"theme.dark.{key}")) or st.get_option(f"theme.{key}")
+
+    themed = option("chartCategoricalColors")
+    if themed:
+        return tuple(themed)
+    accent, text = option("primaryColor"), option("textColor")
+    return (accent, text, text)
 
 
 def _theme(key: str) -> str:
