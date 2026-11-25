@@ -197,8 +197,8 @@ These tags are a starting list written from memory of the US accounting taxonomy
 |---|---|---|
 | P1 | Consistently profitable | Net income > 0 in at least 4 of the last 5 fiscal years |
 | P2 | Earnings grew | Net income FY0 > net income FY-4, and FY0 > 0 |
-| P3 | Growth is accelerating | Net income growth FY-1 to FY0 > compound annual growth FY-4 to FY0. Net income FY-4 or FY-1 ≤ 0: fail, with the note "growth from a loss is not meaningful" |
-| P4 | Return on equity beats the industry | Net income FY0 ÷ average equity (FY-1, FY0) > industry return on equity. Equity ≤ 0: fail, with the note "negative equity" |
+| P3 | Growth is accelerating | Net income growth FY-1 to FY0 > compound annual growth FY-4 to FY0. Net income FY-4 or FY-1 ≤ 0: fail, with the note "growth from a loss is not meaningful", even when another of the three years is missing. With positive FY-4 and FY-1 profits, a negative FY0 fails with "the latest year is a loss"; FY0 = 0 makes both growth rates −100%, so the strict comparison fails |
+| P4 | Return on equity beats the industry | Net income FY0 ÷ average equity (FY-1, FY0) > industry return on equity. Known equity ≤ 0 in FY-1 or FY0: fail, with the note "negative equity", before checking missing net income, the other equity figure or the industry benchmark |
 | P5 | Margin beats the industry | Operating income ÷ revenue (FY0) > industry pre-tax operating margin |
 | P6 | Return on capital improved | Operating income ÷ (total assets − current liabilities), FY0 > FY-3 |
 
@@ -208,10 +208,10 @@ These tags are a starting list written from memory of the US accounting taxonomy
 |---|---|---|
 | H1 | Short-term cover | Current assets > current liabilities |
 | H2 | Long-term cover | Current assets > total liabilities − current liabilities |
-| H3 | Moderate debt | (Debt − cash) ÷ equity < 40%. Equity ≤ 0: fail |
-| H4 | Debt is falling | Debt ÷ equity FY0 < FY-4. No debt in both years: pass |
+| H3 | Moderate debt | (Debt − cash) ÷ equity < 40%. Known equity ≤ 0: fail with "negative equity", before missing debt or cash |
+| H4 | Debt is falling | Debt ÷ equity FY0 < FY-4. Known equity ≤ 0 in FY0 or FY-4: fail with "negative equity", before missing inputs or the zero-debt exception; no ratio is calculated. Otherwise known zero debt in both years: pass |
 | H5 | Debt covered by cash flow | Operating cash flow ÷ debt ≥ 20%. No debt: pass |
-| H6 | Interest covered | Operating income ÷ interest expense ≥ 5. No debt and no interest: pass. Interest expense reported as 0: pass. Debt but no interest figure: insufficient data |
+| H6 | Interest covered | Operating income ÷ interest expense ≥ 5. Interest expense reported as 0: pass. Explicitly reported zero financial debt with missing interest: pass without calculating a ratio; the interest figure stays missing. Missing, assumed or derived zero debt does not establish this exception. Known positive interest uses normal coverage even when debt is zero or missing; negative interest is insufficient data. Without the exception, missing operating income or interest gives insufficient data |
 
 ### Dividend
 

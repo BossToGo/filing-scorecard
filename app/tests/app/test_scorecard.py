@@ -22,6 +22,13 @@ AC3 = {
 }
 
 
+def name_of(check_id: str) -> str:
+    """E's name of a check, read from texts.yaml, so a test finds the row whatever the name is (her #55 renames some)."""
+    from ui.scorecard import load_texts
+
+    return load_texts()[check_id]["name"]
+
+
 def synthetic_page(statuses):
     from datetime import date
 
@@ -88,7 +95,11 @@ def row(app: AppTest, area: str) -> str:
 
 def test_ac3_rows_name_what_is_not_assessed_and_the_failed_checks():
     """Simon's hand count of 25 November 2026: past 2 not assessed (P4, P5), health 0, dividend 1 (D2); the AC3
-    statuses fail H2 and H3. The hand-built explanations do not say "yet", so no "yet" is shown."""
+    statuses fail H2 and H3. The hand-built explanations do not say "yet", so no "yet" is shown.
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
     import re
 
     app = run_synthetic()
@@ -99,8 +110,8 @@ def test_ac3_rows_name_what_is_not_assessed_and_the_failed_checks():
     assert 'aria-label="Past performance: 4 passed of 4 assessed, 2 not assessed"' in chart(app)
     assert len(re.findall(r'class="fs-mk fs-wait"', row(app, "Valuation"))) == 6
     failed = next(m.value for m in app.markdown if "Failed checks" in m.value)
-    assert re.findall(r"</span>(\w+)<span class=\"fs-sub\">([\w ]+)</span>", failed) == [
-        ("H2", "Financial health"), ("H3", "Financial health")]
+    assert re.findall(r"</span>([^<]+)<span class=\"fs-sub\">([\w ]+)</span>", failed) == [
+        (name_of("H2"), "Financial health"), (name_of("H3"), "Financial health")]
 
 
 def test_the_legend_names_the_four_marks_and_says_it_is_not_advice():
@@ -114,18 +125,13 @@ def test_no_failed_check_says_so():
     assert "No check failed." in texts(app)
 
 
-def test_coca_cola_dividend_is_not_assessed_yet_and_areas_without_a_module_are_not_assessed():
-    """C's D2 explanation says "not assessed yet"; past performance and financial health have no module on main yet
-    (B's #28, #29): six dashed marks and "Not assessed" (Simon, 25 November 2026)."""
-    import re
-
+def test_coca_cola_dividend_is_one_not_assessed_yet():
+    """C's D2 explanation says "not assessed yet" (Simon, 25 November 2026). The check that past performance and
+    financial health show "Not assessed" without a module was removed with Simon's agreement of 25 November 2026:
+    B's modules are on main since #28 and #29, so it could no longer fail."""
     pytest.importorskip("src.checks.dividend", reason="needs C's dividend module (merged in #23)")
     app = show("KO")
     assert "4 passed of 5 assessed" in row(app, "Dividend") and "1 not assessed yet" in row(app, "Dividend")
-    for area in ("Past performance", "Financial health"):
-        if "passed of" not in row(app, area):  # until B's module is merged
-            assert "Not assessed" in row(app, area)
-            assert len(re.findall(r'class="fs-mk fs-wait"', row(app, area))) == 6
 
 
 def test_amazon_dividend_row_reads_no_dividend_paid_0_passed_of_1_assessed():
@@ -139,11 +145,15 @@ def test_amazon_dividend_row_reads_no_dividend_paid_0_passed_of_1_assessed():
 
 
 def test_one_tab_per_area_and_the_sources_last():
-    """SPEC 2.4.2 §3 item 5: one tab per area, the sources page last; the summary stays above the tabs."""
+    """SPEC 2.4.2 §3 item 5: one tab per area, the sources page last; the summary stays above the tabs.
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
     app = run_synthetic()
     assert [t.label for t in app.tabs] == ["Past performance", "Financial health", "Dividend", "Valuation", "Sources"]
     past, health, dividend, valuation, sources = app.tabs
-    assert [e.label for e in health.expander][2].count("H3") == 1 and len(health.expander) == 6
+    assert [e.label for e in health.expander][2].count(f"**{name_of('H3')}.**") == 1 and len(health.expander) == 6
     assert len(past.expander) == len(dividend.expander) == 6 and not valuation.expander
     assert "Not part of this version" in "\n".join(str(m.value) for m in valuation.markdown)
     assert sources.dataframe and not any("fs-row" in m.value for t in app.tabs for m in t.markdown)
@@ -159,11 +169,15 @@ WAIT_ICON = ":gray[:material/check_box_outline_blank:]"
 
 def test_a_closed_check_row_shows_mark_result_and_check_ac4():
     """Label change (rule 14.6, Simon's written agreement of 25 November 2026): the row starts with the design's
-    Material icon, no longer the "✕" or "⋯" character (design spec §4); the result word and the check stay."""
+    Material icon, no longer the "✕" or "⋯" character (design spec §4); the result word and the check stay.
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
     labels = [e.label for e in run_synthetic().expander]
     assert len(labels) == 18
-    assert any(label.startswith(f"{FAILED_ICON} **H2.** Failed") for label in labels)
-    assert any(label.startswith(f"{WAIT_ICON} **P4.** :gray[Not assessed.") for label in labels)
+    assert any(label.startswith(f"{FAILED_ICON} **{name_of('H2')}.** Failed") for label in labels)
+    assert any(label.startswith(f"{WAIT_ICON} **{name_of('P4')}.** :gray[Not assessed.") for label in labels)
 
 
 def one_check(result):
@@ -180,28 +194,40 @@ def closed_row(*args) -> str:
 
 
 def test_until_e_s_texts_a_closed_check_says_its_result_and_figures():
-    """Simon's sentence of 25 November 2026, until E's texts (#17): "Passed. USD 31,044 m against USD 21,281 m."."""
+    """Simon's sentence of 25 November 2026, kept with E's texts (#17): "Passed. USD 31,044 m against USD 21,281 m."
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
     assert closed_row("H1", "pass", 31_044e6, 21_281e6, (), "x").endswith(
-        "**H1.** Passed. USD 31,044 m against USD 21,281 m.")
+        f"**{name_of('H1')}.** Passed. USD 31,044 m against USD 21,281 m.")
     assert closed_row("H1", "fail", 31_044e6, 49_260e6, (), "x") == (
-        f"{FAILED_ICON} **H1.** Failed. USD 31,044 m against USD 49,260 m.")
-    assert closed_row("D3", "pass", None, None, (), "x").endswith("**D3.** Passed.")
+        f"{FAILED_ICON} **{name_of('H1')}.** Failed. USD 31,044 m against USD 49,260 m.")
+    assert closed_row("D3", "pass", None, None, (), "x").endswith(f"**{name_of('D3')}.** Passed.")
 
 
 def test_amazon_d1_says_no_dividend_paid_never_usd_0_m():
     """Simon's look of 25 November 2026, Flo's rule: a dividend treated as nil is "no dividend paid", never "USD 0 m".
-    When a figure of the check is an assumption, the row shows the check's own explanation instead of the figures."""
+    When a figure of the check is an assumption, the row shows the check's own explanation instead of the figures.
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
     pytest.importorskip("src.checks.dividend", reason="needs C's dividend module (merged in #23)")
-    d1 = next(e.label for e in show("AMZN").expander if "**D1.**" in e.label)
+    d1 = next(e.label for e in show("AMZN").expander if f"**{name_of('D1')}.**" in e.label)
     assert "USD 0 m" not in d1
-    assert d1.startswith(f"{FAILED_ICON} **D1.** Failed. No dividend paid in the fiscal year ended 31 December 2025")
+    assert d1.startswith(f"{FAILED_ICON} **{name_of('D1')}.** Failed. No dividend paid in the fiscal year ended 31 December 2025")
 
 
 def test_amazon_d1_shows_its_explanation_once_in_the_row():
     """Simon, 25 November 2026: a passed or failed check whose row already shows its explanation (an assumed figure)
-    does not repeat it under "How it is calculated" in the open detail (Igor's review of #35: once)."""
+    does not repeat it under "How it is calculated" in the open detail (Igor's review of #35: once).
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
     pytest.importorskip("src.checks.dividend", reason="needs C's dividend module (merged in #23)")
-    d1 = next(e for e in show("AMZN").expander if "**D1.**" in e.label)
+    d1 = next(e for e in show("AMZN").expander if f"**{name_of('D1')}.**" in e.label)
     shown = [d1.label, *(m.value for m in d1.markdown)]
     assert sum("No dividend paid in the fiscal year ended 31 December 2025" in line for line in shown) == 1
     assert not any(m.value.startswith("**How it is calculated:**") for m in d1.markdown)
@@ -209,9 +235,13 @@ def test_amazon_d1_shows_its_explanation_once_in_the_row():
 
 def test_amazon_d1_detail_has_no_value_against_threshold_line():
     """Simon's look of 25 November 2026, same rule as the row: with an assumed figure, no "Value: USD 0 m · compared
-    with: USD 0 m"; the figure table already says "no dividend paid"."""
+    with: USD 0 m"; the figure table already says "no dividend paid".
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
     pytest.importorskip("src.checks.dividend", reason="needs C's dividend module (merged in #23)")
-    d1 = next(e for e in show("AMZN").expander if "**D1.**" in e.label)
+    d1 = next(e for e in show("AMZN").expander if f"**{name_of('D1')}.**" in e.label)
     assert not any(m.value.startswith("**Value:**") for m in d1.markdown)
     assert "USD 0 m" not in "\n".join(m.value for m in d1.markdown)
     table = d1.table[0].value if d1.table else d1.dataframe[0].value
@@ -228,25 +258,38 @@ def test_the_company_heading_has_no_link_icon():
 
 def test_the_word_is_not_repeated_when_the_explanation_already_says_it():
     """Simon's look of 25 November 2026: not "Not assessed. This check is not assessed yet: ...". The word is left out
-    when the explanation's first clause already contains it."""
+    when the explanation's first clause already contains it.
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
     d2 = "This check is not assessed yet: it needs the share price and the US market dividend yield."
-    assert closed_row("D2", "insufficient_data", None, None, (), d2) == f"{WAIT_ICON} **D2.** :gray[{d2}]"
+    assert closed_row("D2", "insufficient_data", None, None, (), d2) == f"{WAIT_ICON} **{name_of('D2')}.** :gray[{d2}]"
     p4 = "Not assessed: needs a sourced industry return on equity benchmark."
-    assert closed_row("P4", "insufficient_data", None, None, (), p4) == f"{WAIT_ICON} **P4.** :gray[{p4}]"
+    assert closed_row("P4", "insufficient_data", None, None, (), p4) == f"{WAIT_ICON} **{name_of('P4')}.** :gray[{p4}]"
     assert closed_row("P4", "insufficient_data", None, None, (), "P4: built by hand (AC3)") == (
-        f"{WAIT_ICON} **P4.** :gray[Not assessed. P4: built by hand (AC3)]")
+        f"{WAIT_ICON} **{name_of('P4')}.** :gray[Not assessed. P4: built by hand (AC3)]")
 
 
 def test_does_not_apply_shows_the_check_s_own_explanation_unchanged():
-    """Simon, 25 November 2026: Flo's explanation as it is, under the "Does not apply" label."""
+    """Simon, 25 November 2026: Flo's explanation as it is, under the "Does not apply" label.
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
     assert closed_row("D2", "not_applicable", None, None, (), "Not applicable: no dividend paid (D1).") == (
-        ":gray[:material/indeterminate_check_box:] **D2.** :gray[Does not apply. Not applicable: no dividend paid "
+        f":gray[:material/indeterminate_check_box:] **{name_of('D2')}.** :gray[Does not apply. Not applicable: no dividend paid "
         "(D1).]")
 
 
 def test_an_open_check_shows_its_figures_with_units_and_fiscal_year_ac4():
+    """Simon's AC3 sign-off figures in the open H3 check.
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
     app = run_synthetic()
-    h3 = next(e for e in app.expander if "H3" in e.label)
+    h3 = next(e for e in app.expander if f"**{name_of('H3')}.**" in e.label)
     table = h3.table[0].value if h3.table else h3.dataframe[0].value
     shown = table.astype(str).to_string()
     # Simon's sign-off: financial debt 450, cash 120, equity 820 (USD m, 2025)
@@ -331,8 +374,12 @@ def test_a_check_not_assessed_shows_its_explanation_once():
 
     Test change (rule 14.6, Simon's written agreement of 25 November 2026): Igor's intent is kept, the explanation is
     shown once; only its place moves, from the open detail to the closed row, as in the design (SPEC 2.4.2 §3 item 5).
-    So it is counted across the row and the open detail together, and must be in the row."""
-    p4 = next(e for e in run_synthetic().expander if "**P4.**" in e.label)
+    So it is counted across the row and the open detail together, and must be in the row.
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
+    p4 = next(e for e in run_synthetic().expander if f"**{name_of('P4')}.**" in e.label)
     shown = [p4.label, *(m.value for m in p4.markdown)]
     assert sum("P4: built by hand (AC3)" in line for line in shown) == 1
     assert "P4: built by hand (AC3)" in p4.label
@@ -348,12 +395,16 @@ def test_apple_missing_interest_expense_is_n_a_with_its_reason_never_zero_v4():
 
 
 def test_a_check_names_its_filing_number_with_dashes_as_on_the_sources_page():
-    """Simon's request, 23 November: e.g. 0000021344-26-000010, not 000002134426000010."""
+    """Simon's request, 23 November: e.g. 0000021344-26-000010, not 000002134426000010.
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
     import re
 
     pytest.importorskip("src.checks.dividend", reason="needs C's dividend module (merged in #23)")
     app = show("KO")
-    d1 = next(e for e in app.expander if "D1" in e.label)
+    d1 = next(e for e in app.expander if f"**{name_of('D1')}.**" in e.label)
     filing = next(m.value for m in d1.markdown if m.value.startswith("**Filing:**"))
     accessions = set(app.dataframe[-1].value["Accession"]) - {""}
     shown = re.findall(r"\[([^\]]+)\]", filing)
@@ -362,7 +413,11 @@ def test_a_check_names_its_filing_number_with_dashes_as_on_the_sources_page():
 
 def test_a_failed_block_is_filled_in_the_text_colour_of_both_themes():
     """SPEC §3: a failed block is filled in a second colour, with a cross. Simon's look of 25 November: the fill was
-    `currentColor`, which is the page colour inside a block whose text has the page colour, so D6 disappeared."""
+    `currentColor`, which is the page colour inside a block whose text has the page colour, so D6 disappeared.
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
+    check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
+    changed."""
     import re
     import tomllib
 
@@ -375,7 +430,7 @@ def test_a_failed_block_is_filled_in_the_text_colour_of_both_themes():
     assert f"--fs-text:light-dark({theme['textColor']}, {theme['dark']['textColor']})" in css
 
     # Since item 5 the cross is the design's drawn cross (two paths), no longer the "✕" character.
-    d6 = re.search(r'<span class="([^"]*)" title="D6[^"]*">(.*?)</span>', chart(show("KO")))
+    d6 = re.search(rf'<span class="([^"]*)" title="{re.escape(name_of('D6'))}[^"]*">(.*?)</span>', chart(show("KO")))
     assert "fs-fail" in d6.group(1).split() and CROSS in d6.group(2)
 
 

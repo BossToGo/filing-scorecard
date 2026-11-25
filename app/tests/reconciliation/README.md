@@ -15,7 +15,7 @@ Coca-Cola has it, for D6 (Flo's S7 review). The other files need only the six.
 | B, Greg | Apple | `AAPL.yaml` | to do |
 | C, Flo | Nvidia | `NVDA.yaml` | done, 6 of 6 match (PR #30) |
 | D, Simon | McDonald's | `MCD.yaml` | done, 6 of 6 match (PR #38) |
-| E, Emma | Amazon | `AMZN.yaml` | to do |
+| E, Emma | Amazon | `AMZN.yaml` | done, 6 of 6 match (PR #50) |
 
 ## Rules
 
