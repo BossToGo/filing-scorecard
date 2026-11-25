@@ -457,7 +457,8 @@ def test_a_failed_block_is_filled_in_the_text_colour_of_both_themes():
     assert f"--fs-text:light-dark({theme['textColor']}, {theme['dark']['textColor']})" in css
 
     # Since item 5 the cross is the design's drawn cross (two paths), no longer the "✕" character.
-    d6 = re.search(rf'<span class="([^"]*)" title="{re.escape(name_of('D6'))}[^"]*">(.*?)</span>', chart(show("KO")))
+    d6_name = re.escape(name_of("D6"))  # outside the f-string: Python 3.11 forbids its own quote inside {}
+    d6 = re.search(rf'<span class="([^"]*)" title="{d6_name}[^"]*">(.*?)</span>', chart(show("KO")))
     assert "fs-fail" in d6.group(1).split() and CROSS in d6.group(2)
 
 
