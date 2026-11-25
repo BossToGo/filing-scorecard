@@ -128,10 +128,13 @@ def test_no_failed_check_says_so():
 def test_coca_cola_dividend_is_one_not_assessed_yet():
     """C's D2 explanation says "not assessed yet" (Simon, 25 November 2026). The check that past performance and
     financial health show "Not assessed" without a module was removed with Simon's agreement of 25 November 2026:
-    B's modules are on main since #28 and #29, so it could no longer fail."""
+    B's modules are on main since #28 and #29, so it could no longer fail.
+
+    Test change (Simon's written agreement of 25 November 2026, Igor's review of #54 point 5, rule 14.5): only "1 not
+    assessed yet" is asserted, what the test is about; "4 passed of 5 assessed" had no recorded hand working for KO's
+    D3 and D4."""
     pytest.importorskip("src.checks.dividend", reason="needs C's dividend module (merged in #23)")
-    app = show("KO")
-    assert "4 passed of 5 assessed" in row(app, "Dividend") and "1 not assessed yet" in row(app, "Dividend")
+    assert "1 not assessed yet" in row(show("KO"), "Dividend")
 
 
 def test_the_failed_list_stays_in_its_column_and_long_names_wrap():
