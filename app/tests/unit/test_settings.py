@@ -78,4 +78,4 @@ def test_rates_are_decimals_not_percentages():
     # SPEC v2.3 §8.1: the re-levered beta is limited (0.8 to 2.0), written as plain numbers, not percentages.
     assert 0 < valuation["beta_min"]["value"] < 1 < valuation["beta_max"]["value"] < 5
     risk_free = valuation["risk_free_rate"]["value"]
-    assert risk_free is None or 0 <= risk_free < 0.2, "risk_free_rate is a decimal, e.g. 0.042 for 4.2%"
+    assert 0 <= risk_free < 0.2, "risk_free_rate is a decimal, e.g. 0.042 for 4.2% (set since S2b)"
