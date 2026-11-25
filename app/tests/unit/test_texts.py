@@ -16,8 +16,9 @@ SETTINGS = APP / "settings.yaml"
 CHECKS = [f"{area}{n}" for area in "PHDV" for n in range(1, 7)]  # P1 ... D6 (tier 1), V1 ... V6 (SPEC §2, §7)
 NOTES = ["industry_note"]  # top-level texts, one or two sentences, no check id (key agreed with Simon on #56)
 CHECK_ID = re.compile(r"\b[PHDV][1-6]\b")
-ADVICE_WORDS = re.compile(  # information, not advice; SPEC §3 says "the estimate", never "fair value" (#32, #39)
-    r"\b(buy|sell|undervalued|fair\s+value|cheap|expensive)\b", re.IGNORECASE
+ADVICE_WORDS = re.compile(  # information, not advice; SPEC §3 says "the estimate", never "fair value" (#32, #39);
+    # overvalued to should: design spec §5 rule 1
+    r"\b(buy|sell|undervalued|overvalued|fair\s+value|cheap|expensive|safe|risky|strong|weak|should)\b", re.IGNORECASE
 )
 
 
