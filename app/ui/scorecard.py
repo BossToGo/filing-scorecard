@@ -232,7 +232,11 @@ def render_check(data: CompanyData, result: CheckResult, texts: Mapping) -> None
     result and the figures, "Passed. USD 31,044 m against USD 21,281 m."; not assessed or does not apply: the word
     and the check's own explanation, unchanged."""
     word = MARK_WORDS[result.status]
-    if result.status in ("pass", "fail"):
+    if result.status in ("pass", "fail") and any(f.kind == "assumption" for f in result.inputs):
+        # A figure is an assumption (e.g. dividends treated as nil): the check's own words, never "USD 0 m" (Flo's
+        # rule, plan Q1; Simon's look of 25 November 2026)
+        sentence = f"{word}. {result.explanation.translate(_MARKDOWN)}"
+    elif result.status in ("pass", "fail"):
         shown, against = check_value(result.check_id, result.value, result.threshold)
         figures = "" if result.value is None else f" {shown}" + (f" against {against}" if against else "") + "."
         sentence = f"{word}.{figures}"

@@ -188,6 +188,15 @@ def test_until_e_s_texts_a_closed_check_says_its_result_and_figures():
     assert closed_row("D3", "pass", None, None, (), "x").endswith("**D3.** Passed.")
 
 
+def test_amazon_d1_says_no_dividend_paid_never_usd_0_m():
+    """Simon's look of 25 November 2026, Flo's rule: a dividend treated as nil is "no dividend paid", never "USD 0 m".
+    When a figure of the check is an assumption, the row shows the check's own explanation instead of the figures."""
+    pytest.importorskip("src.checks.dividend", reason="needs C's dividend module (merged in #23)")
+    d1 = next(e.label for e in show("AMZN").expander if "**D1.**" in e.label)
+    assert "USD 0 m" not in d1
+    assert d1.startswith(f"{FAILED_ICON} **D1.** Failed. No dividend paid in the fiscal year ended 31 December 2025")
+
+
 def test_does_not_apply_shows_the_check_s_own_explanation_unchanged():
     """Simon, 25 November 2026: Flo's explanation as it is, under the "Does not apply" label."""
     assert closed_row("D2", "not_applicable", None, None, (), "Not applicable: no dividend paid (D1).") == (
