@@ -298,11 +298,15 @@ def test_header_shows_the_latest_fiscal_year_end_from_the_data():
 
 
 def test_a_check_not_assessed_shows_its_explanation_once():
-    """Igor's review of #35: not "Not assessed: ..." and again "How it is calculated: ..."."""
-    p4 = next(e for e in run_synthetic().expander if "P4" in e.label)
-    shown = [m.value for m in p4.markdown]
+    """Igor's review of #35: not "Not assessed: ..." and again "How it is calculated: ...".
+
+    Test change (rule 14.6, Simon's written agreement of 25 November 2026): Igor's intent is kept, the explanation is
+    shown once; only its place moves, from the open detail to the closed row, as in the design (SPEC 2.4.2 §3 item 5).
+    So it is counted across the row and the open detail together, and must be in the row."""
+    p4 = next(e for e in run_synthetic().expander if "**P4.**" in e.label)
+    shown = [p4.label, *(m.value for m in p4.markdown)]
     assert sum("P4: built by hand (AC3)" in line for line in shown) == 1
-    assert any(line.startswith("**Not assessed:**") for line in shown)
+    assert "P4: built by hand (AC3)" in p4.label
 
 
 def test_apple_missing_interest_expense_is_n_a_with_its_reason_never_zero_v4():

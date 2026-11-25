@@ -247,9 +247,9 @@ def render_check(data: CompanyData, result: CheckResult, texts: Mapping) -> None
         sentence = f":gray[{said}{result.explanation.translate(_MARKDOWN)}]"
     with st.expander(f"{ICONS[result.status]} **{_plain_name(result.check_id, texts)}.** {sentence}"):
         rule = texts.get(result.check_id, {}).get("rule")
+        # Not assessed or does not apply: its explanation is the reason, shown once, in the closed row (Igor's review
+        # of #35; Simon, 25 November 2026)
         not_assessed = result.status in ("insufficient_data", "not_applicable")
-        if not_assessed:  # its explanation is the reason, shown once (Igor's review of #35)
-            st.markdown(f"**{word}:** {result.explanation}")
         if rule:
             st.markdown(f"**Rule:** {rule}")
         if not not_assessed:
