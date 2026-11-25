@@ -18,6 +18,9 @@ Each criterion is checkable: a starting state, an action, an expected result. St
 | AC9 | F7 | Tier 2 build, synthetic company, share price USD 30.00 | The scorecard opens | Fair value USD 20.13 per share (equity method); scores 5 of 6, 4 of 6, 6 of 6, 3 of 6 (SPEC v2.3 Appendix A; fair value signed off by C, scores by E, 21 November) | open |
 | AC10 | F7 | Any company, no share price | The scorecard opens | The valuation area shows "insufficient data" and asks for a share price; the other areas still show | open |
 | AC11 | F8 | Synthetic company loaded | The user downloads the Excel file | A test reopens it: two sheets (the scorecard; the figures with their sources, §3 item 8); every figure equals the screen | open |
+| AC12 | F2 | Demo mode, Coca-Cola (KO) | The scorecard opens | The overview above the tabs shows revenue USD 47.94 bn (+1.9% vs FY2024), operating margin 28.7% (+7.5 pp), net income USD 13.11 bn (+23.3%), free cash flow USD 5.30 bn (+11.7%), each marked reported or derived; dividend coverage 60.3%, dividends USD 3.48 bn above free cash flow; current ratio 1.46× (hand working below, "Overview (S10c)") | passing on branch `a/S10c-overview` (`tests/unit/test_overview.py`, `tests/app/test_overview_screen.py`); hand working checked by Igor, 25 November |
+| AC13 | F2 | Demo mode, Amazon (AMZN) | The scorecard opens | Dividend coverage reads "No dividend paid", never 0% | passing on branch `a/S10c-overview` (`tests/unit/test_overview.py`, `tests/app/test_overview_screen.py`); hand working checked by Igor, 25 November |
+| AC14 | F2 | Any company with a figure missing | The scorecard opens | Each overview figure that needs it shows "n/a" with the reason, never 0; the five-year chart leaves a gap and its table shows "n/a" | passing on branch `a/S10c-overview` (`tests/unit/test_overview.py`, `tests/app/test_overview_screen.py`); hand working checked by Igor, 25 November |
 | AC12 | F9 | Tier 3 build, synthetic company, share price USD 30.00 | The scorecard opens | Strengths G1, G2, G3, G5, G6; points to watch W3, W4, W8, all minor; each opens its check (SPEC v2.3 §9 and Appendix A; B's recalculation pending) | open |
 
 ## Screens (how each was checked)
@@ -150,6 +153,41 @@ script from the SPEC §8 formulas (not the app's code): all agree. Everything no
 The other S8 edge cases need no number: the rule itself (a limited value equals its setting; a missing input gives
 "insufficient data" naming it; FCF0 ≤ 0 or equity value ≤ 0 gives "not applicable") or a relation inside one run.
 
+### Overview (S10c, owner A)
+
+Formulas: change = FY0 ÷ FY-1 − 1 (shown to one decimal); operating margin = operating income ÷ revenue; change in
+margin in percentage points (pp); free cash flow = operating cash flow − capital expenditure (as in §8 and D6);
+dividend coverage = free cash flow ÷ dividends paid; current ratio = current assets ÷ current liabilities. Amounts of
+USD 1 bn or more in USD bn with two decimals, smaller ones in USD m with none. Edge rules (Igor, 25 November):
+FY-1 at or below zero gives "not meaningful" instead of a change; negative free cash flow shows both amounts and
+"free cash flow was negative", never a negative coverage; revenue or current liabilities missing or at or below zero
+give "n/a" with the reason; a dividend treated as nil reads "No dividend paid".
+
+**Synthetic company** (USD m, SPEC Appendix A line items):
+
+| Figure | Hand working | Expected |
+|---|---|---|
+| Revenue | 1,300; 1,300 ÷ 1,210 − 1 = 0.07438 | USD 1.30 bn, +7.4% |
+| Operating margin | 208 ÷ 1,300 = 16.00%; 190 ÷ 1,210 = 15.70%; 16.00 − 15.70 = 0.30 | 16.0%, +0.3 pp |
+| Net income | 140; 140 ÷ 128 − 1 = 0.09375 | USD 140 m, +9.4% |
+| Free cash flow | 215 − 85 = 130; 195 − 80 = 115; 130 ÷ 115 − 1 = 0.13043 | USD 130 m, +13.0% |
+| Five-year free cash flow | 160 − 60 = 100; 175 − 70 = 105; 150 − 75 = 75; 195 − 80 = 115; 215 − 85 = 130 | 100, 105, 75, 115, 130 |
+| Dividend coverage | 130 ÷ 56 = 2.3214; 130 − 56 = 74 | 232.1%; free cash flow USD 74 m above dividends |
+| Current ratio | 540 ÷ 360 = 1.50 | 1.50× |
+
+**Coca-Cola** (USD m, FY2025 and FY2024 columns of the FY2025 10-K, accession 0001628280-26-010047):
+
+| Figure | Hand working | Expected |
+|---|---|---|
+| Revenue | 47,941; 47,941 ÷ 47,061 − 1 = 0.01870 | USD 47.94 bn, +1.9% |
+| Operating margin | 13,762 ÷ 47,941 = 28.71%; 9,992 ÷ 47,061 = 21.23%; 28.71 − 21.23 = 7.47 | 28.7%, +7.5 pp |
+| Net income | 13,107; 13,107 ÷ 10,631 − 1 = 0.23290 | USD 13.11 bn, +23.3% |
+| Free cash flow | 7,408 − 2,112 = 5,296; 6,805 − 2,064 = 4,741; 5,296 ÷ 4,741 − 1 = 0.11706 | USD 5.30 bn, +11.7% |
+| Dividend coverage | 5,296 ÷ 8,779 = 0.60326; 8,779 − 5,296 = 3,483 | 60.3%; dividends USD 3.48 bn above free cash flow |
+| Current ratio | 31,044 ÷ 21,281 = 1.4588 | 1.46× |
+
+Checked by hand: Igor (A), 25 November 2026, every value above with a calculator from the listed figures; all match (rule 14.5).
+
 ## Edge cases and errors
 
 | Id | Situation | Expected behaviour | Status |
@@ -162,10 +200,10 @@ The other S8 edge cases need no number: the rule itself (a limited value equals 
 | E6 | Two fallback tags give different values for the same period | Figure flagged on the sources page, not chosen silently (§5.3.7) | passing (test: test_two_tags_with_different_values_are_flagged_and_the_first_in_the_list_is_used) |
 | E7 | Restated figure differs from the original by more than 1% | Latest filed value used; both shown with a warning (§5.3.4) | passing (test: test_planted_a_restated_figure_uses_the_latest_filing_and_keeps_the_original; KO 2018: test_coca_cola_2018_revenue_restatement_as_shown_in_session_5) |
 | E8 | 53-week fiscal year | Kept: flow periods of 350 to 380 days are accepted (§5.3.1) | passing (test: test_a_flow_must_cover_350_to_380_days; Apple: test_apple_has_a_53_week_fiscal_year) |
-| E9 | Negative equity | H3, P4, V5 fail with the note "negative equity"; recorded on the sources page, no header warning (§7, §10). H4: see open question in `docs/plan.md` | open |
+| E9 | Negative equity | H3, H4, P4, V5 fail with the note "negative equity"; recorded on the sources page, no header warning (§7, §10). H4 decided by Greg on 23 November (plan Q3): known equity ≤ 0 in FY0 or FY-4 fails first | passing for H3, H4, P4 on McDonald's saved data (`test_mcdonalds_known_negative_equity_fails_leverage_checks`, `test_mcdonalds_negative_equity_fails_roe_without_an_industry_benchmark`); V5: C |
 | E10 | Net income zero or below | V3, V4 and D5 fail; P2 fails | partly passing (D5, test: test_9_d5_fails_at_exactly_90_percent_and_when_net_income_is_zero_or_negative); V3, V4: S9; P2: S5 |
 | E11 | No dividend | D1 fails; D2 to D6 `not applicable`; area shows "no dividend paid", score 0 | passing for the checks (tests: test_1_a_labelled_nil_means_no_dividend_paid, test_2_a_reported_zero_in_fy0_means_no_dividend_paid; Amazon on real data: test_amazon_shows_no_dividend_paid); the area display: S10 |
-| E12 | Zero debt | H4 (no debt in both years), H5, H6 (no debt and no interest) pass; the levered beta equals the unlevered beta, kept within the limits 0.8 to 2.0 | partly passes: the beta part on branch `c/S8-valuation-engine` (test_e12_with_zero_debt_the_levered_beta_is_the_unlevered_beta, test_e12_with_zero_debt_a_low_unlevered_beta_is_still_limited, property tests); H4–H6 are B's |
+| E12 | Zero debt | H4 (no debt in both years), H5 pass; H6 passes when interest is reported as 0, or when debt is reported as 0 and interest is missing (no ratio invented; an assumed or derived zero debt does not count); the levered beta equals the unlevered beta, kept within the limits 0.8 to 2.0 | passing for H4, H5, H6 (`test_h4_no_debt_in_both_years_passes_even_without_equity`, `test_h5_zero_debt_passes_without_cash_flow`, `test_h6_reported_zero_debt_passes_with_missing_interest_without_filling_it`, `test_h6_assumed_zero_debt_does_not_turn_missing_interest_into_zero`); beta: C |
 | E15 | A warning that is not for the customer (e.g. a restated or derived figure) | Not in the header; listed on the sources page next to the figure (§10) | passes on branch `d/S11-gates` (`test_coca_cola_has_no_header_warning_and_its_reading_note_is_on_the_sources_page_e15`) |
 | E16 | Any ticker other than the five demo companies | Report shown with the header warning "not fully checked" (§2, §10); the five demo companies, Apple included, never show it | passes on branch `d/S11-gates` (`test_a_ticker_that_is_not_a_demo_company_is_not_fully_checked`, `test_a_company_outside_the_five_shows_not_fully_checked_in_the_header_e16`) |
 | E17 | Industry not found in the lookup or the fallback table | Benchmarks `missing`; dependent checks "insufficient data"; no user override (§9.1, v2.3) | open |
