@@ -19,7 +19,7 @@ import yaml
 
 from src.contracts import CheckResult, CompanyData, Fact
 from src.scores import area_score, dividend_note, not_assessed
-from ui.format import check_value, fact_value
+from ui.format import check_value, fact_value, share_price
 from ui.results import AREA_CHECKS, AREAS
 
 TEXTS_FILE = Path(__file__).with_name("texts.yaml")  # E's plain-language texts (PR #17)
@@ -101,7 +101,7 @@ def render_header(data: CompanyData, warnings: Sequence[str] = (), price: float 
     )
     if price is not None:
         typed.markdown(f'<div class="fs-price"><span class="fs-muted">Share price you typed</span><br>'
-                       f'<strong>USD {price:,.2f}</strong></div>', unsafe_allow_html=True)
+                       f'<strong>{share_price(price)}</strong></div>', unsafe_allow_html=True)
     for warning in warnings:  # only "not fully checked" and "latest annual report is old" (SPEC §10, src/gates.py)
         st.warning(warning)
 

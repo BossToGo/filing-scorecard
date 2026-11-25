@@ -14,7 +14,7 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from src.contracts import CHECK_IDS, Fact
-from ui.format import CHECK_UNITS, NO_VALUE, check_value, fact_value, usd_m
+from ui.format import CHECK_UNITS, NO_VALUE, check_value, fact_value, share_price, usd_m
 
 
 def fact(metric="revenue", value=2_112_000_000.0, unit="USD", kind="reported", note=""):
@@ -44,6 +44,12 @@ def test_usd_millions_with_thousands_separator():
 
 def test_usd_millions_keeps_the_sign():
     assert usd_m(-540_000_000) == "USD -540 m"
+
+
+def test_a_typed_share_price_in_usd_with_two_decimals():
+    """The header's "Share price you typed" (mockup: "USD 65.40"); Simon, 25 November 2026: formatted here only."""
+    assert share_price(65.4) == "USD 65.40"
+    assert share_price(1234.5) == "USD 1,234.50"
 
 
 # --- a check's value against its threshold (audit ux #10) -------------------------------------------------------
