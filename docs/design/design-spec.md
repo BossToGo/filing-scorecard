@@ -264,3 +264,28 @@ test), pbakaus/impeccable (ten dimensions, craft floor), nextlevelbuilder/ui-ux-
 minimalism, accessible, navy; not its gold), Laith0003/ux-skill and JCarterJohnson/vibecoded-design-tells (ban
 lists). Writing (§5): blader/humanizer, conorbronsdon/avoid-ai-writing, hardikpandya/stop-slop, sho-das/clear-english.
 Working (§7): multica-ai/andrej-karpathy-skills, mattpocock/skills. vabole/apple-skills skipped as iOS-only.
+
+## 9. Proposal for v0.2: an overview and a dark navy theme (25 November 2026, #47)
+
+Status: a proposal by A after his look at v0.1, waiting for the group on #47; nothing here is decided, and §1 to §8
+stay in force until it is. Mockup: `mockup-v02-overview.html` (static, no network) and `mockup-v02-overview.png`
+(1440 px). Every figure is Coca-Cola's saved SEC data (`load_company("KO", demo=True)`); only the share price is
+typed for the mockup.
+
+- **Layout.** Top bar with the inputs; a left menu (Overview, the four areas, Sources) in place of the tabs; the
+  company name, a meta line and four key figures (revenue, operating margin, net income, free cash flow, each with the
+  change on the year before); then two columns, about 62/38 and the same on every row: scorecard and failed checks;
+  financial performance over five years (Chart/Table) and dividend coverage; balance sheet and filing details.
+- **Colours (dark theme).** Page `#0B1220`, bars `#080E1A`, panels `#101A2B`, borders `#1C2840`, hairlines `#17223A`;
+  text `#E9EDF3`, secondary `#A3AEC0`, muted `#7A879C`; gold `#D9B26A` for the active item, passed checks and key
+  numbers; coral `#E8806A` for failed checks; chart lines blue `#4DA3E8`, mint `#5ED0B8` and magenta `#CF86BC`
+  (dashed). Contrast on the page: text 15.9, secondary 8.4, muted 5.1, gold 9.4, coral 6.9, blue and magenta 6.9
+  (4.5:1 needed for text). Each colour has one job, as in A's Poker Academy design rules: a chart colour never means
+  good or bad, and every mark keeps its tick or cross.
+- **Type.** Serif titles (Source Serif 4 where installed, else Georgia: no web fonts, so demo mode works offline), a
+  clean sans for figures, tabular digits, spacing on a 4-point grid.
+- **Not taken from the reference.** A radar or "snowflake" (SPEC §1; it would also draw "not assessed" as zero), a
+  search box, accounts, a year picker.
+- **What it changes if agreed.** `docs/product.md` ("tables, not charts", the light calm look) and §1 to §4 here;
+  the drawing goes into `app/ui/` with D's agreement.
+
