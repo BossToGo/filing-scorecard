@@ -192,8 +192,8 @@ Detail, before: "How it is calculated: Latest annual net income growth > compoun
 1. Latest year: USD 13,107 m ÷ USD 10,631 m − 1 = 23.3%
 2. Average over four years: (USD 13,107 m ÷ USD 9,771 m) to the power ¼, minus 1 = 7.6%
 
-Names to settle with E: "Short-term liabilities covered" (H1, H2 likewise), "Debt falling against equity" (H4), "No
-large dividend cut" (D3).
+Names settled with E on 25 November (#32, #55): "Short-term liabilities covered" (H1, H2 likewise), "Debt falling
+against equity" (H4), "No large dividend cut" (D3). SPEC §7 uses the names shown on screen.
 
 ## 6. States
 

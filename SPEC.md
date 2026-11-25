@@ -2,7 +2,7 @@
 
 **Course:** Programming and AI for Corporate Finance (FIN_8546), EDHEC, final group project
 **Deadline:** Tuesday 1 December 2026, 23:59, state of `main`. Presentation Wednesday 2 December 2026 (8 minutes + 4 minutes of questions).
-**Status of this file:** version 2.4.2 of 23 November 2026 (version 2, risk-reduced: release tiers, risk register, industry lookup, no browser dependency; 2.1: folder layout under `app/`, §11 and §12; 2.2: names and final roles, §12, §13.2, §17; 2.3: for retail bank customers, fully automatic, share price the only input, equity valuation method with growth decaying over ten years, V4 against the whole market, five forces replaced by 15 strengths and points to watch, growth limit and decay, when the valuation model does not fit, sensitivity table, growth the price implies and user inputs cut, §1 to §3, §5.2, §6, §8 to §16, Appendix A; 2.4: the MVP is the five demo companies and one workflow end to end, a benchmark table for their industries only, plan Q1 and Q13 decided, new release dates, §2, §4, §7, §9.1, §13.2, §13.3; 2.4.1: "not fully checked" is for every ticker other than the five demo companies, the five are offered to pick from and another ticker can be typed, the company name is shown as the SEC lists it, the area scores are computed in `src/scores.py`, §2, §3, §7, §10 to §12, §13.4; 2.4.2: the screen design of `docs/design/`: a light and a dark theme, the labels "N passed of M assessed", "not assessed" and "does not apply", the failed checks next to the score chart until tier 3, one tab per area, a sentence on each closed check, §3; on screen the valuation's result is "the estimate", never "fair value", and V1 and V2 are renamed (§3, §7, decided on 24 November, #32); the product name "Filing Scorecard" (§16, item 7); at the growth cap V6 uses the same estimate as V1, and a price exactly equal to it fails V1 and passes V6 (§7, §15, decided on 25 November, #52); the names in §7 are short reference names and the screen uses E's texts in `app/ui/texts.yaml` (§7, decided on 25 November, #32)). To be agreed by the whole group in one meeting, then changed only by pull request.
+**Status of this file:** version 2.4.2 of 23 November 2026 (version 2, risk-reduced: release tiers, risk register, industry lookup, no browser dependency; 2.1: folder layout under `app/`, §11 and §12; 2.2: names and final roles, §12, §13.2, §17; 2.3: for retail bank customers, fully automatic, share price the only input, equity valuation method with growth decaying over ten years, V4 against the whole market, five forces replaced by 15 strengths and points to watch, growth limit and decay, when the valuation model does not fit, sensitivity table, growth the price implies and user inputs cut, §1 to §3, §5.2, §6, §8 to §16, Appendix A; 2.4: the MVP is the five demo companies and one workflow end to end, a benchmark table for their industries only, plan Q1 and Q13 decided, new release dates, §2, §4, §7, §9.1, §13.2, §13.3; 2.4.1: "not fully checked" is for every ticker other than the five demo companies, the five are offered to pick from and another ticker can be typed, the company name is shown as the SEC lists it, the area scores are computed in `src/scores.py`, §2, §3, §7, §10 to §12, §13.4; 2.4.2: the screen design of `docs/design/`: a light and a dark theme, the labels "N passed of M assessed", "not assessed" and "does not apply", the failed checks next to the score chart until tier 3, one tab per area, a sentence on each closed check, §3; on screen the valuation's result is "the estimate", never "fair value", and V1 and V2 are renamed (§3, §7, decided on 24 November, #32); the product name "Filing Scorecard" (§16, item 7); at the growth cap V6 uses the same estimate as V1, and a price exactly equal to it fails V1 and passes V6 (§7, §15, decided on 25 November, #52); the check names in §7 are the names shown on screen, from E's `app/ui/texts.yaml` (§7, decided on 25 November, #32, #55)). To be agreed by the whole group in one meeting, then changed only by pull request.
 
 **The one principle of this version:** `main` always holds a working, demo-ready app. We build in three tiers. Each tier ends with a tagged release that runs offline and passes all tests. If time runs out, we present the last release and cut the rest; nothing half-finished is ever merged.
 
@@ -191,29 +191,29 @@ These tags are a starting list written from memory of the US accounting taxonomy
 
 **Thresholds** live in `settings.yaml`, each with a one-line reason. The values below are the team's starting choices.
 
-**Names.** The names in the tables below are short reference names. The names and rules a customer reads are E's plain-language texts in `app/ui/texts.yaml` (section 12), which may word them differently but never change a rule's meaning (for example, H4 "Debt is falling" reads "Debt falling against equity" on screen).
+**Names.** The check names in the tables below are the names shown on screen, from E's plain-language texts in `app/ui/texts.yaml` (section 12; agreed on 25 November, #32), which also give each rule in plain words. A pull request that renames a check changes its line here too.
 
 ### Past performance
 
 | # | Check | Rule |
 |---|---|---|
 | P1 | Consistently profitable | Net income > 0 in at least 4 of the last 5 fiscal years |
-| P2 | Earnings grew | Net income FY0 > net income FY-4, and FY0 > 0 |
-| P3 | Growth is accelerating | Net income growth FY-1 to FY0 > compound annual growth FY-4 to FY0. Net income FY-4 or FY-1 ≤ 0: fail, with the note "growth from a loss is not meaningful" |
-| P4 | Return on equity beats the industry | Net income FY0 ÷ average equity (FY-1, FY0) > industry return on equity. Equity ≤ 0: fail, with the note "negative equity" |
-| P5 | Margin beats the industry | Operating income ÷ revenue (FY0) > industry pre-tax operating margin |
+| P2 | Growing profit | Net income FY0 > net income FY-4, and FY0 > 0 |
+| P3 | Profit growth is speeding up | Net income growth FY-1 to FY0 > compound annual growth FY-4 to FY0. Net income FY-4 or FY-1 ≤ 0: fail, with the note "growth from a loss is not meaningful" |
+| P4 | Return on equity above its industry | Net income FY0 ÷ average equity (FY-1, FY0) > industry return on equity. Equity ≤ 0: fail, with the note "negative equity" |
+| P5 | Margin above its industry | Operating income ÷ revenue (FY0) > industry pre-tax operating margin |
 | P6 | Return on capital improved | Operating income ÷ (total assets − current liabilities), FY0 > FY-3 |
 
 ### Financial health
 
 | # | Check | Rule |
 |---|---|---|
-| H1 | Short-term cover | Current assets > current liabilities |
-| H2 | Long-term cover | Current assets > total liabilities − current liabilities |
+| H1 | Short-term liabilities covered | Current assets > current liabilities |
+| H2 | Long-term liabilities covered | Current assets > total liabilities − current liabilities |
 | H3 | Moderate debt | (Debt − cash) ÷ equity < 40%. Equity ≤ 0: fail |
-| H4 | Debt is falling | Debt ÷ equity FY0 < FY-4. No debt in both years: pass |
+| H4 | Debt falling against equity | Debt ÷ equity FY0 < FY-4. No debt in both years: pass |
 | H5 | Debt covered by cash flow | Operating cash flow ÷ debt ≥ 20%. No debt: pass |
-| H6 | Interest covered | Operating income ÷ interest expense ≥ 5. No debt and no interest: pass. Interest expense reported as 0: pass. Debt but no interest figure: insufficient data |
+| H6 | Interest well covered | Operating income ÷ interest expense ≥ 5. No debt and no interest: pass. Interest expense reported as 0: pass. Debt but no interest figure: insufficient data |
 
 ### Dividend
 
@@ -224,11 +224,11 @@ If D1 fails, D2 to D6 are `not applicable` and the area shows "no dividend paid"
 | # | Check | Rule |
 |---|---|---|
 | D1 | Pays a dividend | Dividends paid FY0 > 0 |
-| D2 | Yield above the market | Dividends paid FY0 ÷ (share price × shares) > US market dividend yield (benchmark file). Needs the share price |
-| D3 | No large cut | No year-on-year fall in dividends paid of more than 10% within the five years |
+| D2 | Dividend yield above the US market | Dividends paid FY0 ÷ (share price × shares) > US market dividend yield (benchmark file). Needs the share price |
+| D3 | No large dividend cut | No year-on-year fall in dividends paid of more than 10% within the five years |
 | D4 | Dividend grew | Dividends paid FY0 > FY-4 |
-| D5 | Covered by earnings | Dividends paid ÷ net income < 90%. Net income ≤ 0: fail |
-| D6 | Covered by cash | Dividends paid ≤ operating cash flow − capital expenditure |
+| D5 | Dividend covered by profit | Dividends paid ÷ net income < 90%. Net income ≤ 0: fail |
+| D6 | Dividend covered by cash | Dividends paid ≤ operating cash flow − capital expenditure |
 
 ### Valuation (needs the share price; without it the whole area is "insufficient data")
 
