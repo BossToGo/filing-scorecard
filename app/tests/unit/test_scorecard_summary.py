@@ -97,3 +97,11 @@ def test_coca_cola_totals_equal_a_count_of_its_check_results():
     assert card.failed == statuses.count("fail")
     assert card.assessed == statuses.count("pass") + statuses.count("fail")
     assert card.not_assessed == statuses.count("insufficient_data") + 6 * sum(1 for a in checks.values() if a is None)
+
+
+def test_the_short_counts_of_igors_design():
+    areas = by_area(scorecard(results(AC3)))
+    assert areas["financial_health"].short_text == "4 of 6 passed"
+    assert areas["financial_health"].focus_text == "4 of 6 checks passed"
+    assert areas["valuation"].short_text == "Not assessed"
+

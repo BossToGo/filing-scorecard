@@ -51,6 +51,7 @@ class Line:
     label: str
     values: tuple[float | None, ...]  # in the series' unit, for the chart; None is a gap, never zero
     texts: tuple[str, ...]  # the same values written for the table view
+    end_label: str = ""  # the last value in the series' unit, two decimals, written at the end of the line
 
 
 @dataclass(frozen=True)
@@ -91,6 +92,8 @@ class Overview:
     coverage: Coverage
     balance: tuple[Figure, ...]
     filing: Filing
+    fiscal_year_end: str = NA  # "31 December 2025"
+    years_text: str = NA  # "FY2021 – FY2025", the years the overview covers
 
 
 # --- writing numbers --------------------------------------------------------------------------------------------
@@ -227,7 +230,8 @@ def _series(data: CompanyData, years: list[date]) -> Series:
     scale, unit = (BILLION, "USD bn") if known and max(known) >= BILLION else (MILLION, "USD m")
     lines = tuple(
         Line(label, tuple(None if v is None else v / scale for v in values),
-             tuple(NA if v is None else amount_text(v) for v in values))
+             tuple(NA if v is None else amount_text(v) for v in values),
+             "" if values[-1] is None else f"{values[-1] / scale:,.2f}".replace("-", MINUS))
         for label, values in columns.items()
     )
     return Series(tuple(end.year for end in years), unit, lines)
@@ -313,6 +317,8 @@ def overview(data: CompanyData) -> Overview:
         coverage=_coverage(data, fy0),
         balance=_balance(data, fy0),
         filing=_filing(data, fy0),
+        fiscal_year_end=_day(fy0),
+        years_text=f"FY{last_five[0].year} – FY{fy0.year}",
     )
 
 
@@ -336,6 +342,8 @@ class AreaSummary:
     share: float | None  # passed ÷ assessed for the radar; None when nothing is assessed (left off the shape)
     share_text: str  # "100%" or "Not assessed"
     count_text: str  # "4 passed of 4 assessed", "Not assessed", "No dividend paid · 0 passed of 1 assessed"
+    short_text: str = ""  # Igor's design: "4 of 4 passed" (of the assessed checks), "Not assessed"
+    focus_text: str = ""  # "3 of 6 checks passed"
 
 
 @dataclass(frozen=True)
@@ -361,9 +369,11 @@ def _area_summary(area: str, results) -> AreaSummary:
         count = f"{passed} passed of {assessed} assessed"
         if area == "dividend" and marks == ("fail",) + ("not_applicable",) * (len(marks) - 1):
             count = f"No dividend paid · {count}"
+    short = f"{passed} of {assessed} passed" if assessed else "Not assessed"
     return AreaSummary(area, AREA_LABELS.get(area, area.replace("_", " ").capitalize()), marks, passed, assessed,
                        failed, marks.count("not_assessed"), share,
-                       "Not assessed" if share is None else f"{share * 100:.0f}%", count)
+                       "Not assessed" if share is None else f"{share * 100:.0f}%", count, short,
+                       f"{passed} of {assessed} checks passed" if assessed else "Not assessed")
 
 
 def scorecard(results) -> Scorecard:

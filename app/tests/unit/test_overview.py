@@ -177,3 +177,19 @@ def test_negative_capital_expenditure_is_a_sign_error_not_a_bigger_cash_flow():
 def test_amounts_switch_to_billions_from_one_billion(millions, text):
     data = changed(synthetic.company_data(), "cash", FY0, millions)
     assert {f.label: f.text for f in overview(data).balance}["Cash and equivalents"] == text
+
+
+def test_each_line_carries_its_last_value_for_the_end_of_the_chart():
+    lines = {line.label: line for line in overview(synthetic.company_data()).series.lines}
+    assert (lines["Revenue"].end_label, lines["Free cash flow"].end_label) == ("1.30", "0.13")  # USD bn
+
+
+def test_a_missing_last_value_has_no_end_label():
+    data = changed(synthetic.company_data(), "operating_cash_flow", FY0, None)
+    assert {line.label: line for line in overview(data).series.lines}["Free cash flow"].end_label == ""
+
+
+def test_the_fiscal_year_end_and_the_years_covered_are_written_for_the_header():
+    ov = overview(load_company("KO", demo=True))
+    assert (ov.fiscal_year_end, ov.years_text) == ("31 December 2025", "FY2021 – FY2025")
+

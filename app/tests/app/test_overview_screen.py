@@ -40,7 +40,7 @@ def test_ac12_coca_cola_key_figures_coverage_and_balance_sheet_are_shown():
     text = shown(run("KO"))
     for expected in ("47.94", "+1.9%", "28.7", "+7.5 pp", "13.11", "+23.3%", "5.30", "+11.7%", "vs FY2024",
                      "60.3%", "USD 3.48 bn", "Dividends above free cash flow", "1.46×", "0001628280-26-010047",
-                     "20 February 2026", "27 metrics, 119 records"):
+                     "20 February 2026", "27 metrics · 119 records"):  # was "27 metrics, 119 records": label only, "·" as in Igor's design of 25 November (rule 14.6, agreed by Igor)
         assert expected in text, expected
 
 
@@ -122,3 +122,15 @@ def test_without_check_results_there_is_no_scorecard_panel():
 
 def test_amazon_panel_says_no_dividend_paid():
     assert "No dividend paid · 0 passed of 1 assessed" in shown(run_with_checks("AMZN"))
+
+
+def test_chart_colours_given_as_text_on_the_command_line_are_read_as_a_list(monkeypatch):
+    import streamlit as st
+
+    from ui import overview as ui_overview
+
+    real = st.get_option
+    monkeypatch.setattr(st, "get_option", lambda key: '["#111111", "#222222", "#333333"]'
+                        if key == "theme.chartCategoricalColors" else real(key))
+    assert ui_overview._series_colours() == ("#111111", "#222222", "#333333")
+
