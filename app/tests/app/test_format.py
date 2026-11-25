@@ -14,7 +14,7 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from src.contracts import CHECK_IDS, Fact
-from ui.format import CHECK_UNITS, NO_VALUE, check_value, fact_value, usd_m
+from ui.format import CHECK_UNITS, NO_VALUE, check_value, fact_value, share_price, usd_m
 
 
 def fact(metric="revenue", value=2_112_000_000.0, unit="USD", kind="reported", note=""):
@@ -46,6 +46,12 @@ def test_usd_millions_keeps_the_sign():
     assert usd_m(-540_000_000) == "USD -540 m"
 
 
+def test_a_typed_share_price_in_usd_with_two_decimals():
+    """The header's "Share price you typed" (mockup: "USD 65.40"); Simon, 25 November 2026: formatted here only."""
+    assert share_price(65.4) == "USD 65.40"
+    assert share_price(1234.5) == "USD 1,234.50"
+
+
 # --- a check's value against its threshold (audit ux #10) -------------------------------------------------------
 
 
@@ -71,16 +77,29 @@ def _number(text: str) -> float:
     return float(text.replace("USD", "").replace("m", "").replace("%", "").replace(",", "").strip())
 
 
+def _compares_like_the_real_ones(value: float, threshold: float) -> None:
+    shown, against = check_value("H3", value, threshold)
+    real = (value > threshold) - (value < threshold)
+    seen = (_number(shown) > _number(against)) - (_number(shown) < _number(against))
+    # One step of the finest decimal (0.00001% = 1e-5), as the docstring says. The limit was half a step (0.5e-5),
+    # but two numbers less than one step apart can round to the same text; changed with Simon's written agreement
+    # of 25 November 2026 (rule 14.6), after Hypothesis found the example below.
+    assert seen == real or (seen == 0 and abs(value - threshold) * 100 < 1e-5), (shown, against)
+
+
 @settings(max_examples=500)
 @given(st.floats(-2, 2, allow_nan=False), st.floats(-2, 2, allow_nan=False))
 def test_shown_numbers_always_compare_like_the_real_ones(value, threshold):
     """Never on the wrong side; shown as equal only when the gap is below the finest decimal shown (0.00001%).
 
     The check's pass or fail, shown next to it, then says which side it is on."""
-    shown, against = check_value("H3", value, threshold)
-    real = (value > threshold) - (value < threshold)
-    seen = (_number(shown) > _number(against)) - (_number(shown) < _number(against))
-    assert seen == real or (seen == 0 and abs(value - threshold) * 100 < 0.5e-5)
+    _compares_like_the_real_ones(value, threshold)
+
+
+def test_two_values_closer_than_the_finest_decimal_may_show_as_equal():
+    """The example Hypothesis found once at random (Flo, 25 November 2026): both show as "-0.00001%", 0.0000060%
+    apart, less than the finest decimal shown. The same happens at 50% (0.5000000596 against 0.5000001192)."""
+    _compares_like_the_real_ones(-5.960464477539063e-08, -1.192092896e-07)
 
 
 def test_a_pass_or_fail_without_a_value_shows_no_value_never_zero_or_none():

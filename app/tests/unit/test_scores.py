@@ -12,7 +12,7 @@ with those statuses and no value, so no expected value of another owner is used.
 import pytest
 
 from src.contracts import CheckResult
-from src.scores import AreaScore, area_score, dividend_note
+from src.scores import AreaScore, NotAssessed, area_score, dividend_note, not_assessed
 
 
 def results(statuses: dict[str, str]) -> tuple[CheckResult, ...]:
@@ -73,3 +73,44 @@ def test_amazon_through_the_real_dividend_module_reads_no_dividend_paid():
     amazon = dividend.dividend_checks(load_company("AMZN", demo=True), load_settings())
     assert area_score(amazon) == AreaScore(passed=0, assessed=1)
     assert dividend_note(amazon) == "no dividend paid"
+
+
+# --- "not assessed" and "not assessed yet" (SPEC 2.4.2 §3; design spec §3) ---------------------------------------
+# Counts: Simon's hand count of 25 November 2026 from the AC3 statuses (past 2: P4, P5; health 0; dividend 1: D2)
+# and for Amazon (0). "yet" only when the check's own explanation says so (agreed with Igor on #39).
+
+
+def test_synthetic_company_not_assessed_counts():
+    assert not_assessed(PAST) == NotAssessed(count=2, yet=False)
+    assert not_assessed(HEALTH) == NotAssessed(count=0, yet=False)
+    assert not_assessed(DIVIDEND) == NotAssessed(count=1, yet=False)
+
+
+def test_does_not_apply_is_not_counted_as_not_assessed():
+    assert not_assessed(NO_DIVIDEND_PAID) == NotAssessed(count=0, yet=False)
+
+
+def explained(cid: str, explanation: str) -> CheckResult:
+    return CheckResult(cid, "insufficient_data", None, None, (), explanation)
+
+
+def test_yet_when_every_not_assessed_check_says_a_later_version_brings_its_input():
+    """C's D2 wording (`src/checks/dividend.py`)."""
+    d2 = explained("D2", "This check is not assessed yet: it needs the share price and the US market dividend yield.")
+    assert not_assessed((*DIVIDEND[:1], d2, *DIVIDEND[2:])) == NotAssessed(count=1, yet=True)
+
+
+def test_no_yet_when_the_explanation_does_not_say_it():
+    """Greg's current P4 wording: no "yet" until his module says so (Simon, 25 November 2026)."""
+    p4 = explained("P4", "Not assessed: needs a sourced industry return on equity benchmark.")
+    p5 = explained("P5", "Not assessed yet: needs a sourced industry operating margin benchmark.")
+    assert not_assessed((p4, p5)) == NotAssessed(count=2, yet=False)
+
+
+def test_amazon_through_the_real_dividend_module_has_nothing_not_assessed():
+    dividend = pytest.importorskip("src.checks.dividend", reason="C's dividend module (PR #23) is not on main yet")
+    from src.data.company import load_company
+    from src.settings import load_settings
+
+    amazon = dividend.dividend_checks(load_company("AMZN", demo=True), load_settings())
+    assert not_assessed(amazon) == NotAssessed(count=0, yet=False)
