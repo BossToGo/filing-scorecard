@@ -11,7 +11,8 @@ from src.data.company import DEMO_TICKERS, SecError, load_company
 from src.gates import check_gates
 from src.settings import load_settings
 from ui.inputs import PriceError, parse_price
-from ui.messages import TECHNICAL_DETAILS, header_warnings, sec_error_message, stop_message
+from ui.messages import (EMPTY_TICKER, TECHNICAL_DETAILS, UNEXPECTED_ERROR, header_warnings, sec_error_message,
+                         stop_message)
 from ui.results import check_results
 from ui.scorecard import render_scorecard
 from ui.sources import render_sources
@@ -49,6 +50,10 @@ if request is None:
     st.stop()
 
 ticker, price_text, demo = request
+if not ticker:  # "Other ticker" chosen but nothing typed: load nothing
+    st.error(EMPTY_TICKER)
+    st.stop()
+
 try:
     price = parse_price(price_text)
 except PriceError as error:
@@ -62,6 +67,11 @@ except SecError as error:
     st.error(sec_error_message(error, ticker, demo))
     with st.expander(TECHNICAL_DETAILS, expanded=False):
         st.code(str(error), language=None)
+    st.stop()
+except Exception as error:  # any other problem while reading the data: no crash, a message and the details
+    st.error(UNEXPECTED_ERROR)
+    with st.expander(TECHNICAL_DETAILS, expanded=False):
+        st.code(f"{type(error).__name__}: {error}", language=None)
     st.stop()
 
 # --- data-quality gates (SPEC 2.4.1 §10) -------------------------------------------------------------------------

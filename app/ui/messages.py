@@ -18,6 +18,9 @@ NEXT_AFTER_STOP = "Pick one of the five demo companies, or type another ticker."
 NOT_FULLY_CHECKED = "Not fully checked: read automatically, not compared by hand for this company."
 OLD_REPORT = "Latest annual report is old: filed on {filed}, more than {months} months before the data was read."
 TECHNICAL_DETAILS = "Technical details"
+# Igor's review of #36; proposed by a review assistant and accepted by Simon (D) on 23 November 2026.
+EMPTY_TICKER = "Type a ticker first."
+UNEXPECTED_ERROR = "Something went wrong while reading the data. Try again, or switch on demo mode."
 
 _STOPS = {
     "industry": "Not supported: {name} is in an industry these checks do not cover (banks, insurers, real estate "
