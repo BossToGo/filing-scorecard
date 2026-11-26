@@ -10,7 +10,7 @@ The tool will change not only what the customer sees but also what the bank must
 - **Data and IT** connects the tool to the bank's own share quote (instead of the price typed by hand in the demo), updates the data, and checks each new annual report.
 - **Model validation and risk** reviews the thresholds used by the checks, the tests, and the hand reconciliation of the figures. Because the calculation uses fixed rules and no AI, the same inputs always give the same result, which can be audited.
 - **Compliance** confirms that the tool stays information, never advice, and approves showing scores next to the order screen.
-- **Advisers and customer service** can explain what the scorecard shows when a customer asks, for example why a check says "insufficient data" or why a company shows "no dividend paid".
+- **Advisers and customer service** can explain what the scorecard shows when a customer asks, for example why a check says "not assessed" or why a company shows "no dividend paid".
 - **Product owner** decides where and how the tool appears in the app (next to the order screen) and which companies are shown.
 
 So, the customer remains the only one who decides on the investment: the tool will never recommend buying or selling. What changes is that the customer now has a checking step before placing the order. They see which checks the company passes or fails and can trace each figure back to its source, although this does not guarantee a good investment decision.
