@@ -1,6 +1,6 @@
 """The overview above the tabs, drawn without a browser (Streamlit AppTest; slice S10c). Owner: A.
 
-Expected texts are the hand-worked values of docs/acceptance.md, "Overview (S10c)" (AC12 to AC14); the screen only
+Expected texts are the hand-worked values of docs/acceptance.md, "Overview (S10c)" (AC16 to AC18; numbered AC12 to AC14 until 26 November); the screen only
 shows what `src.overview` prepared, so these tests check that it shows all of it, and shows "n/a" with a reason.
 """
 
@@ -46,7 +46,7 @@ def visible(at: AppTest) -> str:
     return " ".join(html.unescape(text).split())
 
 
-def test_ac12_coca_cola_key_figures_coverage_and_balance_sheet_are_shown():
+def test_ac16_coca_cola_key_figures_coverage_and_balance_sheet_are_shown():
     text = shown(run("KO"))
     for expected in ("47.94", "+1.9%", "28.7", "+7.5 pp", "13.11", "+23.3%", "5.30", "+11.7%", "vs FY2024",
                      "60.3%", "USD 3.48 bn", "Dividends above free cash flow", "1.46×", "0001628280-26-010047",
@@ -68,13 +68,13 @@ def test_the_chart_has_a_table_view_with_the_same_figures():
         assert expected in text, expected
 
 
-def test_ac13_amazon_shows_no_dividend_paid():
+def test_ac17_amazon_shows_no_dividend_paid():
     text = shown(run("AMZN"))
     assert "No dividend paid" in text
     assert "0.0%" not in text
 
 
-def test_ac14_a_missing_figure_shows_na_with_its_reason_never_zero():
+def test_ac18_a_missing_figure_shows_na_with_its_reason_never_zero():
     at = run("SYN", "operating_cash_flow")
     text = shown(at)
     assert "n/a" in text and "operating cash flow for FY2025: not in the filing" in text
@@ -152,7 +152,7 @@ def test_without_check_results_there_is_no_scorecard_panel():
 
 def test_amazon_panel_says_no_dividend_paid():
     # was a search of the HTML source, where the text sat only in the aria-label; now the visible text (Emma's
-    # review of #60, SPEC §3 and AC15; rule 14.6, agreed by Igor)
+    # review of #60, SPEC §3 and AC19; rule 14.6, agreed by Igor)
     seen = visible(run_with_checks("AMZN"))
     assert "No dividend paid" in seen and "0 passed of 1 assessed" in seen
 

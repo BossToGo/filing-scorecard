@@ -82,10 +82,10 @@ def test_synthetic_balance_sheet_figures():
     assert (rows["Current ratio"].text, rows["Current ratio"].kind) == ("1.50×", "derived")
 
 
-# --- the demo companies (AC12, AC13) -------------------------------------------------------------------------
+# --- the demo companies (AC16, AC17) -------------------------------------------------------------------------
 
 
-def test_ac12_coca_cola_overview():
+def test_ac16_coca_cola_overview():
     data = load_company("KO", demo=True)
     got = figures(data)
     assert (got["Revenue"].text, got["Revenue"].change) == ("USD 47.94 bn", "+1.9%")
@@ -99,7 +99,7 @@ def test_ac12_coca_cola_overview():
     assert {f.label: f.text for f in ov.balance}["Current ratio"] == "1.46×"
 
 
-def test_ac12_coca_cola_filing_details():
+def test_ac16_coca_cola_filing_details():
     filing = overview(load_company("KO", demo=True)).filing
     assert (filing.form, filing.accession) == ("10-K", "0001628280-26-010047")
     assert filing.filed == "20 February 2026"
@@ -107,7 +107,7 @@ def test_ac12_coca_cola_filing_details():
     assert (filing.metrics, filing.records) == (27, 119)
 
 
-def test_ac13_amazon_shows_no_dividend_paid_never_zero_percent():
+def test_ac17_amazon_shows_no_dividend_paid_never_zero_percent():
     cover = overview(load_company("AMZN", demo=True)).coverage
     assert cover.status == "no_dividend"
     assert cover.percent is None
@@ -116,17 +116,17 @@ def test_ac13_amazon_shows_no_dividend_paid_never_zero_percent():
     assert cover.note == "No dividends paid in FY2025. The Sources tab shows how this was read."
 
 
-# --- edge rules (AC14; Igor, 25 November) --------------------------------------------------------------------
+# --- edge rules (AC18; Igor, 25 November) --------------------------------------------------------------------
 
 
-def test_ac14_a_missing_year_gives_no_change_never_zero():
+def test_ac18_a_missing_year_gives_no_change_never_zero():
     data = changed(synthetic.company_data(), "net_income", FY1, None)
     net = figures(data)["Net income"]
     assert (net.text, net.change, net.direction) == ("USD 140 m", "n/a", None)
     assert "2024" in net.note
 
 
-def test_ac14_missing_operating_cash_flow_leaves_free_cash_flow_and_coverage_open():
+def test_ac18_missing_operating_cash_flow_leaves_free_cash_flow_and_coverage_open():
     data = changed(synthetic.company_data(), "operating_cash_flow", FY0, None)
     ov = overview(data)
     fcf = {f.label: f for f in ov.key_figures}["Free cash flow"]
