@@ -63,7 +63,7 @@ Agreed visuals:
    are not a rating of the share and not advice. The overview's panel shows a plain radar of the four areas (share of
    assessed checks passed, centre 0%, edge 100%, in the accent colour; an area that cannot be scored is labelled and
    left off the shape) next to each area's six marks (square, as on the score chart) with "N passed of M assessed".
-   No total and no area to read first (Igor's proposal on #60, 26 November, for the group to decide).
+   No total and no area to read first (agreed by the whole group on #60, 26 November).
 2. **Check details**: tables, not charts. The overview's five-year chart (below) is the one chart so far (#47). Every figure with unit and fiscal year; missing figures shown as "n/a"
    with the reason, never as 0.
 3. The synthetic test company always carries a "SYNTHETIC DATA" mark.
