@@ -21,8 +21,7 @@ from ui.results import Market
 NEEDS_PRICE = ("Needs a share price. Type it in US dollars in the Share price box above, then show the scorecard "
                "again: the estimate and the valuation checks use it.")
 ESTIMATE_TITLE = "The estimate"
-ESTIMATE_NOTE = ("The cash-flow estimate per share under the assumptions below (the equity method of SPEC §8). It is "
-                 "information, not advice.")
+ESTIMATE_NOTE = "The cash-flow estimate per share under the assumptions below. It is information, not advice."
 NO_ESTIMATE = "No estimate."
 # Plain labels for the engine's metric names (SPEC §3: never "fair value" or the internal names on screen)
 LABELS = {
