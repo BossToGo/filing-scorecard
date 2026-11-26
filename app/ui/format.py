@@ -43,11 +43,18 @@ CHECK_UNITS = {
 }
 
 
+MINUS = "−"  # the minus sign U+2212, as in the rest of the app (A's overview; Greg's note on #47)
+
+
+def _signed(text: str) -> str:
+    """A number written by Python, with the minus sign instead of a hyphen; "-0.0" reads "0.0"."""
+    if text.lstrip("-").strip("0.,") == "":
+        return text.lstrip("-")
+    return MINUS + text[1:] if text.startswith("-") else text
+
+
 def _write(number: float, style: _Style, decimals: int) -> str:
-    text = f"{number * style.scale:,.{decimals}f}"
-    if text.lstrip("-").strip("0.,") == "":  # "-0.0" -> "0.0"
-        text = text.lstrip("-")
-    return style.template.format(text)
+    return style.template.format(_signed(f"{number * style.scale:,.{decimals}f}"))
 
 
 def _sign(a: float, b: float) -> int:
@@ -86,7 +93,7 @@ def usd_m(amount: float, decimals: int = 0) -> str:
 
 def share_price(price: float) -> str:
     """The share price the user typed, in USD with two decimals: 65.4 -> "USD 65.40"."""
-    return f"USD {price:,.2f}"
+    return f"USD {_signed(f'{price:,.2f}')}"
 
 
 def in_style(value: float, style: str) -> str:
@@ -101,7 +108,7 @@ def rate(value: float) -> str:
 
 def beta(value: float) -> str:
     """A beta, with two decimals: 1.00665 -> "1.01" (S10b)."""
-    return f"{value:,.2f}"
+    return _signed(f"{value:,.2f}")
 
 
 def fact_value(fact: Fact) -> str:
@@ -114,9 +121,9 @@ def fact_value(fact: Fact) -> str:
     if fact.unit == "USD":
         return usd_m(value)
     if fact.unit == "USD/shares":
-        return f"USD {value:,.2f} per share"
+        return f"USD {_signed(f'{value:,.2f}')} per share"
     if fact.unit == "shares":
-        return f"{value / 1e6:,.1f} m shares"
+        return f"{_signed(f'{value / 1e6:,.1f}')} m shares"
     if fact.unit == "days":
-        return f"{value:,.0f} days"
-    return f"{value:,.2f}"  # "pure": a ratio or multiple without a unit
+        return f"{_signed(f'{value:,.0f}')} days"
+    return _signed(f"{value:,.2f}")  # "pure": a ratio or multiple without a unit
