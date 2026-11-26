@@ -287,6 +287,21 @@ def test_appendix_a_d2_is_not_assessed_without_share_price_and_benchmark():
     assert d2.status == "insufficient_data" and d2.value is None
 
 
+def test_appendix_a_d2_with_share_price_and_market_yield():
+    # CALC-D2 (S9): 56 ÷ (30.00 × 100) = 1.867% > 1.5% → pass, signed off by Flo on PR #5.
+    expected = synthetic.expected_check("D2")
+    yield_fact = Fact("dividend_yield", synthetic.inputs()["benchmarks"]["market_dividend_yield"], "pure", None,
+                      date(2025, 12, 31), "assumption", None, None, None, None, None,
+                      "market dividend yield of the synthetic company (SYNTHETIC DATA: SPEC Appendix A)")
+    d2 = {r.check_id: r for r in dividend_checks(synthetic.company_data(), SETTINGS,
+                                                 share_price=synthetic.inputs()["share_price"],
+                                                 market_dividend_yield=yield_fact)}["D2"]
+    assert d2.status == expected["result"]
+    assert as_shown(d2.value, expected["unit"]) == pytest.approx(expected["value"], abs=synthetic.tolerance(expected))
+    assert as_shown(d2.threshold, expected["unit"]) == pytest.approx(expected["compared_with"],
+                                                                      abs=synthetic.tolerance(expected))
+
+
 def test_ac3_tier_1_dividend_score_of_the_synthetic_company():
     expected = synthetic.expected_tier1()
     checks = dividend_checks(synthetic.company_data(), SETTINGS)
@@ -408,3 +423,143 @@ def test_the_sign_warning_is_named_only_for_a_figure_read_from_a_filing():
     assert d6.status == "insufficient_data"
     assert "positive amount" in d6.explanation and "sign warning" not in d6.explanation
 
+
+
+# --- S9: D2 switched on (yield above the market). Flo's hand working, docs/acceptance.md "S9 edge cases" --------------
+
+
+def with_shares(data: CompanyData, millions: float | None) -> CompanyData:
+    """The test company with a share count at FY0 (None: no share count in the data)."""
+    items = {metric: dict(by_year) for metric, by_year in data.items.items()}
+    if millions is not None:
+        items["shares"] = {date(2025, 12, 31): Fact("shares", millions * MILLION, "shares", None, date(2025, 12, 31),
+                                                     "reported", "test:shares", "TEST", "test-company", None, None,
+                                                     "test company")}
+    return CompanyData(ticker="TST", cik="0000000001", name="Test Co. (test data)", sic=None, sic_description=None,
+                       fiscal_year_end="1231", latest_10k_filed=None, retrieved=None, items=items)
+
+
+MARKET_YIELD = Fact("dividend_yield", 0.015, "pure", None, date(2025, 12, 31), "assumption", None, None, None, None,
+                    None, "US market dividend yield of a test (test data)")
+
+
+def d2(dividends_fy0: float, *, price=20.0, shares=100, market_yield=MARKET_YIELD):
+    data = with_shares(company([dividends_fy0] * 5), shares)
+    return {r.check_id: r for r in dividend_checks(data, SETTINGS, share_price=price,
+                                                   market_dividend_yield=market_yield)}["D2"]
+
+
+def test_s9_e9_yield_equal_to_the_market_yield_fails():
+    result = d2(30)  # 30 ÷ (20.00 × 100) = 1.50%, against 1.50%
+    assert (result.status, result.value, result.threshold) == ("fail", pytest.approx(0.015), 0.015)
+
+
+def test_s9_e10_yield_below_the_market_yield_fails():
+    result = d2(20)  # 20 ÷ (20.00 × 100) = 1.00%, against 1.50%
+    assert (result.status, result.value, result.threshold) == ("fail", pytest.approx(0.010), 0.015)
+
+
+@pytest.mark.parametrize("missing, words", [
+    ({"price": None}, "share price"), ({"market_yield": None}, "dividend yield"), ({"shares": None}, "share count")])
+def test_d2_without_price_market_yield_or_shares_is_insufficient_data(missing, words):
+    result = d2(30, **missing)
+    assert (result.status, result.value) == ("insufficient_data", None)
+    assert words in result.explanation
+
+
+def test_d2_is_not_applicable_when_no_dividend_is_paid():
+    data = with_shares(company([10, 10, 10, 10, 0]), 100)
+    result = {r.check_id: r for r in dividend_checks(data, SETTINGS, share_price=20.0,
+                                                     market_dividend_yield=MARKET_YIELD)}["D2"]
+    assert result.status == "not_applicable"
+
+
+def test_d2_yield_halves_when_the_share_count_doubles():
+    # The rule itself (dividends ÷ (price × shares)): every other test company has 100 million shares, so a formula
+    # that ignored the share count would pass them all (planted-bug check, 25 November).
+    assert d2(30, shares=200).value == pytest.approx(d2(30, shares=100).value / 2)
+
+
+# --- Review of 25 November (Flo: "yes, as recommended"): D2's guards, from the rules themselves --------------------
+
+def missing_yield() -> Fact:
+    return Fact("dividend_yield", None, "pure", None, date(2025, 12, 31), "missing", None, None, None, None, None,
+                "the source cell is blank (test)")
+
+
+@pytest.mark.parametrize("bad, words", [
+    ({"price": 0.0}, "a share price above zero"), ({"price": -1.0}, "a share price above zero"),
+    ({"price": float("nan")}, "a share price above zero"), ({"price": float("inf")}, "a share price above zero"),
+    ({"shares": 0}, "share count"), ({"shares": -100}, "share count"),
+    ({"market_yield": missing_yield()}, "the source cell is blank (test)"),
+    ({"market_yield": Fact("dividend_yield", 0.0, "pure", None, date(2025, 12, 31), "assumption", None, None, None,
+                           None, None, "test")}, "zero or negative"),
+    ({"market_yield": Fact("dividend_yield", -0.01, "pure", None, date(2025, 12, 31), "assumption", None, None, None,
+                           None, None, "test")}, "zero or negative"),
+])
+def test_r_d2_bad_inputs_give_insufficient_data_naming_them(bad, words):
+    result = d2(30, **bad)
+    assert (result.status, result.value) == ("insufficient_data", None)
+    assert words in result.explanation
+
+
+def test_r_d2_with_dividends_fy0_missing_is_insufficient_data_naming_them():
+    data = with_shares(company([10, 10, 10, 10, None]), 100)
+    r = {x.check_id: x for x in dividend_checks(data, SETTINGS, share_price=20.0, market_dividend_yield=MARKET_YIELD)}
+    assert (r["D1"].status, r["D2"].status, r["D2"].value) == ("insufficient_data", "insufficient_data", None)
+    assert "dividends paid" in r["D2"].explanation
+
+
+def test_r_d2_yields_that_round_to_the_same_number_are_shown_with_more_decimals():
+    # 29.998 ÷ 2,000 = 1.4999%, against 1.50%: with two decimals both would read "1.50%" next to a fail.
+    result = d2(29.998)
+    assert result.status == "fail"
+    assert "1.4999%" in result.explanation and "1.5000%" in result.explanation
+    e9 = d2(30).explanation  # exactly equal (S9-E9): two decimals
+    assert "Dividend yield 1.50% " in e9 and "against 1.50% for the US market" in e9
+
+
+def test_appendix_a_dividend_area_score_with_d2():
+    # CALC-S, signed off by Emma (E): dividend 6 of 6 once D2 is assessed (share price 30.00, market yield 1.5%).
+    from src.scores import area_score
+
+    yield_fact = Fact("dividend_yield", synthetic.inputs()["benchmarks"]["market_dividend_yield"], "pure", None,
+                      date(2025, 12, 31), "assumption", None, None, None, None, None,
+                      "market dividend yield of the synthetic company (SYNTHETIC DATA: SPEC Appendix A)")
+    found = dividend_checks(synthetic.company_data(), SETTINGS, share_price=synthetic.inputs()["share_price"],
+                            market_dividend_yield=yield_fact)
+    score = area_score(found)
+    assert (score.passed, score.assessed) == (synthetic.expected_scores()["dividend"], 6)
+
+
+# --- Review round 2 (Flo: option A, 25 November): a yield equal to the market's by hand fails (as S9-E9) ---------------
+# Flo's hand working: 30,150 ÷ (2.01 × 1,000,000) = 30,150 ÷ 2,010,000 = 0.015, exactly 1.5% (row S9-T2).
+
+def test_s9_t2_a_yield_equal_to_the_market_yield_by_hand_fails():
+    result = d2(0.03015, price=2.01, shares=1)
+    assert result.status == "fail"
+    assert "Dividend yield 1.50% " in result.explanation and "against 1.50% for the US market" in result.explanation
+
+
+def test_t_d2_differences_of_one_part_in_a_trillion_are_ties_and_one_in_a_million_counts():
+    assert d2(30 * (1 + 1e-12)).status == "fail"
+    assert d2(30 * (1 + 1e-6)).status == "pass"
+
+
+# --- Igor's review of #52 (25 November; Flo: option (a), "yes, (a) and plan") ---------------------------------------
+
+def test_igor_2_without_the_price_and_market_yield_d2_is_not_assessed_yet():
+    # Until S10b the screen calls dividend_checks(data, settings): the old wording, "not assessed yet" (Flo's (a)).
+    result = d2(30, price=None, market_yield=None)
+    assert result.explanation == ("This check is not assessed yet: it needs the share price and the US market "
+                                  "dividend yield.")
+    assert "not assessed yet" in d2(30, price=None).explanation
+
+
+def test_igor_1_a_yield_that_is_not_a_tie_never_prints_like_the_market_yield():
+    # 1.5% × (1 + 5 billionths) against 1.5%: not a tie under option A, but equal to six decimals.
+    import re
+
+    text = d2(30 * (1 + 5e-9)).explanation
+    shown, market = re.search(r"Dividend yield (\S+) .* against (\S+) for", text).groups()
+    assert shown != market, text
