@@ -73,7 +73,7 @@ V3:
   rule: "The value of all its shares at the price you typed, divided by its latest yearly profit (price to earnings), is lower than the average of companies in the same industry. A loss or zero profit fails the check."
 V4:
   name: "Price to earnings below the US market"
-  rule: "The value of all its shares at the price you typed, divided by its latest yearly profit (price to earnings), is lower than the average of the whole US stock market. A loss or zero profit fails the check."
+  rule: "The value of all its shares at the price you typed, divided by its latest yearly profit (price to earnings), is lower than the average of the whole US stock market, excluding financial companies. A loss or zero profit fails the check."
 V5:
   name: "Price to book below industry"
   rule: "The value of all its shares at the price you typed, divided by its equity (what the company owns minus what it owes, the part that belongs to its shareholders) at the latest year end (price to book), is lower than the average of companies in the same industry. Zero or negative equity fails the check."
