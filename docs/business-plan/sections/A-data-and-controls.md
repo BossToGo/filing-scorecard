@@ -10,7 +10,7 @@ The app uses four main inputs:
 |---|---|---|
 | SEC EDGAR | Five years of financial figures, share counts and filing dates | Updated when the company files its annual report. Saved copies are available, and the demonstration can run offline. |
 | Damodaran’s industry tables | Industry betas, profitability, P/E, P/B and dividend-yield comparisons, plus market benchmarks | Updated each January; we use the January 2026 edition (Damodaran, 2026). We save the tables with their date, but they can approach a year old between updates. |
-| FRED | The ten-year US Treasury rate, averaged over five years for the discount rate | The underlying series is published daily. The app downloads the five-year average when needed and keeps it only in memory, because FRED’s terms do not allow its data to be stored (FRED, n.d.). If FRED cannot be reached, and in the demonstration, it uses a dated five-year average computed from the US Treasury’s own daily yield-curve rates (US Department of the Treasury, n.d.). |
+| FRED | The ten-year US Treasury rate, averaged over five years for the discount rate | The underlying series is published daily. The app downloads the five-year average when needed and keeps it only in memory, because FRED’s terms require written consent to store its data (FRED, n.d.). If FRED cannot be reached, and in the demonstration, it uses a dated five-year average computed from the US Treasury’s own daily yield-curve rates (US Department of the Treasury, n.d.). |
 | Share price | The price used in valuation comparisons | Customers enter it themselves in the prototype. In a bank deployment, it would come from the bank’s quote. |
 
 Saved copies help keep the app available during an outage. However, availability and freshness are different: a calculation can still run using information that no longer reflects current conditions.
@@ -30,7 +30,7 @@ The most serious risk is an undetected error that makes a company appear financi
 - **Wrong figures:** The sources page identifies the filing, accession number and line item behind each financial input. Accounting checks help identify inconsistencies, including whether assets equal liabilities plus equity within a 1% tolerance.
 - **Missing figures:** Missing information stays missing and is never replaced with zero. Checks that require it show “not assessed”, with the reason.
 - **Limited verification:** Team members reconciled six figures for each of the five demonstration companies by hand against their annual reports, and all 30 match. Any other ticker displays “not fully checked”.
-- **Old information and outages:** Annual reports more than 15 months old display “old annual report”. Saved industry tables and rate fallbacks retain their dates. For bank deployment, these dates should be clearly visible wherever older inputs affect a result.
+- **Old information and outages:** Annual reports more than 15 months old display “Latest annual report is old”. Saved industry tables and rate fallbacks retain their dates. For bank deployment, these dates should be clearly visible wherever older inputs affect a result.
 - **Unsuitable companies:** The app does not produce an estimate when the cash flow model does not fit.
 - **Price errors:** Manual entry remains a weakness of the prototype. Using the bank’s quote and validating any remaining manual entries are proposed controls for deployment.
 - **Misinterpretation:** The app avoids trading recommendations and calls its valuation result “the estimate”, never “fair value”. A test keeps advice words such as “buy”, “sell”, “undervalued”, “cheap” and “expensive” out of every check text.
@@ -41,7 +41,7 @@ The app uses no AI internally and no analyst forecasts. Its calculations are rep
 
 **D. Limits we admit**
 
-The demonstration covers five large US companies, testing has focused on large US companies, and coverage is limited to US filers. Banks, insurers and real estate companies are outside scope. In this version, industry averages exist only for the industries of the five demonstration companies, so other tickers show “not assessed” for the industry comparisons. Annual reports may miss recent developments, while industry tables can become dated between yearly updates.
+The demonstration covers five large US companies, testing has focused on large US companies, and coverage is limited to US filers. Banks, insurers and real estate investment trusts (REITs) are outside scope. In this version, industry averages exist only for the industries of the five demonstration companies, so other tickers show “not assessed” for the industry comparisons. Annual reports may miss recent developments, while industry tables can become dated between yearly updates.
 
 The scorecard helps customers understand reported information. It does not remove investment risk or provide investment advice.
 
