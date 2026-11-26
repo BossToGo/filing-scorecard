@@ -14,14 +14,17 @@ overwritten, with one exception:
 
 trims the five companies' company facts again from the raw downloads in that folder, keeping the quarterly reports
 too (slice S2c, issue #71 item 1). No network and no app/.env are used. Each raw file must have exactly the size and
-SHA-256 checksum written in the company's provenance.json, so the new file comes from the very same download; only
-companyfacts.json and the "trimmed" line of its record change.
+SHA-256 checksum written in the company's provenance.json, so the new file comes from the very same download. All five
+are checked before any file is written, and each file is swapped in whole; only companyfacts.json and the "trimmed"
+line of its record change.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
+import re
 import sys
 from datetime import date
 from pathlib import Path
@@ -44,29 +47,48 @@ EVIDENCE = APP / "evidence" / "demo"
 FACTS_TRIMMED = "only Form 10-K, 10-K/A, 10-Q and 10-Q/A entries (dei: all forms)"
 
 
+def _shown(path: Path) -> str:
+    return str(path.relative_to(APP)) if path.is_relative_to(APP) else str(path)
+
+
 def write(path: Path, data: dict) -> None:
+    """Write JSON to a temporary file in the same folder, then swap it in, so an interrupted run never leaves a
+    half-written evidence file."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"  saved   {path.relative_to(APP)} ({path.stat().st_size:,} bytes)")
+    temporary = path.with_name(path.name + ".tmp")
+    temporary.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    os.replace(temporary, path)
+    print(f"  saved   {_shown(path)} ({path.stat().st_size:,} bytes)")
 
 
 def save(path: Path, data: dict) -> None:
     if path.exists():
-        print(f"  kept    {path.relative_to(APP)} (evidence is never overwritten)")
+        print(f"  kept    {_shown(path)} (evidence is never overwritten)")
         return
     write(path, data)
 
 
-def retrim_from_cache(cache: Path) -> None:
-    """Re-trim the five companyfacts.json files from the recorded raw downloads in `cache` (no network)."""
-    for ticker in DEMO:
-        print(ticker)
-        record_path = EVIDENCE / ticker / "provenance.json"
+def retrim_from_cache(cache: Path, evidence: Path = EVIDENCE, tickers: list[str] = DEMO) -> None:
+    """Re-trim the companyfacts.json files from the recorded raw downloads in `cache` (no network). Every company is
+    checked before anything is written: one raw file that is not the recorded download leaves the whole set as it
+    was (review of PR #72)."""
+    checked = []
+    for ticker in tickers:  # first pass: read and check, write nothing
+        record_path = evidence / ticker / "provenance.json"
         record = json.loads(record_path.read_text(encoding="utf-8"))
+        if not re.fullmatch(r"\d{10}", str(record["cik"])):
+            raise ValueError(f"{ticker}: the company number {record['cik']!r} in provenance.json is not 10 digits; "
+                             "nothing was written")
         facts_record = next(f for f in record["files"] if f["file"] == "companyfacts.json")
         raw = (cache / f"companyfacts_{record['cik']}.json").read_bytes()
-        check_same_download(raw, facts_record)  # raises if it is not the recorded download
-        write(EVIDENCE / ticker / "companyfacts.json", trim_companyfacts(json.loads(raw), DEMO_FORMS))
+        try:
+            check_same_download(raw, facts_record)
+        except ValueError as error:
+            raise ValueError(f"{ticker}: {error}; nothing was written") from None
+        checked.append((ticker, record_path, record, facts_record, raw))
+    for ticker, record_path, record, facts_record, raw in checked:  # second pass: write
+        print(ticker)
+        write(evidence / ticker / "companyfacts.json", trim_companyfacts(json.loads(raw), DEMO_FORMS))
         facts_record["trimmed"] = (f"{FACTS_TRIMMED}; re-trimmed on {date.today().isoformat()} from this same "
                                    "download, size and SHA-256 checksum checked (slice S2c, issue #71)")
         write(record_path, record)

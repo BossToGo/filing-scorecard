@@ -28,6 +28,9 @@ test and every member's work run on these files. **Never edit them by hand** (SP
   `companyfacts.json` and the "trimmed" line of its record. The checksums, retrieval times and submissions files are
   unchanged; every demo company's annual figures and warnings are identical with and without the 10-Q entries
   (`app/tests/integration/test_twelve_months_demo.py`). The five files grew from about 12 MB to about 33 MB.
+- **Has a file changed since?** `test_the_saved_company_facts_have_not_changed_since_the_re_trim` pins a SHA-256 of
+  each file's content (its JSON with sorted keys, so line endings do not matter): a hand edit fails it. Anyone with
+  the downloads of 2026-11-18 can repeat the re-trim with the command above; `git status` must then show no change.
 - **Made by:** `app/scripts/fetch_demo_data.py` (run from `app/`; needs `SEC_USER_AGENT` in `app/.env`). Raw
   downloads stay in `app/.cache/sec/` (git-ignored). Use is allowed for the demo "for now" (decision log,
   2026-11-18, SPEC §16.4).

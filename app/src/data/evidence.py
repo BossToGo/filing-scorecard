@@ -22,7 +22,8 @@ KEEP_ALL_FORMS: tuple[str, ...] = ("dei",)
 
 
 def trim_companyfacts(raw: dict, forms: tuple[str, ...] = ANNUAL_FORMS) -> dict:
-    """A copy of a companyfacts file with only annual-report entries; concepts or units left empty are dropped."""
+    """A copy of a companyfacts file with only the entries of `forms` (annual reports by default; `DEMO_FORMS` for the
+    demo files); cover-page (`dei`) entries keep every form; concepts or units left empty are dropped."""
     trimmed = {key: value for key, value in raw.items() if key != "facts"}
     facts = {}
     for taxonomy, concepts in raw.get("facts", {}).items():
