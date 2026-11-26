@@ -45,7 +45,9 @@ def test_jpmorgan_is_not_supported_and_shows_no_score_ac2():
         "Not supported: JPMORGAN CHASE & CO is in an industry these checks do not cover (banks, insurers, real "
         "estate trusts; SEC industry code 6021). Pick one of the five demo companies, or type another ticker."]
     shown = "\n".join(m.value for m in app.markdown)
-    assert "passed of" not in shown and "fs-block" not in shown  # no score chart
+    # Label change (rule 14.6, Simon's written agreement of 25 November 2026): the marks' class is "fs-mk" since the
+    # S10 design (it was "fs-block"); with the old name this check would pass without checking anything.
+    assert "passed of" not in shown and "fs-mk" not in shown  # no score chart
     assert not app.dataframe and not app.expander  # no checks, no sources
 
 
@@ -89,6 +91,7 @@ def test_an_empty_other_ticker_asks_for_one_and_loads_nothing(monkeypatch):
     assert [e.value for e in app.error] == ["Type a ticker first."]
     assert calls == []
     assert not app.header and not app.expander
+    assert not any(m.value.startswith("<h1") for m in app.markdown)  # no company heading either (S10 design)
 
 
 def test_an_invalid_price_still_says_how_to_type_it_v2():
