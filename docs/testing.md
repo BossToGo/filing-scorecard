@@ -56,8 +56,8 @@ years are below FY0; `test_p2_compares_with_four_years_earlier_not_the_year_befo
 | H6-a | H6 | comparison: exactly 5 times fails | 4: `test_six_checks_and_strict_cover_and_debt_boundaries`, `test_h6_does_not_require_debt_when_operating_profit_and_interest_are_known` and 2 more |
 | H6-b | H6 | inputs swapped: interest / operating income | 7: `test_appendix_a_past_performance_and_health[H6]`, `test_ac3_tier_1_financial_health_score_of_the_synthetic_company` and 5 more |
 
-All 12 caught. Each exact boundary (40% for H3, 20% for H5, 5 times for H6, equal assets for H1, an unchanged
-share for H4) has its own test, so a changed comparison is caught even where Appendix A is not at the boundary.
+All 12 caught. The exact boundaries (equal assets for H1, 40% for H3, an unchanged share for H4, 20% for H5,
+5 times for H6) are tested directly, so a changed comparison is caught even where Appendix A is not at the boundary.
 
 ### S4 (benchmark loader, `app/src/benchmarks/loader.py`)
 
