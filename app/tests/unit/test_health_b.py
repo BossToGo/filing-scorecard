@@ -395,3 +395,27 @@ def test_h6_a_half_year_figure_is_not_used_as_a_full_year(metric):
     latest = company().fact(metric, date(2025, 12, 31))
     data = company().with_fact(replace(latest, period_start=date(2025, 7, 1)))
     assert run(data)["H6"].status == "insufficient_data"
+
+
+def test_h3_net_cash_is_described_as_net_cash_with_a_minus_sign():
+    # Debt 40 less cash 60 = -20, which is -20% of equity 100: below 40% -> pass, described as net cash.
+    result = run(change(company(), "cash", 60))["H3"]
+    assert result.status == "pass"
+    assert "net cash" in result.explanation and "−20.00%" in result.explanation
+    assert not re.search(r"(?<![\w])-\d", result.explanation)
+
+
+def test_h6_an_operating_loss_does_not_cover_interest():
+    # Operating income -5 against interest 1: a loss covers no interest -> fail, and the sentence does not say
+    # it "covered" interest "-5.00 times".
+    result = run(change(company(), "operating_income", -5))["H6"]
+    assert result.status == "fail"
+    assert "loss" in result.explanation and "covered" not in result.explanation
+    assert not re.search(r"(?<![\w])-\d", result.explanation)
+
+
+def test_h_sentences_write_negative_amounts_with_a_minus_sign():
+    data = change(company(), "equity", -50)
+    for result in run(data).values():
+        assert not re.search(r"(?<![\w])-\d", result.explanation), result.explanation
+    assert "USD −" in run(data)["H3"].explanation
