@@ -74,3 +74,25 @@ industry, and V4's market row with financial companies.
 **Summary:** 28 deliberate breaks in B's area, 28 caught, 1 test added. The independent read-only review of B's
 code by a member of another area (SPEC §15) is still to come.
 
+## Break-it round (S18), part B: Flo's read-only review and what was done
+
+Flo (C) reviewed P1–P6, H1–H6 and the benchmark loader read-only on 26 November (#64): no wrong result for the five
+companies; 16 deliberate breaks of his own, none caught at the time. Every finding is now a test or a written
+answer (SPEC §15).
+
+| # | Finding | Done |
+|---|---|---|
+| 1 | H5: the size of the ratio (`abs`) passed all tests | Test: operating cash flow −50 against debt 100 fails (`test_h5_negative_operating_cash_flow_fails`) |
+| 2 | P6: comparing sizes without the sign passed | Test: −20% now against −10% three years earlier fails (`test_p6_a_worse_return_fails_even_when_both_years_are_losses`) |
+| 3 | A mistyped benchmark value passed | Test: the 30 ROE, margin, P/E, P/B and unlevered-beta values and firm counts match Damodaran's own web tables of the January 2026 edition (`test_benchmark_value_matches_damodarans_published_table`); Flo's five typos are each caught. The six dividend yields are not on those pages and stay checked against `divfund.xls` only |
+| 4 | Guards removed without a failure: full-year flows, negative debt (H3–H5), negative revenue (P5), negative capital employed (P6), a benchmark in a wrong unit | One test each; the nine breaks are now caught |
+| 5 | P3 said "faster" when profit fell | Fixed: "the latest change is higher than the average". Whether P3 should pass when profit fell by less than its average decline is the SPEC §7 formula (latest change > average change), kept as written |
+| 6 | H6's "reported zero debt" exception cannot apply | Kept, no change: the data layer always gives financial debt as `derived` (the sum of debt lines) or `missing` (`resolver.py`, `debt()`), so a company with no debt and no interest gets "insufficient data", the cautious result. The rule is SPEC §7 and works if debt is ever reported directly |
+| 7 | Industry ROE −0.17% and 0.10% | Confirmed against Damodaran's web table (finding 3); the weak hurdle is recorded in `docs/benchmarks.md` |
+| 8 | H6 passes on any zero interest; SPEC says "reported as 0" | Kept, no change: interest expense is only `reported` or `missing` in the data layer and in the five companies' saved data, so any zero is a reported zero; an assumed zero appears only in the rule tests' made-up company, and changing the rule would mean editing one of those tests (rule 14.6) for no real case |
+| 9 | After a change of fiscal year end, some checks are "insufficient data" | Kept: SPEC §5.3 rule 9 ends the five-year window at the gap, so "four years earlier" is never a different period |
+| 10 | Negative figures read oddly (H3 "about −1.36% of equity", H6 "covered … −5.00 times") | Fixed: H3 names net cash, H6 with an operating loss says there was no operating profit to pay interest; every negative is written with "−" |
+| 11 | P1 is "insufficient data" with one year missing | Kept: a missing input is never guessed (SPEC §5.2); four known profitable years out of five are not five known years |
+
+No P or H result changed for the five companies or Appendix A (72 of 72 identical); only sentences did.
+
