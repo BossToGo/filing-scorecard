@@ -39,3 +39,23 @@ tests); one line changed at a time, and `git status` confirmed the source was re
 All 12 caught. P2-a (FY-1 instead of FY-4) was at first caught by one test only, and not by Appendix A, where both
 years are below FY0; `test_p2_compares_with_four_years_earlier_not_the_year_before` was added for it.
 
+### H1–H6 (financial health)
+
+| Break | Check | What was broken | Caught by (failing tests) |
+|---|---|---|---|
+| H1-a | H1 | comparison: equal assets pass | 1: `test_six_checks_and_strict_cover_and_debt_boundaries` |
+| H1-b | H1 | inputs swapped | 3: `test_appendix_a_past_performance_and_health[H1]`, `test_ac3_tier_1_financial_health_score_of_the_synthetic_company` and 1 more |
+| H2-a | H2 | term dropped: total liabilities instead of long-term | 4: `test_appendix_a_past_performance_and_health[H2]`, `test_h2_subtracts_the_current_portion_from_total_liabilities` and 2 more |
+| H2-b | H2 | sign: liabilities plus current liabilities | 4: `test_appendix_a_past_performance_and_health[H2]`, `test_h2_subtracts_the_current_portion_from_total_liabilities` and 2 more |
+| H3-a | H3 | term dropped: gross debt, cash not deducted | 4: `test_appendix_a_past_performance_and_health[H3]`, `test_h3_uses_cash_and_is_not_gross_debt_to_equity` and 2 more |
+| H3-b | H3 | comparison: exactly at the 40% limit passes | 3: `test_six_checks_and_strict_cover_and_debt_boundaries`, `test_h3_uses_cash_and_is_not_gross_debt_to_equity` and 1 more |
+| H4-a | H4 | comparison: an unchanged share passes | 2: `test_six_checks_and_strict_cover_and_debt_boundaries`, `test_equal_decimal_debt_ratios_are_not_falling` |
+| H4-b | H4 | wrong year: latest equity used for the old ratio | 5: `test_appendix_a_past_performance_and_health[H4]`, `test_ac3_tier_1_financial_health_score_of_the_synthetic_company` and 3 more |
+| H5-a | H5 | comparison: exactly 20% fails | 2: `test_h5_includes_exactly_twenty_percent`, `test_decimal_cash_flow_equal_to_twenty_percent_passes_the_inclusive_rule` |
+| H5-b | H5 | divide by the sum: debt plus cash | 5: `test_appendix_a_past_performance_and_health[H5]`, `test_h3_nonpositive_equity_fails_without_dividing[0]` and 3 more |
+| H6-a | H6 | comparison: exactly 5 times fails | 4: `test_six_checks_and_strict_cover_and_debt_boundaries`, `test_h6_does_not_require_debt_when_operating_profit_and_interest_are_known` and 2 more |
+| H6-b | H6 | inputs swapped: interest / operating income | 7: `test_appendix_a_past_performance_and_health[H6]`, `test_ac3_tier_1_financial_health_score_of_the_synthetic_company` and 5 more |
+
+All 12 caught. Each exact boundary (40% for H3, 20% for H5, 5 times for H6, equal assets for H1, an unchanged
+share for H4) has its own test, so a changed comparison is caught even where Appendix A is not at the boundary.
+
