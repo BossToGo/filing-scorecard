@@ -463,3 +463,14 @@ def test_igor_6_the_real_engines_status_and_reason_reach_v1_v2_and_v6(data, stat
 def test_estimate_gap_is_plain_zero_on_a_tie():
     gap = estimate_gap(20.0 * (1 - 1e-12), 20.0)  # a tie under option A
     assert gap == 0.0 and math.copysign(1.0, gap) == 1.0 and f"{gap:.1%}" == "0.0%"
+
+
+# --- S18, break-it round (26 November): a break that no test caught --------------------------------------------------
+
+def test_a_company_without_any_fiscal_year_is_insufficient_data_in_the_whole_area():
+    # Break GV-no-years. As in the dividend checks: a fiscal year that is not in the data is a missing input.
+    no_years = CompanyData(ticker="NIL", cik="0000000002", name="No figures (test data)", sic=None,
+                           sic_description=None, fiscal_year_end=None, latest_10k_filed=None, retrieved=None,
+                           items={"shares": {YEAR_END: figure("shares", 100, unit="shares")}})
+    r = checks(Valuation("insufficient_data", "Insufficient data: no revenue (test).", ()), no_years)
+    assert [(x.status, x.value) for x in r.values()] == [("insufficient_data", None)] * 6
