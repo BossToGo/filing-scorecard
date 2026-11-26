@@ -417,3 +417,22 @@ def test_a_half_year_figure_is_not_used_as_a_full_year(metric, check):
     data = company().with_fact(replace(latest, period_start=date(2025, 7, 1)))
     result = run(data, {"operating_margin": benchmark("operating_margin", 0.1)})[check]
     assert result.status == "insufficient_data"
+
+
+def test_p3_wording_when_profit_fell_less_than_its_average_decline():
+    # Flo's case: 200 (FY-4), 100 (FY-1), 95 (FY0). Latest change 95 / 100 - 1 = -5%; average
+    # (95 / 200)^(1/4) - 1 = about -17.0% a year. -5% is higher than -17.0%, so P3 passes by the SPEC formula,
+    # but the sentence must not call a fall "faster" growth.
+    data = change(change(change(company(), "net_income", 2025, 95), "net_income", 2024, 100), "net_income", 2021, 200)
+    result = run(data)["P3"]
+    assert result.status == "pass"
+    assert "fell by about 5.00%" in result.explanation
+    assert "faster" not in result.explanation and "higher than the average" in result.explanation
+
+
+def test_negative_amounts_are_written_with_a_minus_sign_not_a_hyphen():
+    # On screen negatives use "−" (U+2212), as in the tables (#65); the sentences of P1-P6 must match.
+    data = change(change(company(), "equity", 2025, -5), "net_income", 2025, -1)
+    for result in run(data).values():
+        assert not re.search(r"(?<![\w])-\d", result.explanation), result.explanation
+    assert "USD −" in run(data)["P4"].explanation
