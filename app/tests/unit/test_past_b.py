@@ -73,6 +73,16 @@ def test_positive_profit_above_four_years_earlier_passes_p2():
     assert result.value == 2 and result.threshold == 1
 
 
+def test_p2_compares_with_four_years_earlier_not_the_year_before():
+    # Break-it round (S18): comparing with FY-1 instead of FY-4 was caught by only one test, so two direct cases.
+    # FY0 = 5, FY-1 = 9, FY-4 = 3: 5 > 3 and 5 > 0 -> pass (against FY-1 it would fail, 5 < 9).
+    data = change(change(change(company(), "net_income", 2025, 5), "net_income", 2024, 9), "net_income", 2021, 3)
+    assert run(data)["P2"].status == "pass"
+    # FY0 = 5, FY-1 = 3, FY-4 = 9: 5 < 9 -> fail (against FY-1 it would pass, 5 > 3).
+    data = change(change(change(company(), "net_income", 2025, 5), "net_income", 2024, 3), "net_income", 2021, 9)
+    assert run(data)["P2"].status == "fail"
+
+
 def test_latest_zero_profit_fails_p3_because_both_growth_rates_are_minus_one():
     # 0/1 - 1 = -1; (0/1) ** (1/4) - 1 = -1. Strict -1 > -1 is false.
     result = run(change(company(), "net_income", 2025, 0))["P3"]
