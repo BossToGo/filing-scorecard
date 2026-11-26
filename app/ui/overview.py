@@ -14,7 +14,8 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from src.contracts import CompanyData
-from src.overview import NA, Coverage, Figure, KeyFigure, Overview, Scorecard, Series, overview, scorecard
+from src.overview import (NA, RADAR_ORDER, Coverage, Figure, KeyFigure, Overview, Scorecard, Series, overview,
+                          radar_shape, scorecard)
 
 KIND_WORDS = {"reported": "Reported", "derived": "Derived", "assumption": "Assumption", "missing": "Not available"}
 ARROWS = {1: "▲", -1: "▼", 0: ""}
@@ -73,9 +74,6 @@ def _style() -> str:
   --ov-panel:{_theme_or('secondaryBackgroundColor', 'backgroundColor')}; --ov-accent:{_theme('primaryColor')};
   --ov-muted:color-mix(in srgb, currentColor 62%, transparent); --ov-line:color-mix(in srgb, currentColor 14%, transparent);
   font-variant-numeric:tabular-nums}}
-[data-testid="stSidebar"] {{min-width:264px !important; max-width:264px !important}}
-[data-testid="stMainBlockContainer"] {{max-width:none !important; padding-left:44px !important; padding-right:44px !important;
-  padding-top:24px !important}}
 [class*="st-key-ov_card"] {{background:var(--ov-panel); border-radius:12px !important; padding:22px 26px !important}}
 .fs-ov-h {{font-family:Georgia, 'Times New Roman', serif; font-weight:400; font-size:30px; line-height:1.15; white-space:nowrap;
   letter-spacing:-0.01em}}
@@ -109,19 +107,9 @@ table.fs-ov-rows td.fs-ov-kind.fs-ov-derived {{color:var(--ov-accent)}}
 table.fs-ov-rows td.fs-ov-num {{text-align:right; font-weight:600}}
 table.fs-ov-rows td.fs-ov-plain {{color:var(--ov-muted)}}
 .st-key-ov_card_scorecard [data-testid="stColumn"]:not(:first-child) {{border-left:1px solid var(--ov-line); padding-left:24px}}
-.fs-ov-area {{padding:12px 0; border-bottom:1px solid var(--ov-line)}}
 .fs-ov-caption {{text-align:center; font-size:14px; color:var(--ov-muted); margin-top:-6px}}
-.fs-ov-area-top {{font-size:17px; font-weight:600}}
-.fs-ov-area-top span {{display:block; font-weight:400; font-size:15px; color:var(--ov-muted); margin-top:2px}}
-.fs-ov-marks {{display:flex; gap:8px; margin-top:10px}}
-.fs-ov-area-note {{font-size:14px; color:var(--ov-muted); margin-top:8px}}
-.fs-ov-mk {{width:20px; height:20px; border-radius:4px; box-sizing:border-box; display:inline-grid; place-items:center;
-  font-size:11px; font-weight:800; line-height:1; flex:none; color:var(--ov-panel)}}
-.fs-ov-mk.fs-ov-pass {{background:var(--ov-pass)}}  .fs-ov-mk.fs-ov-fail {{background:var(--ov-fail)}}
-.fs-ov-mk.fs-ov-wait {{color:inherit; border:1.5px dashed color-mix(in srgb, currentColor 60%, transparent)}}
-.fs-ov-mk.fs-ov-none {{color:inherit; border:1px solid color-mix(in srgb, currentColor 35%, transparent)}}
-.fs-ov-legend {{display:flex; flex-wrap:wrap; gap:8px 20px; margin-top:16px; font-size:15px; color:var(--ov-muted)}}
-.fs-ov-legend > span {{display:inline-flex; align-items:center; gap:8px}}
+.fs-ov-read {{font-size:16px; line-height:1.55; margin-top:6px}}  .fs-ov-read p {{margin:0 0 12px}}
+.fs-ov-read b {{font-weight:600}}
 .fs-ov-foot {{display:flex; justify-content:space-between; gap:16px; font-size:14px; color:var(--ov-muted); margin:22px 0 8px}}
 .fs-ov-shell-bar {{display:flex; align-items:center; gap:20px; height:64px}}
 .fs-ov-brand {{display:flex; align-items:center; gap:14px; font-family:Georgia, 'Times New Roman', serif; font-size:30px}}
@@ -191,9 +179,8 @@ def _coverage(cover: Coverage) -> str:
     if cover.status in ("no_dividend", "missing"):
         note = f'<div class="fs-ov-note">{_e(cover.note)}</div>' if cover.note else ""
         return f'<div class="fs-ov">{head}{note}</div>'
-    share = f"{(cover.share or 0) * 100:.1f}"  # bar width only, from the prepared share
     fcf = _series_colours()[2 % len(_series_colours())]  # the free cash flow line's colour in the chart
-    fill = f"width:{share}%" + (f"; background:{fcf}" if fcf else "")
+    fill = f"width:{cover.bar_width}%" + (f"; background:{fcf}" if fcf else "")
     bars = (f'<div class="fs-ov-bar"><span>Free cash flow</span><b>{_e(cover.free_cash_flow)}</b></div>'
             f'<div class="fs-ov-track"><div class="fs-ov-fill" style="{fill}"></div></div>'
             f'<div class="fs-ov-bar"><span>Dividends paid</span><b>{_e(cover.dividends)}</b></div>'
@@ -238,38 +225,46 @@ def _table(series: Series) -> str:
     return f'<div class="fs-ov"><table class="fs-ov-rows"><tr><td></td>{head}</tr>{body}</table></div>'
 
 
-MARK_LOOKS = {"pass": ("fs-ov-pass", "✓", "Passed"), "fail": ("fs-ov-fail", "✕", "Failed"),
-              "not_assessed": ("fs-ov-wait", "", "Not assessed"), "not_applicable": ("fs-ov-none", "–", "Does not apply")}
-RADAR_ORDER = ("financial_health", "past_performance", "valuation", "dividend")  # top, right, bottom, left
-NOT_A_RATING = "Not a rating of the share and not advice."  # SPEC §3: under the radar and in the legend
-
-
-def _mark(look: str) -> str:
-    css, glyph, word = MARK_LOOKS[look]
-    return f'<span class="fs-ov-mk {css}" title="{word}" aria-hidden="true">{glyph}</span>'
+NOT_A_RATING = "Not a rating of the share and not advice."  # SPEC §3, under the radar
+HOW_TO_READ = (  # static words of the panel; every figure comes from src.overview
+    "<p><b>How to read it.</b> Each corner is one area of the scorecard. The further out the point, the larger the "
+    "share of that area's assessed checks that passed: the centre is 0% and the edge 100%.</p>"
+    "<p>An area with nothing to score (not assessed, or a check that does not apply) keeps its label but stays off "
+    "the shape, and the line breaks at its corner, so it never reads as 0%.</p>"
+    "<p>Each area's six checks, with their reasons, are listed in the score chart below.</p>")
 
 
 def _radar(card: Scorecard) -> go.Figure:
-    """Four axes, the share of assessed checks passed per area (centre 0%, edge 100%). An area with nothing assessed
-    keeps its axis and label but is left off the shape, so it never reads as 0%."""
+    """Four axes, the share of assessed checks passed per area (centre 0%, edge 100%). What to draw comes from
+    `src.overview.radar_shape`: lines only between neighbouring scored areas, a filled shape only when all four are
+    scored, so an area off the shape is never crossed through the centre."""
     areas = {a.area: a for a in card.areas}
+    shape = radar_shape(card)
     colour = _pass_colour()
     def name(k: str, side: bool) -> str:  # a side label on two lines ("Past / performance"), so it is not cut off
         return areas[k].label.replace(" ", "<br>", 1) if side else areas[k].label
 
-    labels = [f"<b>{name(k, i % 2)}</b><br><span style='color:{colour}'>{areas[k].share_text}</span>"
-              if areas[k].share is not None else f"<b>{name(k, i % 2)}</b><br>{areas[k].share_text}"
-              for i, k in enumerate(RADAR_ORDER)]
-    scored = [(label, areas[k].share * 100) for k, label in zip(RADAR_ORDER, labels) if areas[k].share is not None]
+    labels = {k: (f"<b>{name(k, i % 2)}</b><br><span style='color:{colour}'>{areas[k].share_text}</span>"
+                  if areas[k].share is not None else f"<b>{name(k, i % 2)}</b><br>{areas[k].share_text}")
+              for i, k in enumerate(RADAR_ORDER)}
+    r = dict(shape.points)
+    line = {"color": colour, "width": 3}
     fig = go.Figure()
-    fig.add_trace(go.Scatterpolar(r=[0] * len(labels), theta=labels, mode="markers", marker={"opacity": 0},
-                                  hoverinfo="skip", showlegend=False))  # keeps every axis, even unscored ones
-    if scored:
-        r = [v for _, v in scored] + [scored[0][1]]
-        theta = [label for label, _ in scored] + [scored[0][0]]
-        fig.add_trace(go.Scatterpolar(r=r, theta=theta, mode="lines+markers", fill="toself", showlegend=False,
-                                      line={"color": colour, "width": 3}, marker={"size": 9, "color": colour},
-                                      hoverinfo="skip"))
+    fig.add_trace(go.Scatterpolar(r=[0] * len(RADAR_ORDER), theta=[labels[k] for k in RADAR_ORDER], mode="markers",
+                                  marker={"opacity": 0}, hoverinfo="skip", showlegend=False))  # every axis, always
+    if shape.filled:
+        order = list(RADAR_ORDER) + [RADAR_ORDER[0]]
+        fig.add_trace(go.Scatterpolar(r=[r[k] for k in order], theta=[labels[k] for k in order], mode="lines+markers",
+                                      fill="toself", line=line, marker={"size": 9, "color": colour},
+                                      hoverinfo="skip", showlegend=False))
+    else:
+        for a, b in shape.edges:
+            fig.add_trace(go.Scatterpolar(r=[r[a], r[b]], theta=[labels[a], labels[b]], mode="lines", line=line,
+                                          hoverinfo="skip", showlegend=False))
+        if shape.points:
+            fig.add_trace(go.Scatterpolar(r=[r[k] for k, _ in shape.points], theta=[labels[k] for k, _ in shape.points],
+                                          mode="markers", marker={"size": 9, "color": colour}, hoverinfo="skip",
+                                          showlegend=False))
     grid = _option("borderColor")  # None: Plotly's own grey
     panel = _option("secondaryBackgroundColor") or _option("backgroundColor")
     fig.update_layout(
@@ -277,15 +272,16 @@ def _radar(card: Scorecard) -> go.Figure:
         paper_bgcolor=panel, plot_bgcolor=panel,
         polar={"bgcolor": panel, "gridshape": "linear",
                "angularaxis": {"rotation": 90, "direction": "clockwise", "categoryorder": "array",
-                               "categoryarray": labels, "gridcolor": grid, "linecolor": grid},
+                               "categoryarray": [labels[k] for k in RADAR_ORDER], "gridcolor": grid, "linecolor": grid},
                "radialaxis": {"range": [0, 100], "tickvals": [25, 50, 75, 100], "showticklabels": False,
                               "showline": False, "gridcolor": grid}})
     return fig
 
 
 def render_scorecard_panel(card: Scorecard, fiscal_year: int | None) -> None:
-    """The panel at the top of the overview: the radar of the four areas and each area's six marks with its count.
-    No total and no area to read first (the group's answers on #60, 26 November)."""
+    """The panel at the top of the overview: the radar of the four areas and how to read it. The six marks of each
+    area are in D's score chart below, with each check's name and reason, so the panel does not repeat them (Igor,
+    26 November). No total and no area to read first (the group's answers on #60)."""
     with st.container(border=True, key="ov_card_scorecard"):
         st.markdown(_heading("Checks by area", f"FY{fiscal_year} filing checks" if fiscal_year else "Filing checks"),
                     unsafe_allow_html=True)
@@ -295,15 +291,7 @@ def render_scorecard_panel(card: Scorecard, fiscal_year: int | None) -> None:
             st.markdown('<div class="fs-ov fs-ov-caption">Share of assessed checks passed per area<br>'
                         f"Centre 0% · edge 100%<br>{NOT_A_RATING}</div>", unsafe_allow_html=True)
         with right:
-            rows = "".join(
-                f'<div class="fs-ov-area" role="group" aria-label="{_e(a.label)}: {_e(a.count_text)}">'
-                f'<div class="fs-ov-area-top">{_e(a.label)}<span>{_e(a.short_text)}</span></div>'
-                f'<div class="fs-ov-marks">{"".join(_mark(m) for m in a.marks)}</div>'
-                + (f'<div class="fs-ov-area-note">{_e(a.note)}</div>' if a.note else "") + "</div>"
-                for a in card.areas)
-            legend = "".join(f"<span>{_mark(look)}{word}</span>" for look, (_, _, word) in MARK_LOOKS.items())
-            st.markdown(f'<div class="fs-ov">{rows}<div class="fs-ov-legend">{legend}<span>{NOT_A_RATING}</span>'
-                        "</div></div>", unsafe_allow_html=True)
+            st.markdown(f'<div class="fs-ov fs-ov-read">{HOW_TO_READ}</div>', unsafe_allow_html=True)
 
 
 NAV = (("Overview", "ov-overview", '<rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" '
