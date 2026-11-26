@@ -234,8 +234,10 @@ hand (34.275 gives 34.28; Python's own format gave 34.27, fixed in `src/overview
 59,515 − 61,306 = −1,791 (negative, not drawn); financial debt 39,973 ÷ 59,515 = 0.67165 → 67.2%; cash 774 ÷ 59,515 =
 0.01300 → 1.3%.
 
-Worked by Claude Code from the listed figures; to be checked by Igor (A) with a calculator before the merge (rule
-14.5).
+Worked by Claude Code from the listed figures. Checked by hand: Igor (A), 27 November 2026, every value above with a
+calculator from the listed figures, and the McDonald's right-hand column (39,973 + 1,149 + 20,184 = 61,306) and
+Amazon's equity (411.065 → USD 411.07 bn); all match (rule 14.5). The synthetic dividend yield 56 ÷ 3,000 was checked
+to one decimal (1.9%); the screen shows two, 1.87%, as D2 does.
 
 ### S9 edge cases (test cases and real companies)
 
