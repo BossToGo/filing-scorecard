@@ -220,7 +220,15 @@ class CompanyData:
     `recent` (slice S2c) maps a line item to its latest figure: revenue, net income, operating cash flow and capital
     expenditure over the twelve months to the latest quarterly report (or the latest fiscal year when the 10-K is
     the latest report); financial debt and minority interest at the latest balance-sheet date; shares from the cover
-    page of the latest report. Each fact carries its own period; notes about it are in its `note`."""
+    page of the latest report (src/data/twelve_months.py has the rules). Good to know before reading it:
+    - it is empty for a `CompanyData` not made by the resolver (the synthetic company, test fixtures) and for a
+      company with no annual figures, so use `data.recent.get(...)`;
+    - a twelve-month flow is `derived` (from a 10-Q) or `reported` (the 10-K's own year); `filed` is the date of
+      the report it is as of; its period need not be 365 days (Coca-Cola: 371) and the note then says so;
+    - a balance or share count may be the fiscal-year-end figure when the 10-Q has none: its `period_end` and note
+      say so; shares may be a diluted average, as in `items`;
+    - warnings about these figures (DEBT_CHECK, SIGN, MINORITY_UNTAGGED, a restatement) are in each fact's `note`,
+      never in `warnings`, which the gates read."""
 
     ticker: str
     cik: str  # SEC company number, 10 digits with leading zeros
