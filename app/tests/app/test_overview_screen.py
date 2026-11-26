@@ -108,7 +108,9 @@ def run_with_checks(ticker: str) -> AppTest:
     return at
 
 
-def test_the_scorecard_panel_shows_the_total_the_radar_and_the_checks_by_area():
+def test_the_scorecard_panel_shows_the_radar_and_the_checks_by_area_without_a_total():
+    # was "the total, the radar and the checks by area": the total is out (the group's answers on #60, 26 November;
+    # rule 14.6, agreed by Igor); the radar is back at Igor's request
     from src.data.company import load_company
     from src.overview import scorecard
     from ui.results import check_results
@@ -116,20 +118,36 @@ def test_the_scorecard_panel_shows_the_total_the_radar_and_the_checks_by_area():
     card = scorecard(check_results(load_company("KO", demo=True)))
     at = run_with_checks("KO")
     text = shown(at)
-    passed, assessed = card.headline
-    assert f">{passed}<small> / {assessed}</small>" in text and "assessed checks passed" in text
-    assert f"{card.failed} failed · {card.not_assessed} not assessed" in text
     seen = visible(at)
+    assert "Checks by area" in seen
     for area in card.areas:  # was `area.count_text in text`, which also matched the hidden aria-label; the visible
         # count is `short_text` since Emma's review of #60 (26 November; rule 14.6, agreed by Igor)
         assert area.label in seen and area.short_text in seen, area.label
     assert text.count('class="fs-ov-mk') >= 24 + 4  # six marks per area, plus the legend
-    charts = at.get("plotly_chart")
-    assert len(charts) == 2  # the radar and the five-year chart
+    assert len(at.get("plotly_chart")) == 2  # the radar and the five-year chart
+    assert "Centre 0% · edge 100%" in seen
+    for gone in ("fs-ov-total", "fs-ov-strong", "fs-ov-focus"):  # the total, its label and the area to read first
+        assert gone not in text, gone
+
+
+def test_the_radar_and_the_legend_say_they_are_not_a_rating():
+    # was "the total and the radar" (twice): the total is out, so the sentence is under the radar and in the legend, as
+    # SPEC §3 asks of every score chart's legend (rule 14.6, agreed by Igor)
+    assert visible(run_with_checks("KO")).count("Not a rating of the share and not advice") >= 2
+
+
+def test_the_marks_are_square_as_on_the_main_chart():
+    # Simon's condition on #60 for keeping the checks by area (26 November): the same square marks as the score chart
+    from ui import overview as ui_overview
+
+    css = ui_overview._style()
+    rule = css[css.index(".fs-ov-mk {"):].split("}", 1)[0]
+    assert "border-radius:4px" in rule and "50%" not in rule
 
 
 def test_without_check_results_there_is_no_scorecard_panel():
-    assert "Company scorecard" not in shown(run("KO"))
+    # was "Company scorecard", the panel's old heading; the panel is now headed "Checks by area"
+    assert "Checks by area" not in shown(run("KO"))
 
 
 def test_amazon_panel_says_no_dividend_paid():
@@ -137,11 +155,6 @@ def test_amazon_panel_says_no_dividend_paid():
     # review of #60, SPEC §3 and AC15; rule 14.6, agreed by Igor)
     seen = visible(run_with_checks("AMZN"))
     assert "No dividend paid" in seen and "0 passed of 1 assessed" in seen
-
-
-def test_the_total_and_the_radar_say_they_are_not_a_rating():
-    at = run_with_checks("KO")
-    assert visible(at).count("Not a rating of the share and not advice") >= 2  # by the total and under the radar
 
 
 def test_an_area_not_in_this_version_reads_as_on_the_main_screen():

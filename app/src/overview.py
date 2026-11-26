@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from datetime import date
 
 from src.contracts import CompanyData, Fact
+from src.scores import area_score, dividend_note
 
 BILLION, MILLION = 1e9, 1e6
 MINUS = "−"
@@ -322,12 +323,14 @@ def overview(data: CompanyData) -> Overview:
     )
 
 
-# --- the scorecard panel: totals, the share per area for the radar, checks by area ------------------------------
+# --- the scorecard panel: the radar of the four areas and the checks by area ----------------------------------
+# No total and no area to read first (the group's answers on #60, 26 November).
 
 AREA_LABELS = {"past_performance": "Past performance", "financial_health": "Financial health",
                "dividend": "Dividend", "valuation": "Valuation"}
 CHECKS_PER_AREA = 6
 MARKS = {"pass": "pass", "fail": "fail", "insufficient_data": "not_assessed", "not_applicable": "not_applicable"}
+NOT_IN_THIS_VERSION = "Not part of this version"  # as the main screen says (ui/scorecard.py, design spec §6)
 
 
 @dataclass(frozen=True)
@@ -337,56 +340,39 @@ class AreaSummary:
     marks: tuple[str, ...]  # per check, in order: pass, fail, not_assessed or not_applicable
     passed: int
     assessed: int
-    failed: int
-    not_assessed: int
-    share: float | None  # passed ÷ assessed for the radar; None when nothing is assessed (left off the shape)
-    share_text: str  # "100%", "Not assessed", or "Not part of this version" (no check module yet)
-    count_text: str  # "4 passed of 4 assessed", "Not assessed", "No dividend paid · 0 passed of 1 assessed"
-    short_text: str = ""  # the count on screen, one format (SPEC §3): "4 passed of 4 assessed", "Not assessed"
+    count_text: str  # for screen readers: "4 passed of 4 assessed", "No dividend paid · 0 passed of 1 assessed"
+    short_text: str  # the count on screen, one format (SPEC §3): "4 passed of 4 assessed", "Not assessed"
     note: str = ""  # shown under the marks: "No dividend paid", else empty
+    share: float | None = None  # passed ÷ assessed on the radar; None keeps the area off the shape (see below)
+    share_text: str = ""  # under the radar's label: "67%", or why the area is off the shape
 
 
 @dataclass(frozen=True)
 class Scorecard:
     areas: tuple[AreaSummary, ...]
-    passed: int
-    assessed: int
-    failed: int
-    not_assessed: int
-    headline: tuple[str, str] | None  # ("11", "15") for "11 / 15"; None when nothing is assessed
-    focus: AreaSummary | None  # the weakest assessed area: the one to read first
-
-
-NOT_IN_THIS_VERSION = "Not part of this version"  # as the main screen says (ui/scorecard.py, design spec §6)
 
 
 def _area_summary(area: str, results) -> AreaSummary:
-    marks = (tuple(MARKS.get(r.status, "not_assessed") for r in results) if results
-             else ("not_assessed",) * CHECKS_PER_AREA)
-    passed, failed = marks.count("pass"), marks.count("fail")
-    assessed = passed + failed
-    share = passed / assessed if assessed else None
-    if results is None:
-        short = NOT_IN_THIS_VERSION
-    else:
-        short = f"{passed} passed of {assessed} assessed" if assessed else "Not assessed"
-    if results is None:
-        share_text = NOT_IN_THIS_VERSION
-    else:
-        share_text = "Not assessed" if share is None else f"{share * 100:.0f}%"
-    no_dividend = area == "dividend" and assessed and marks == ("fail",) + ("not_applicable",) * (len(marks) - 1)
-    note = "No dividend paid" if no_dividend else ""
-    return AreaSummary(area, AREA_LABELS.get(area, area.replace("_", " ").capitalize()), marks, passed, assessed,
-                       failed, marks.count("not_assessed"), share, share_text,
-                       f"{note} · {short}" if note else short, short, note)
+    """Counts come from `src.scores` (D's), the no-dividend words from the dividend module (C's), as on the main
+    screen, so the panel and the score chart cannot disagree (Simon's point on #60)."""
+    label = AREA_LABELS.get(area, area.replace("_", " ").capitalize())
+    if results is None:  # no check module in this version
+        return AreaSummary(area, label, ("not_assessed",) * CHECKS_PER_AREA, 0, 0, NOT_IN_THIS_VERSION,
+                           NOT_IN_THIS_VERSION, share_text=NOT_IN_THIS_VERSION)
+    score = area_score(results)
+    short = f"{score.passed} passed of {score.assessed} assessed" if score.assessed else "Not assessed"
+    note = dividend_note(results) if area == "dividend" else None
+    note = note[:1].upper() + note[1:] if note else ""
+    marks = tuple(MARKS.get(r.status, "not_assessed") for r in results) or ("not_assessed",) * CHECKS_PER_AREA
+    # Off the radar's shape: nothing assessed, or a check that does not apply (no dividend; a valuation without an
+    # estimate), where a share would read as 0% or 100% and mislead (Flo's two cases on #60).
+    on_shape = score.assessed and "not_applicable" not in marks
+    share = score.passed / score.assessed if on_shape else None
+    return AreaSummary(area, label, marks, score.passed, score.assessed, f"{note} · {short}" if note else short,
+                       short, note, share, f"{share * 100:.0f}%" if share is not None else (note or short))
 
 
 def scorecard(results) -> Scorecard:
     """`results` maps each area to its check results in order, or None for an area not part of this version (as
     `ui.results.check_results` returns). Counts only: which check passes is decided by the checks themselves."""
-    areas = tuple(_area_summary(area, results.get(area)) for area in AREA_LABELS)
-    passed, assessed = sum(a.passed for a in areas), sum(a.assessed for a in areas)
-    scored = [a for a in areas if a.share is not None]
-    focus = min(scored, key=lambda a: a.share) if scored else None  # ties: the first in area order
-    return Scorecard(areas, passed, assessed, sum(a.failed for a in areas), sum(a.not_assessed for a in areas),
-                     (str(passed), str(assessed)) if assessed else None, focus)
+    return Scorecard(tuple(_area_summary(area, results.get(area)) for area in AREA_LABELS))

@@ -77,7 +77,6 @@ def _style() -> str:
 [data-testid="stMainBlockContainer"] {{max-width:none !important; padding-left:44px !important; padding-right:44px !important;
   padding-top:24px !important}}
 [class*="st-key-ov_card"] {{background:var(--ov-panel); border-radius:12px !important; padding:22px 26px !important}}
-.st-key-ov_card_scorecard [data-testid="stColumn"]:not(:first-child) {{border-left:1px solid var(--ov-line); padding-left:24px}}
 .fs-ov-h {{font-family:Georgia, 'Times New Roman', serif; font-weight:400; font-size:30px; line-height:1.15; white-space:nowrap;
   letter-spacing:-0.01em}}
 .fs-ov-h.fs-ov-sans {{font-family:inherit; font-weight:600; font-size:20px}}
@@ -109,26 +108,20 @@ table.fs-ov-rows td.fs-ov-kind {{font-size:14px; color:var(--ov-muted); text-ali
 table.fs-ov-rows td.fs-ov-kind.fs-ov-derived {{color:var(--ov-accent)}}
 table.fs-ov-rows td.fs-ov-num {{text-align:right; font-weight:600}}
 table.fs-ov-rows td.fs-ov-plain {{color:var(--ov-muted)}}
-.fs-ov-total {{font-family:Georgia, 'Times New Roman', serif; font-size:96px; line-height:1; margin:26px 0 8px}}
-.fs-ov-total small {{font-size:56px; color:var(--ov-muted)}}
-.fs-ov-strong {{font-size:21px; font-weight:600; margin:6px 0 8px}}
-.fs-ov-focus {{border-top:1px solid var(--ov-line); margin-top:24px; padding-top:22px; font-size:16px; color:var(--ov-muted)}}
-.fs-ov-focus b {{display:block; font-family:Georgia, 'Times New Roman', serif; font-weight:400; font-size:25px;
-  color:var(--ov-accent); margin-top:10px; white-space:nowrap}}
+.st-key-ov_card_scorecard [data-testid="stColumn"]:not(:first-child) {{border-left:1px solid var(--ov-line); padding-left:24px}}
 .fs-ov-area {{padding:12px 0; border-bottom:1px solid var(--ov-line)}}
+.fs-ov-caption {{text-align:center; font-size:14px; color:var(--ov-muted); margin-top:-6px}}
 .fs-ov-area-top {{font-size:17px; font-weight:600}}
 .fs-ov-area-top span {{display:block; font-weight:400; font-size:15px; color:var(--ov-muted); margin-top:2px}}
 .fs-ov-marks {{display:flex; gap:8px; margin-top:10px}}
 .fs-ov-area-note {{font-size:14px; color:var(--ov-muted); margin-top:8px}}
-.fs-ov-rating {{font-size:14px; color:var(--ov-muted); margin-top:10px}}
-.fs-ov-mk {{width:19px; height:19px; border-radius:50%; box-sizing:border-box; display:inline-grid; place-items:center;
+.fs-ov-mk {{width:20px; height:20px; border-radius:4px; box-sizing:border-box; display:inline-grid; place-items:center;
   font-size:11px; font-weight:800; line-height:1; flex:none; color:var(--ov-panel)}}
 .fs-ov-mk.fs-ov-pass {{background:var(--ov-pass)}}  .fs-ov-mk.fs-ov-fail {{background:var(--ov-fail)}}
 .fs-ov-mk.fs-ov-wait {{color:inherit; border:1.5px dashed color-mix(in srgb, currentColor 60%, transparent)}}
 .fs-ov-mk.fs-ov-none {{color:inherit; border:1px solid color-mix(in srgb, currentColor 35%, transparent)}}
 .fs-ov-legend {{display:flex; flex-wrap:wrap; gap:8px 20px; margin-top:16px; font-size:15px; color:var(--ov-muted)}}
 .fs-ov-legend > span {{display:inline-flex; align-items:center; gap:8px}}
-.fs-ov-caption {{text-align:center; font-size:14px; color:var(--ov-muted); margin-top:-6px}}
 .fs-ov-foot {{display:flex; justify-content:space-between; gap:16px; font-size:14px; color:var(--ov-muted); margin:22px 0 8px}}
 .fs-ov-shell-bar {{display:flex; align-items:center; gap:20px; height:64px}}
 .fs-ov-brand {{display:flex; align-items:center; gap:14px; font-family:Georgia, 'Times New Roman', serif; font-size:30px}}
@@ -248,7 +241,7 @@ def _table(series: Series) -> str:
 MARK_LOOKS = {"pass": ("fs-ov-pass", "✓", "Passed"), "fail": ("fs-ov-fail", "✕", "Failed"),
               "not_assessed": ("fs-ov-wait", "", "Not assessed"), "not_applicable": ("fs-ov-none", "–", "Does not apply")}
 RADAR_ORDER = ("financial_health", "past_performance", "valuation", "dividend")  # top, right, bottom, left
-NOT_A_RATING = "Not a rating of the share and not advice."  # SPEC §1 and §3, by the total and the radar
+NOT_A_RATING = "Not a rating of the share and not advice."  # SPEC §3: under the radar and in the legend
 
 
 def _mark(look: str) -> str:
@@ -291,25 +284,13 @@ def _radar(card: Scorecard) -> go.Figure:
 
 
 def render_scorecard_panel(card: Scorecard, fiscal_year: int | None) -> None:
-    """The panel at the top of the overview: the total, the radar of the four areas, and the checks by area."""
+    """The panel at the top of the overview: the radar of the four areas and each area's six marks with its count.
+    No total and no area to read first (the group's answers on #60, 26 November)."""
     with st.container(border=True, key="ov_card_scorecard"):
-        left, middle, right = st.columns([0.95, 1.5, 1.05], gap="large")
+        st.markdown(_heading("Checks by area", f"FY{fiscal_year} filing checks" if fiscal_year else "Filing checks"),
+                    unsafe_allow_html=True)
+        left, right = st.columns([1.25, 1], gap="large")
         with left:
-            st.markdown(_heading("Company scorecard", f"FY{fiscal_year} filing checks" if fiscal_year
-                                 else "Filing checks"), unsafe_allow_html=True)
-            if card.headline:
-                passed, assessed = card.headline
-                total = (f'<div class="fs-ov-total">{_e(passed)}<small> / {_e(assessed)}</small></div>'
-                         f'<div class="fs-ov-strong">assessed checks passed</div>'
-                         f'<div class="fs-ov-note" style="font-size:16px">{card.failed} failed · '
-                         f'{card.not_assessed} not assessed</div>'
-                         f'<div class="fs-ov-rating">{NOT_A_RATING}</div>')
-            else:
-                total = '<div class="fs-ov-big" style="margin-top:22px">No check assessed yet</div>'
-            focus = (f'<div class="fs-ov-focus">{_e(card.focus.label)}<b>{_e(card.focus.short_text)}</b></div>'
-                     if card.focus else "")
-            st.markdown(f'<div class="fs-ov">{total}{focus}</div>', unsafe_allow_html=True)
-        with middle:
             st.plotly_chart(_radar(card), theme="streamlit", config={"displayModeBar": False}, key="scorecard_radar")
             st.markdown('<div class="fs-ov fs-ov-caption">Share of assessed checks passed per area<br>'
                         f"Centre 0% · edge 100%<br>{NOT_A_RATING}</div>", unsafe_allow_html=True)
@@ -321,8 +302,8 @@ def render_scorecard_panel(card: Scorecard, fiscal_year: int | None) -> None:
                 + (f'<div class="fs-ov-area-note">{_e(a.note)}</div>' if a.note else "") + "</div>"
                 for a in card.areas)
             legend = "".join(f"<span>{_mark(look)}{word}</span>" for look, (_, _, word) in MARK_LOOKS.items())
-            st.markdown(_heading("Checks by area", sans=True) + f'<div class="fs-ov" style="margin-top:12px">{rows}'
-                        f'<div class="fs-ov-legend">{legend}</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="fs-ov">{rows}<div class="fs-ov-legend">{legend}<span>{NOT_A_RATING}</span>'
+                        "</div></div>", unsafe_allow_html=True)
 
 
 NAV = (("Overview", "ov-overview", '<rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" '

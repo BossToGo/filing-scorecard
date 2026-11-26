@@ -38,11 +38,11 @@ its public `MODEL.markdown` and general knowledge.
 5. **Risks at the top**: our "Failed checks", until strengths and points to watch exist.
 6. **Areas as tabs, data sources last**: our Sources tab.
 
-Not taken: the shape's name, red-to-green scores, gauges, treemaps, numbered headings, coloured "Label:" checks, AI
-prompts, upgrade buttons, ownership, insiders, management, forecasts, news, community, their wording. Changed on 25 and
-26 November (Igor's design, #60; keeping them is for the group to decide there): the overview has a radar of our four
-areas' share of assessed checks passed, in the accent colour, round marks, and a charcoal-and-gold theme; passed is
-still the accent and failed the text colour, never red or green.
+Not taken: the shape's name, red-to-green scores, the dark-and-gold look, gauges, treemaps, numbered headings,
+circle ticks, coloured "Label:" checks, AI prompts, upgrade buttons, ownership, insiders, management, forecasts,
+news, community, their wording. Proposed on 26 November (Igor, #60, for the group to decide): the overview shows a
+plain radar of our four areas, the share of assessed checks passed, in the accent colour, with an area that cannot
+be scored left off the shape; no total.
 
 ## 3. The page, top to bottom (1366×768)
 
@@ -257,9 +257,7 @@ Audit of the mockup (MengTo method; impeccable's ten dimensions and craft floor;
 vibecoded-design-tells). Removed: the product banner; text in every block; boxed expanders; Unicode glyph marks; the
 SEC code in the header; two large ratios that repeated the sentence and the rows (three times on one screen); a heading
 over the area rows. Not added: eyebrows, section numbers, side stripes, shadows, gradients, red and green, a total
-score (it would read as a rating). Changed on 25 and 26 November (#60, for the group to decide there): the overview
-shows the total of assessed checks passed, with "Not a rating of the share and not advice." next to it and under the
-radar. Fixed: misaligned hairlines between the summary columns; the legend below the 125%
+score (it would read as a rating). Fixed: misaligned hairlines between the summary columns; the legend below the 125%
 fold.
 
 Sources, all public GitHub repositories. Design: ehmo/platform-design-skills (web: 16 px body, 4.5:1 and 3:1 contrast,
