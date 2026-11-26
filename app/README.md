@@ -83,3 +83,11 @@ Full table and rules: `docs/architecture.md`.
 - Saved risk-free rate (demo mode, or when FRED cannot be used): U.S. Department of the Treasury, Daily Treasury
   Par Yield Curve Rates, 10-year, https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve
   (public domain).
+- Industry benchmarks (return on equity, operating margin, price to earnings, price to book, dividend yield, unlevered
+  beta, number of firms): Aswath Damodaran, NYU Stern School of Business, US industry datasets, January 2026 edition,
+  https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datacurrent.html. Each value in `data/benchmarks_us_2026.csv`
+  carries its source file, sheet, row and column (`docs/benchmarks.md`).
+- Method: the pass/fail checks per area and parts of the valuation (ten years of growth slowing towards the long-run
+  rate, the beta limits, no estimate without positive free cash flow) are adapted from the publicly documented Simply
+  Wall St Company Analysis Model, https://github.com/SimplyWallSt/Company-Analysis-Model (its model document is
+  licensed CC BY-NC-SA 4.0). The thresholds, the texts, the screen and the code are the team's own (SPEC §1, §8).
