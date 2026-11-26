@@ -84,6 +84,11 @@ def usd_m(amount: float, decimals: int = 0) -> str:
     return _write(amount, STYLES["usd"], decimals)
 
 
+def share_price(price: float) -> str:
+    """The share price the user typed, in USD with two decimals: 65.4 -> "USD 65.40"."""
+    return f"USD {price:,.2f}"
+
+
 def fact_value(fact: Fact) -> str:
     """One figure as shown in a check or on the sources page."""
     if fact.kind == "missing" or fact.value is None:
