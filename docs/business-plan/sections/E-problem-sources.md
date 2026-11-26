@@ -1,8 +1,8 @@
-# Sources for the problem and evidence section (member E)
+# Sources for the problem and evidence section
 
-Business plan, section "Problem and evidence" (SPEC §17). Collected by Emma (E). Every figure below was checked in the original document; pages accessed on 21 and 22 November 2026. Page numbers are the numbers printed on the page, not the PDF viewer's.
+Business plan, section "Problem and evidence". Every figure below was checked in the original document; pages accessed on 21 and 22 November 2026. Page numbers are the numbers printed on the page, not the PDF viewer's.
 
-Rule (SPEC 14.17): no figure, statistic or source in the business plan that is not in this table. All items have been checked.
+Every figure in the "Problem and evidence" section comes from this table. All items have been checked.
 
 ## Evidence table
 

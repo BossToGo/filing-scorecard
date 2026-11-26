@@ -6,6 +6,6 @@ For our tool to become a real bank product, several steps are needed.
 
 **Integration in the bank.** The tool should use the bank's own share price instead of a price typed by hand. Before customers can use it, the bank needs production hosting, security testing and compliance approval for showing scores next to an order.
 
-**Data rights.** Some free data and the scoring method cannot be used commercially without permission: a commercial rollout would need a data feed licensed for the industry figures shown to customers, FRED's written clearance for the interest rate, and Simply Wall St's permission or our own scoring method (see Business model).
+**Data rights.** Some free data and the scoring method cannot be used commercially without permission: a commercial rollout would need a data feed licensed for the industry figures shown to customers, FRED's written clearance for the interest rate, and our own documented scoring and valuation method, so that no licensed material is reused (see Business model).
 
 **The pilot.** A pilot with one bank would measure the time needed to integrate and support the tool and collect supplier quotes for the data licences, to test whether the proposed licence of €24,000 a year covers the costs (see Business model). It would also measure how customers use the scorecard (see How the bank changes). The bank could then decide whether to build the tool itself or buy it.
