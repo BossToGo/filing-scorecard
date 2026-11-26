@@ -3,6 +3,7 @@
 These cases establish comparisons and safety behavior, not Greg's personal numerical sign-off.
 The Appendix A known answers are in test_b_appendix_a.py (Greg's sign-off on PR #5, 24 November 2026).
 """
+import re
 from dataclasses import replace
 from datetime import date, timedelta
 
@@ -376,3 +377,43 @@ def test_amounts_above_one_trillion_are_written_in_full():
     from src.checks._b_inputs import money
     assert money(1.2e15) == "USD 1,200,000,000 million"
     assert "e+" not in money(3.5e12)
+
+
+# --- Flo's S18 read-only review of B's checks (#64, 26 November): cases no test covered -------------------------
+
+def test_p6_a_worse_return_fails_even_when_both_years_are_losses():
+    # Capital employed 3 - 1 = 2 in both years. Now -0.4 / 2 = -20%; three years earlier -0.2 / 2 = -10%.
+    # -20% is not above -10% -> fail (comparing sizes without the sign would wrongly pass it: 20% > 10%).
+    data = change(change(company(), "operating_income", 2025, -0.4), "operating_income", 2022, -0.2)
+    assert run(data)["P6"].status == "fail"
+
+
+@pytest.mark.parametrize("year", [2025, 2022])
+def test_p6_negative_capital_employed_is_not_a_ratio(year):
+    # Total assets 0.5 - current liabilities 1 = -0.5: capital employed below zero gives no meaningful return.
+    result = run(change(company(), "total_assets", year, 0.5))["P6"]
+    assert result.status == "insufficient_data" and result.value is None
+
+
+def test_p5_negative_revenue_is_not_a_margin():
+    # Revenue -2: 1 / -2 = -50% is not an operating margin; the check is not assessed.
+    result = run(change(company(), "revenue", 2025, -2), {"operating_margin": benchmark("operating_margin", 0.1)})["P5"]
+    assert result.status == "insufficient_data" and result.value is None
+
+
+@pytest.mark.parametrize("check,metric", [("P4", "roe"), ("P5", "operating_margin")])
+def test_a_benchmark_in_a_non_ratio_unit_is_refused_not_compared(check, metric):
+    # The contract already refuses a "percent" unit; a benchmark in an allowed but wrong unit (USD) must still never
+    # be compared with a decimal ratio.
+    wrong = replace(benchmark(metric, 0.15), unit="USD")
+    result = run(company(), {metric: wrong})[check]
+    assert result.status == "insufficient_data"
+
+
+@pytest.mark.parametrize("metric,check", [("revenue", "P5"), ("operating_income", "P5")])
+def test_a_half_year_figure_is_not_used_as_a_full_year(metric, check):
+    # A six-month revenue or operating income would halve or double the margin: not a fiscal-year figure.
+    latest = company().fact(metric, date(2025, 12, 31))
+    data = company().with_fact(replace(latest, period_start=date(2025, 7, 1)))
+    result = run(data, {"operating_margin": benchmark("operating_margin", 0.1)})[check]
+    assert result.status == "insufficient_data"

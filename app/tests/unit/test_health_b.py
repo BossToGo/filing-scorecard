@@ -3,6 +3,7 @@
 The constructed threshold examples come from the published rules (40%, 20%, 5x),
 not the app's output. No locked Appendix A expected values are used.
 """
+import re
 from dataclasses import replace
 from datetime import date, timedelta
 
@@ -371,3 +372,26 @@ def test_h6_just_below_five_times_does_not_read_like_a_pass():
     result = run(change(company(), "operating_income", 4.9999))["H6"]
     assert result.status == "fail"
     assert "below the required 5 times" in result.explanation
+
+
+# --- Flo's S18 read-only review of B's checks (#64, 26 November): cases no test covered -------------------------
+
+def test_h5_negative_operating_cash_flow_fails():
+    # Operating cash flow -50 against debt 100: -50% is below the required 20% -> fail
+    # (taking the size of the ratio, 50%, would wrongly pass it).
+    data = change(change(company(), "financial_debt", 100), "operating_cash_flow", -50)
+    assert run(data)["H5"].status == "fail"
+
+
+@pytest.mark.parametrize("check", ["H3", "H4", "H5"])
+def test_negative_financial_debt_is_not_assessed(check):
+    # Debt -10 is a figure to check, not "less than no debt": H3, H4 and H5 are not assessed.
+    result = run(change(company(), "financial_debt", -10))[check]
+    assert result.status == "insufficient_data" and result.value is None
+
+
+@pytest.mark.parametrize("metric", ["interest_expense", "operating_income"])
+def test_h6_a_half_year_figure_is_not_used_as_a_full_year(metric):
+    latest = company().fact(metric, date(2025, 12, 31))
+    data = company().with_fact(replace(latest, period_start=date(2025, 7, 1)))
+    assert run(data)["H6"].status == "insufficient_data"
