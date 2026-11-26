@@ -150,3 +150,20 @@ def test_a_reported_zero_stays_a_zero():
 def test_every_unit_has_a_format_and_names_its_unit(unit):
     shown = fact_value(fact("shares", 1_234_567_890.0, unit=unit, kind="derived", note="formula"))
     assert shown and "None" not in shown
+
+
+def test_a_rate_is_shown_as_a_percent_with_two_decimals():
+    """S10b, the cost-of-equity build-up: hand values (Simon's plan, 26 November): 0.04 is 4.00%, the synthetic
+    cost of equity 0.0903325 is 9.03% (Appendix A 9.03325%), a negative growth -0.10 is -10.00%."""
+    from ui.format import rate
+
+    assert rate(0.04) == "4.00%"
+    assert rate(0.0903325) == "9.03%"
+    assert rate(-0.10) == "-10.00%"
+
+
+def test_a_beta_is_shown_with_two_decimals():
+    from ui.format import beta
+
+    assert beta(0.90) == "0.90"
+    assert beta(1.00665) == "1.01"  # Appendix A levered beta

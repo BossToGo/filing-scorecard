@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from datetime import date
 
 from src.contracts import CompanyData, Fact
+from src.scores import area_score, dividend_note
 
 BILLION, MILLION = 1e9, 1e6
 MINUS = "−"
@@ -51,6 +52,7 @@ class Line:
     label: str
     values: tuple[float | None, ...]  # in the series' unit, for the chart; None is a gap, never zero
     texts: tuple[str, ...]  # the same values written for the table view
+    end_label: str = ""  # the last value in the series' unit, two decimals, written at the end of the line
 
 
 @dataclass(frozen=True)
@@ -91,6 +93,8 @@ class Overview:
     coverage: Coverage
     balance: tuple[Figure, ...]
     filing: Filing
+    fiscal_year_end: str = NA  # "31 December 2025"
+    years_text: str = NA  # "FY2021 – FY2025", the years the overview covers
 
 
 # --- writing numbers --------------------------------------------------------------------------------------------
@@ -227,7 +231,8 @@ def _series(data: CompanyData, years: list[date]) -> Series:
     scale, unit = (BILLION, "USD bn") if known and max(known) >= BILLION else (MILLION, "USD m")
     lines = tuple(
         Line(label, tuple(None if v is None else v / scale for v in values),
-             tuple(NA if v is None else amount_text(v) for v in values))
+             tuple(NA if v is None else amount_text(v) for v in values),
+             "" if values[-1] is None else f"{values[-1] / scale:,.2f}".replace("-", MINUS))
         for label, values in columns.items()
     )
     return Series(tuple(end.year for end in years), unit, lines)
@@ -235,11 +240,11 @@ def _series(data: CompanyData, years: list[date]) -> Series:
 
 def _coverage(data: CompanyData, fy0: date) -> Coverage:
     fcf, fcf_why = _free_cash_flow(data, fy0)
-    dividends_fact = data.fact("dividends_paid", fy0)
     dividends, div_why = _value(data, "dividends_paid", fy0)
     fcf_text = NA if fcf is None else amount_text(fcf)
     if dividends is not None and dividends <= 0:  # treated as nil (SPEC §7, plan Q1) or reported as zero
-        note = dividends_fact.note if dividends_fact is not None else ""
+        # plain words for the reader; the tags searched stay in the fact's note, on the Sources tab
+        note = f"No dividends paid in {_year(fy0)}. The Sources tab shows how this was read."
         return Coverage("no_dividend", "No dividend paid", free_cash_flow=fcf_text, note=note)
     if dividends is None or fcf is None:
         return Coverage("missing", "Dividend coverage is not available", free_cash_flow=fcf_text,
@@ -313,4 +318,61 @@ def overview(data: CompanyData) -> Overview:
         coverage=_coverage(data, fy0),
         balance=_balance(data, fy0),
         filing=_filing(data, fy0),
+        fiscal_year_end=_day(fy0),
+        years_text=f"FY{last_five[0].year} – FY{fy0.year}",
     )
+
+
+# --- the scorecard panel: the radar of the four areas and the checks by area ----------------------------------
+# No total and no area to read first (the group's answers on #60, 26 November).
+
+AREA_LABELS = {"past_performance": "Past performance", "financial_health": "Financial health",
+               "dividend": "Dividend", "valuation": "Valuation"}
+CHECKS_PER_AREA = 6
+MARKS = {"pass": "pass", "fail": "fail", "insufficient_data": "not_assessed", "not_applicable": "not_applicable"}
+NOT_IN_THIS_VERSION = "Not part of this version"  # as the main screen says (ui/scorecard.py, design spec §6)
+
+
+@dataclass(frozen=True)
+class AreaSummary:
+    area: str
+    label: str
+    marks: tuple[str, ...]  # per check, in order: pass, fail, not_assessed or not_applicable
+    passed: int
+    assessed: int
+    count_text: str  # for screen readers: "4 passed of 4 assessed", "No dividend paid · 0 passed of 1 assessed"
+    short_text: str  # the count on screen, one format (SPEC §3): "4 passed of 4 assessed", "Not assessed"
+    note: str = ""  # shown under the marks: "No dividend paid", else empty
+    share: float | None = None  # passed ÷ assessed on the radar; None keeps the area off the shape (see below)
+    share_text: str = ""  # under the radar's label: "67%", or why the area is off the shape
+
+
+@dataclass(frozen=True)
+class Scorecard:
+    areas: tuple[AreaSummary, ...]
+
+
+def _area_summary(area: str, results) -> AreaSummary:
+    """Counts come from `src.scores` (D's), the no-dividend words from the dividend module (C's), as on the main
+    screen, so the panel and the score chart cannot disagree (Simon's point on #60)."""
+    label = AREA_LABELS.get(area, area.replace("_", " ").capitalize())
+    if results is None:  # no check module in this version
+        return AreaSummary(area, label, ("not_assessed",) * CHECKS_PER_AREA, 0, 0, NOT_IN_THIS_VERSION,
+                           NOT_IN_THIS_VERSION, share_text=NOT_IN_THIS_VERSION)
+    score = area_score(results)
+    short = f"{score.passed} passed of {score.assessed} assessed" if score.assessed else "Not assessed"
+    note = dividend_note(results) if area == "dividend" else None
+    note = note[:1].upper() + note[1:] if note else ""
+    marks = tuple(MARKS.get(r.status, "not_assessed") for r in results) or ("not_assessed",) * CHECKS_PER_AREA
+    # Off the radar's shape: nothing assessed, or a check that does not apply (no dividend; a valuation without an
+    # estimate), where a share would read as 0% or 100% and mislead (Flo's two cases on #60).
+    on_shape = score.assessed and "not_applicable" not in marks
+    share = score.passed / score.assessed if on_shape else None
+    return AreaSummary(area, label, marks, score.passed, score.assessed, f"{note} · {short}" if note else short,
+                       short, note, share, f"{share * 100:.0f}%" if share is not None else (note or short))
+
+
+def scorecard(results) -> Scorecard:
+    """`results` maps each area to its check results in order, or None for an area not part of this version (as
+    `ui.results.check_results` returns). Counts only: which check passes is decided by the checks themselves."""
+    return Scorecard(tuple(_area_summary(area, results.get(area)) for area in AREA_LABELS))

@@ -1,6 +1,7 @@
 """Streamlit entry point: `streamlit run main.py` from the `app/` folder. Owner: D (slice S10).
 
-Input bar, start screen, then the scorecard and sources pages. The interface only shows values it receives from
+Input bar, start screen, then the header, A's overview (S10c), the score chart, one tab per area (the valuation detail
+in the Valuation tab, S10b) and the sources page. The interface only shows values it receives from
 `src/`; it never computes financial numbers (SPEC §11). The data-quality gates (`src/gates.py`, S11) decide
 whether a report is shown; every message for the customer comes from `ui/messages.py`.
 """
@@ -13,7 +14,8 @@ from src.settings import load_settings
 from ui.inputs import PriceError, parse_price
 from ui.messages import (EMPTY_TICKER, TECHNICAL_DETAILS, UNEXPECTED_ERROR, header_warnings, sec_error_message,
                          stop_message)
-from ui.results import check_results
+from ui.overview import render_overview
+from ui.results import run_checks
 from ui.scorecard import render_scorecard
 from ui.sources import render_sources
 
@@ -82,8 +84,11 @@ if gate.stop is not None:  # "Not supported": the reason, no scores (AC2, E2, E3
     st.error(stop_message(gate.stop, data.name))
     st.stop()
 
-results = check_results(data)
-# Header and summary, then one tab per area and the Sources tab last (SPEC 2.4.2 §3)
-sources_tab = render_scorecard(data, results, price, warnings=header_warnings(gate, gates))
+# Benchmarks once, the risk-free rate, one valuation at the typed price, then the four areas (S10b, ui/results.py)
+run = run_checks(data, price, demo=demo)
+# Header, overview (Igor's #58 and #60), score chart, then one tab per area and the Sources tab last (SPEC 2.4.2 §3)
+sources_tab = render_scorecard(data, run.results, price, warnings=header_warnings(gate, gates), market=run.market,
+                               overview=render_overview)
 with sources_tab:
-    render_sources(data, results)
+    render_sources(data, run.results, price=price,
+                   records=run.market.valuation.records if run.market.valuation is not None else ())
