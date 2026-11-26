@@ -190,12 +190,18 @@ def test_area_rows_grow_and_the_note_drops_below_the_score():
 
 def test_a_mark_s_hover_text_does_not_repeat_the_word():
     """Simon, 25 November 2026: same rule as the row. Not "Not assessed. This check is not assessed yet: ..." on D2's
-    mark; the word stays when the explanation does not say it (P4)."""
+    mark; the word stays when the explanation does not say it (V1).
+
+    Test change (rule 14.6, Simon's written agreement of 26 November 2026): with B's benchmarks P4 is now assessed
+    for Coca-Cola, so this line moves to V1; no expected value changes. Coca-Cola is shown with no typed price."""
     pytest.importorskip("src.checks.dividend", reason="needs C's dividend module (merged in #23)")
-    shown = chart(show("KO"))
+    shown = chart(show("KO", price=""))
     assert "Not assessed. This check is not assessed yet" not in shown
     assert f'title="{name_of("D2")}: This check is not assessed yet: ' in shown
-    assert f'title="{name_of("P4")}: Not assessed. ' in shown
+    from ui.scorecard import _plain_name, load_texts
+
+    # V1 has no name in texts.yaml until Emma's #56: the screen then shows the id, so look it up as the screen does
+    assert f'title="{_plain_name("V1", load_texts())}: Not assessed. ' in shown
 
 
 def test_amazon_dividend_row_reads_no_dividend_paid_0_passed_of_1_assessed():

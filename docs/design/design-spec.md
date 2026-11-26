@@ -38,9 +38,11 @@ its public `MODEL.markdown` and general knowledge.
 5. **Risks at the top**: our "Failed checks", until strengths and points to watch exist.
 6. **Areas as tabs, data sources last**: our Sources tab.
 
-Not taken: the radar shape and its name, red-to-green scores, the dark-and-gold look, gauges, treemaps, numbered
-headings, circle ticks, coloured "Label:" checks, AI prompts, upgrade buttons, ownership, insiders, management,
-forecasts, news, community, their wording.
+Not taken: the shape's name, red-to-green scores, the dark-and-gold look, gauges, treemaps, numbered headings,
+circle ticks, coloured "Label:" checks, AI prompts, upgrade buttons, ownership, insiders, management, forecasts,
+news, community, their wording. Proposed on 26 November (Igor, #60, for the group to decide): the overview shows a
+plain radar of our four areas, the share of assessed checks passed, in the accent colour, with an area that cannot
+be scored left off the shape; no total.
 
 ## 3. The page, top to bottom (1366×768)
 
@@ -192,8 +194,8 @@ Detail, before: "How it is calculated: Latest annual net income growth > compoun
 1. Latest year: USD 13,107 m ÷ USD 10,631 m − 1 = 23.3%
 2. Average over four years: (USD 13,107 m ÷ USD 9,771 m) to the power ¼, minus 1 = 7.6%
 
-Names to settle with E: "Short-term liabilities covered" (H1, H2 likewise), "Debt falling against equity" (H4), "No
-large dividend cut" (D3).
+Names settled with E on 25 November (#32, #55): "Short-term liabilities covered" (H1, H2 likewise), "Debt falling
+against equity" (H4), "No large dividend cut" (D3). SPEC §7 uses the names shown on screen.
 
 ## 6. States
 
