@@ -20,7 +20,8 @@ import yaml
 from src.contracts import CheckResult, CompanyData, Fact
 from src.scores import area_score, dividend_note, not_assessed
 from ui.format import check_value, fact_value, share_price
-from ui.results import AREA_CHECKS, AREAS
+from ui.results import AREA_CHECKS, AREAS, Market
+from ui.valuation import LABELS, render_detail, render_estimate
 
 TEXTS_FILE = Path(__file__).with_name("texts.yaml")  # E's plain-language texts (PR #17)
 AREA_TITLES = {"past_performance": "Past performance", "financial_health": "Financial health",
@@ -275,7 +276,7 @@ def render_check(data: CompanyData, result: CheckResult, texts: Mapping) -> None
             shown, against = check_value(result.check_id, result.value, result.threshold)
             st.markdown(f"**Value:** {shown}" + (f" · **compared with:** {against}" if against else ""))
         if result.inputs:
-            st.table(pd.DataFrame([{"Figure": f.metric, "Period": _period(f), "Value": fact_value(f), "Kind": f.kind}
+            st.table(pd.DataFrame([{"Figure": LABELS.get(f.metric, f.metric), "Period": _period(f), "Value": fact_value(f), "Kind": f.kind}
                                    for f in result.inputs]))
             # Filing number with its dashes, as on the sources page (e.g. 0000063908-26-000035)
             links = sorted({(f.accession, link) for f in result.inputs if (link := filing_link(data, f))})
@@ -285,24 +286,35 @@ def render_check(data: CompanyData, result: CheckResult, texts: Mapping) -> None
                 st.markdown(f"**Filing:** none ({SYNTHETIC})")
 
 
-def render_checks(data: CompanyData, results: Mapping[str, Sequence[CheckResult] | None]):
-    """One tab per area, the Sources tab last (SPEC 2.4.2 §3 item 5); returns the Sources tab for `main.py`."""
+def render_checks(data: CompanyData, results: Mapping[str, Sequence[CheckResult] | None],
+                  market: Market | None = None):
+    """One tab per area, the Sources tab last (SPEC 2.4.2 §3 item 5); returns the Sources tab for `main.py`. With
+    `market` (S10b) the Valuation tab starts with the estimate and ends with the valuation detail (SPEC §3 item 6)."""
     texts = load_texts()
     *area_tabs, sources_tab = st.tabs([*(AREA_TITLES[area] for area in AREAS), SOURCES_TAB])
     for area, tab in zip(AREAS, area_tabs):
         area_results = results.get(area)
         with tab:
+            detail = area == "valuation" and market is not None
+            if detail:
+                render_estimate(market)
             if not area_results:  # no module yet: the same words as its row in the chart
                 st.markdown(f'<span class="fs-sub">{_label(area, area_results)[1]}</span>', unsafe_allow_html=True)
                 continue
             for result in area_results:
                 render_check(data, result, texts)
+            if detail:
+                render_detail(market, texts)
     return sources_tab
 
 
 def render_scorecard(data: CompanyData, results: Mapping[str, Sequence[CheckResult] | None],
-                     price: float | None, warnings: Sequence[str] = ()):
-    """Header, score chart, then the tabs; returns the Sources tab, which `main.py` fills with `render_sources`."""
+                     price: float | None, warnings: Sequence[str] = (), market: Market | None = None,
+                     overview=None):
+    """Header, the overview (`overview(data, results)`, A's `ui.overview.render_overview`, S10c), score chart, then
+    the tabs; returns the Sources tab, which `main.py` fills with `render_sources`."""
     render_header(data, warnings, price)
+    if overview is not None:
+        overview(data, results)
     render_score_chart(results)
-    return render_checks(data, results)
+    return render_checks(data, results, market)

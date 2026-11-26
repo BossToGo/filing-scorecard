@@ -89,6 +89,16 @@ def share_price(price: float) -> str:
     return f"USD {price:,.2f}"
 
 
+def rate(value: float) -> str:
+    """A rate stored as a decimal, shown as a percent with two decimals: 0.0903325 -> "9.03%" (S10b)."""
+    return _write(value, _Style(100.0, 2, "{}%"), 2)
+
+
+def beta(value: float) -> str:
+    """A beta, with two decimals: 1.00665 -> "1.01" (S10b)."""
+    return f"{value:,.2f}"
+
+
 def fact_value(fact: Fact) -> str:
     """One figure as shown in a check or on the sources page."""
     if fact.kind == "missing" or fact.value is None:
