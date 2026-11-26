@@ -2,7 +2,8 @@
 
 Expected behaviour from SPEC §5.3.1 (only Form 10-K and 10-K/A figures), §4 (every response saved with its
 retrieval time) and the security review (never store request headers). Inputs are small hand-made examples in
-the shape of the SEC files.
+the shape of the SEC files. Slice S2c (issue #71, item 1): the demo files also keep Form 10-Q and 10-Q/A entries,
+for the twelve months to the latest quarter; the default trimming is unchanged.
 """
 
 import copy
@@ -10,7 +11,14 @@ from datetime import datetime, timezone
 
 import pytest
 
-from src.data.evidence import provenance, tickers_subset, trim_companyfacts, trim_submissions
+from src.data.evidence import (
+    DEMO_FORMS,
+    check_same_download,
+    provenance,
+    tickers_subset,
+    trim_companyfacts,
+    trim_submissions,
+)
 
 
 def entry(form, val, end="2025-12-31"):
@@ -71,6 +79,41 @@ def test_trimming_does_not_change_the_downloaded_data():
     original = copy.deepcopy(COMPANYFACTS)
     trim_companyfacts(COMPANYFACTS)
     assert COMPANYFACTS == original
+
+
+# --- slice S2c (issue #71, item 1): the demo files keep the quarterly reports too ---------------------------------
+
+
+def test_the_demo_trimming_keeps_annual_and_quarterly_report_entries():
+    # The twelve months to the latest quarter need the 10-Q year-to-date figures; other forms (8-K) still go.
+    revenue = trim_companyfacts(COMPANYFACTS, DEMO_FORMS)["facts"]["us-gaap"]["Revenues"]["units"]["USD"]
+    assert [e["form"] for e in revenue] == ["10-K", "10-Q", "10-K/A"]
+    assert set(DEMO_FORMS) == {"10-K", "10-K/A", "10-Q", "10-Q/A"}
+
+
+def test_the_demo_trimming_keeps_a_concept_found_only_in_quarterly_reports():
+    us_gaap = trim_companyfacts(COMPANYFACTS, DEMO_FORMS)["facts"]["us-gaap"]
+    assert us_gaap["OnlyQuarterly"]["units"]["USD"] == [entry("10-Q", 5)]
+    assert us_gaap["MixedUnits"]["units"] == {"USD": [entry("10-Q", 7)], "pure": [entry("10-K", 0.2)]}
+
+
+RAW = b'{"cik": "0000021344"}'
+RECORD = {"raw_bytes": 21, "raw_sha256": "8edc71091265ff6245e63cf1c6d7755169e5d7fc1e6b29870b94514633b472ce"}
+
+
+def test_a_cached_download_with_the_recorded_size_and_checksum_is_accepted():
+    # Size and checksum computed outside Python (see the provenance test below).
+    check_same_download(RAW, RECORD)  # no error
+
+
+@pytest.mark.parametrize("raw, what", [
+    (b'{"cik": "0000021345"}', "checksum"),  # same size, one digit changed
+    (b'{"cik": "21344"}', "size"),
+])
+def test_a_cached_download_that_is_not_the_recorded_one_is_refused(raw, what):
+    # Re-trimming must start from the very download the evidence records, never from a later one.
+    with pytest.raises(ValueError, match=what):
+        check_same_download(raw, RECORD)
 
 
 SUBMISSIONS = {

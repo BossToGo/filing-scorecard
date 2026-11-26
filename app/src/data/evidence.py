@@ -2,11 +2,13 @@
 
 Pure functions, no network. The trimmed files keep the SEC's own JSON structure, so the resolver (slice S2) reads
 saved demo data and live data the same way. Rules:
-- company facts: only entries from annual reports (Form 10-K, 10-K/A, SPEC §5.3.1); cover-page (`dei`) facts keep
-  every form, because SPEC §6 takes the share count from "the latest filing";
+- company facts: only entries from annual reports (Form 10-K, 10-K/A, SPEC §5.3.1) by default; the demo files also
+  keep the quarterly reports (`DEMO_FORMS`, slice S2c, issue #71 item 1), for the twelve months to the latest
+  quarter. Cover-page (`dei`) facts keep every form, because SPEC §6 takes the share count from "the latest filing";
 - submissions: only the annual reports in the list of recent filings, columns kept aligned; older pages dropped;
 - provenance: the source address, retrieval time, size and SHA-256 checksum of the raw download (SPEC §4). Never
   the request headers: they hold the SEC_USER_AGENT name and e-mail.
+- re-trimming: a cached download is used only if its size and checksum are those recorded (`check_same_download`).
 """
 
 from __future__ import annotations
@@ -15,6 +17,7 @@ import hashlib
 from datetime import datetime
 
 ANNUAL_FORMS: tuple[str, ...] = ("10-K", "10-K/A")
+DEMO_FORMS: tuple[str, ...] = ("10-K", "10-K/A", "10-Q", "10-Q/A")  # slice S2c: quarterly reports kept too
 KEEP_ALL_FORMS: tuple[str, ...] = ("dei",)
 
 
@@ -58,6 +61,16 @@ def tickers_subset(raw: dict, tickers: list[str]) -> dict:
     if missing:
         raise KeyError(f"tickers not in the SEC list: {sorted(missing)}")
     return subset
+
+
+def check_same_download(raw: bytes, record: dict) -> None:
+    """Raise ValueError unless `raw` has the size and SHA-256 checksum written in a provenance record, i.e. it is
+    the very download the saved evidence was made from (used to re-trim from app/.cache/sec/ without the network)."""
+    if len(raw) != record["raw_bytes"]:
+        raise ValueError(f"the cached file has {len(raw):,} bytes, the record says {record['raw_bytes']:,}: "
+                         "different size, so it is not the recorded download")
+    if hashlib.sha256(raw).hexdigest() != record["raw_sha256"]:
+        raise ValueError("the cached file's SHA-256 checksum differs from the record: not the recorded download")
 
 
 def provenance(url: str, retrieved: datetime, raw: bytes, trimmed: str) -> dict:

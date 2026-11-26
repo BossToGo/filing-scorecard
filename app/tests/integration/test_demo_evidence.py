@@ -16,6 +16,7 @@ DEMO_DIR = Path(__file__).resolve().parents[2] / "evidence" / "demo"
 DEMO = ["KO", "AAPL", "NVDA", "MCD", "AMZN"]
 REFUSED = ["JPM"]
 ANNUAL = {"10-K", "10-K/A"}
+QUARTERLY = {"10-Q", "10-Q/A"}  # kept since slice S2c (issue #71, item 1)
 
 
 def load(*parts):
@@ -43,11 +44,47 @@ def test_every_file_belongs_to_the_same_company(ticker):
 
 
 @pytest.mark.parametrize("ticker", DEMO)
-def test_company_facts_hold_only_annual_report_figures(ticker):
+def test_company_facts_hold_only_annual_and_quarterly_report_figures(ticker):
+    # Changed in slice S2c with Igor's agreement (26 November 2026; rule 14.6). Reason: issue #71, item 1 — the
+    # twelve months to the latest quarter need the 10-Q figures, so the demo files keep Form 10-Q and 10-Q/A too.
+    # The test used to assert `forms <= ANNUAL`; other forms (8-K, S-1, ...) are still left out.
     facts = load(ticker, "companyfacts.json")
     forms = {e["form"] for concept in facts["facts"]["us-gaap"].values() for entries in concept["units"].values()
              for e in entries}
-    assert forms <= ANNUAL
+    assert forms <= ANNUAL | QUARTERLY
+
+
+@pytest.mark.parametrize("ticker", DEMO)
+def test_company_facts_hold_the_quarterly_reports_since_the_latest_annual_report(ticker):
+    # Every demo company filed at least one 10-Q in 2026 (Apple's latest report is its 10-K of 3 November 2026).
+    facts = load(ticker, "companyfacts.json")
+    quarterly_filed = {e["filed"] for concept in facts["facts"]["us-gaap"].values()
+                       for entries in concept["units"].values() for e in entries if e["form"] in QUARTERLY}
+    assert any(day.startswith("2026-") for day in quarterly_filed)
+
+
+# The SHA-256 of the raw company facts downloaded on 18 November 2026 (the slice S0b records). Re-trimming for
+# slice S2c had to start from these very files: the checksums must not change.
+RAW_SHA256 = {
+    "KO": "87a4173fcd3d662d18d19e0e885095aa5e3812b74c54d1ee55808ff1540a8081",
+    "AAPL": "f085735b4d08fb116ade18d24247ffabe11df8eb52eae6556b165831f15ef1ad",
+    "AMZN": "acddb7c0a6973a1fd08372de3b292298a34eae7f42a7eedc4bdebd3ac659c8fd",
+    "MCD": "426688e51562a0bf08a4ede782fbaa7ff97eed5c18477bcffab165b3d5743359",
+    "NVDA": "19ef503a5770f5660964b3c3aea6937579d9b359da344afe6a9adf59c63d26ff",
+}
+
+
+@pytest.mark.parametrize("ticker", DEMO)
+def test_the_company_facts_come_from_the_download_of_18_november(ticker):
+    record = next(f for f in load(ticker, "provenance.json")["files"] if f["file"] == "companyfacts.json")
+    assert record["raw_sha256"] == RAW_SHA256[ticker]
+    assert record["retrieved"].startswith("2026-11-18T")
+
+
+@pytest.mark.parametrize("ticker", DEMO)
+def test_the_company_facts_record_says_the_quarterly_reports_are_kept(ticker):
+    record = next(f for f in load(ticker, "provenance.json")["files"] if f["file"] == "companyfacts.json")
+    assert "10-Q" in record["trimmed"] and "checksum" in record["trimmed"]
 
 
 @pytest.mark.parametrize("ticker", DEMO + REFUSED)
