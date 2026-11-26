@@ -48,6 +48,7 @@ advice: never "buy", "sell" or "undervalued" (§3).
 | Screen | Purpose | The user sees first | Cards / charts / tables (unit, period) | The user can | Loading / empty / error |
 |---|---|---|---|---|---|
 | Scorecard (main page) | First-pass view of one company | Header: company, industry and how it was found, fiscal year end, latest 10-K date, retrieval date, and only two warnings ("not fully checked", "old annual report"; the rest on the sources page, §10); then the score chart | Score chart (4 areas, passes out of 6) with a legend; the failed checks next to it; one tab per area: its score, one sentence, key figures and its checks, each a sentence with the company's figures, expandable to rule, working, inputs (USD m, fiscal year) and filing link; the sources page as the last tab | Pick one of the five demo companies or type another ticker; type the share price (USD); switch demo mode; open a check | Loading: "Fetching SEC filings…". Unknown ticker, unsupported company (bank, insurer, REIT, non-USD, non-10-K), source unreachable: a message that says how to fix it (§3) |
+| Overview (above the tabs, tier 2; #47) | See how the company did at a glance | Four key figures for the latest fiscal year, each with its change on the year before and "reported" or "derived" | Key figures (USD bn or m, %, pp); a five-year line chart of revenue, net income and free cash flow (USD, FY-4 to FY0) with a table view; dividend coverage (%); balance sheet figures; filing details | Switch the chart to a table | A missing input gives "n/a" with the reason, never 0; a nil dividend reads "No dividend paid" |
 | Valuation detail (tier 2, on the main page) | Show how the fair value was built | Fair value per share against the share price (USD) | Tables: cost of equity build-up (%), 10-year free cash flow forecast (USD m), actual revenue growth (%); the growth note when the growth limit applies | Nothing to type: the share price in the input bar is the only input | No share price: the whole area shows "insufficient data, enter a share price". Model does not fit (§8.6): no fair value, the reason in plain words |
 | Strengths and points to watch (tier 3, next to the score chart) | Say in plain words what the numbers mean | Up to five strengths and five points to watch, important ones first | List of short statements with the company's numbers, each linked to its check or figures (§9) | Open the check behind a statement | Inputs missing: the statement is not shown (never guessed) |
 | Sources page | Trace every number | One row per figure | Table: metric, value, unit, period, kind, tag, form, accession, filed, retrieved, note | Filter by kind; follow the link to the filing | Missing figures listed with the reason and the checks they block |
@@ -60,9 +61,12 @@ Agreed visuals:
    "not assessed" (insufficient data): dashed outline; "does not apply": thin outline with a dash. Told apart by
    shape and by the label "4 passed of 5 assessed, 1 not assessed", never by colour alone; a legend says the scores
    are not a rating of the share and not advice. No radar chart.
-2. **Check details**: tables, not charts. Every figure with unit and fiscal year; missing figures shown as "n/a"
+2. **Check details**: tables, not charts. The overview's five-year chart (below) is the one chart so far (#47). Every figure with unit and fiscal year; missing figures shown as "n/a"
    with the reason, never as 0.
 3. The synthetic test company always carries a "SYNTHETIC DATA" mark.
+4. **Overview chart** (S10c, agreed on #47). Question: "is the business growing, and does the cash follow the profit?"
+   Lines for revenue, net income and free cash flow (dashed) over the five fiscal years, USD bn; a Chart/Table switch
+   shows the same figures as a table; a missing year is a gap, never 0. Colours never mean good or bad.
 
 Interface rules (§3): a unit on every input and figure; the key result at the top without scrolling; every error
 message says how to fix the problem.

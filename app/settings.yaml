@@ -110,7 +110,7 @@ valuation:  # owner C (SPEC §7, §8)
     reason: "Terminal growth is the lower of the risk-free rate and 2.5% (SPEC §8.3)"
   well_below_fair_value:
     value: 0.80
-    reason: "Well below fair value: share price at most 80% of fair value (V2)"
+    reason: "Price at or below 80% of the estimate: share price at most 80% of the cash-flow estimate (V2; the name of the setting is unchanged)"
   growth_floor:
     value: -0.10
     reason: "The floor limits how strongly an unusually steep historical decline drives the forecast, with the adjustment disclosed in the growth note (SPEC v2.3 §8.2, §8.3)"

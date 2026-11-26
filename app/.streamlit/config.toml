@@ -1,13 +1,36 @@
-# Theme of the Filing Scorecard (SPEC §3). Owner: D.
-# Every colour of the app is defined here, once, so a bank can apply its own brand. Calm and light, one accent
-# colour (passed checks, buttons); a failed check is filled in the text colour with a cross.
+# Theme of the Filing Scorecard (SPEC 2.4.2 §3; docs/design/design-spec.md §4). Owner: D.
+# Every colour of the app is defined here, once, so a bank can apply its own brand. A light and a dark theme with
+# the same structure: the app follows the viewer's system setting, and the viewer switches in the app menu.
+# One accent colour (passed checks, the button, the selected tab, links); a failed check is filled in the text
+# colour with a cross. Muted text and hairlines are mixes of the text colour (CSS in ui/scorecard.py).
 
-[theme]
+[client]
+toolbarMode = "viewer"  # keeps the menu with Light, Dark and System; hides Deploy
+
+[theme]  # light, the default
 base = "light"
-primaryColor = "#2F5D8A"
+primaryColor = "#1D5AA6"
 backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F3F5F7"
-textColor = "#1F2933"
+secondaryBackgroundColor = "#F3F5F8"
+textColor = "#121821"
+linkColor = "#1D5AA6"
+grayTextColor = "#5E6268"
+font = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+baseFontSize = 16
+baseRadius = "8px"
+headingFontSizes = ["28px", "18px", "16px"]
+headingFontWeights = [600, 600, 600]
+metricValueFontSize = "24px"
+metricValueFontWeight = 600
+paddingTop = "16px"
+
+[theme.dark]  # inherits sizes and font
+primaryColor = "#3D74C0"
+backgroundColor = "#0E1217"
+secondaryBackgroundColor = "#181E26"
+textColor = "#E4E8EE"
+linkColor = "#8DB2E8"
+grayTextColor = "#A0A4A9"
 
 [browser]
 # Do not send Streamlit usage statistics (audit of 21 November, security #10).
