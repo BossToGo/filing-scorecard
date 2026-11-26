@@ -22,10 +22,14 @@ RESTATED, TAG_CONFLICT, TAG_SWITCH, NON_USD, FY_CHANGE, DERIVED, DEBT_CHECK, DEB
 SIGN, NO_ANNUAL_DATA.
 
 Shares are stored at their own date (the cover page of the latest annual report): use `data.latest("shares")`.
+
+The latest figures (slice S2c, issue #71 item 1) are in `data.recent`, worked out by src/data/twelve_months.py from
+the 10-Qs (`quarterly_forms`); they change nothing above: the fiscal years and their figures come from the 10-K alone.
 """
 
 from __future__ import annotations
 
+import dataclasses
 from datetime import date, datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
@@ -33,6 +37,7 @@ from pathlib import Path
 import yaml
 
 from src.contracts import CompanyData, Fact
+from src.data.twelve_months import recent_figures
 from src.settings import load_settings
 
 TAG_MAP_FILE = Path(__file__).with_name("tag_map.yaml")
@@ -64,13 +69,15 @@ def _order(e: dict) -> tuple:
 
 
 class _Resolver:
-    def __init__(self, ticker, companyfacts, submissions, retrieved, settings, tag_map, years):
+    def __init__(self, ticker, companyfacts, submissions, retrieved, settings, tag_map, years, forms=None):
         facts = (companyfacts or {}).get("facts", {})
         self.us_gaap, self.dei = facts.get("us-gaap", {}), facts.get("dei", {})
         self.ticker, self.submissions, self.retrieved = ticker, submissions, retrieved
         self.settings, self.map = settings, tag_map
         self.overrides = tag_map.get("overrides", {}).get(ticker, {})
-        self.forms = set(settings["annual_forms"])
+        # The annual figures read only the annual forms (rule 1); the latest balance sheet (slice S2c) passes the
+        # quarterly forms too, and uses only the balance-sheet rules (debt, bridge items), never the flow periods.
+        self.forms = set(forms or settings["annual_forms"])
         self.years = years or settings["fiscal_years"]
         self.items: dict[str, dict[date, Fact]] = {}
         self.warnings: list[str] = []
@@ -576,6 +583,10 @@ class _Resolver:
 
 def resolve(ticker: str, companyfacts: dict | None, submissions: dict, retrieved: datetime | None = None, *,
             settings: dict | None = None, tag_map: dict | None = None, years: int | None = None) -> CompanyData:
-    """CompanyData for one company from its SEC companyfacts and submissions JSON (SPEC §5, §6)."""
-    return _Resolver(ticker.strip().upper(), companyfacts, submissions, retrieved,
-                     settings or load_settings()["data"], tag_map or load_tag_map(), years).run()
+    """CompanyData for one company from its SEC companyfacts and submissions JSON (SPEC §5, §6), with its latest
+    figures in `recent` (slice S2c: twelve months to the latest 10-Q, latest balance sheet; src/data/twelve_months.py)."""
+    symbol, settings, tag_map = ticker.strip().upper(), settings or load_settings()["data"], tag_map or load_tag_map()
+    annual = _Resolver(symbol, companyfacts, submissions, retrieved, settings, tag_map, years).run()
+    latest = _Resolver(symbol, companyfacts, submissions, retrieved, settings, tag_map, years,
+                       forms=[*settings["annual_forms"], *settings["quarterly_forms"]])
+    return dataclasses.replace(annual, recent=recent_figures(annual, latest, settings))
