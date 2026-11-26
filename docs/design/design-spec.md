@@ -40,9 +40,10 @@ its public `MODEL.markdown` and general knowledge.
 
 Not taken: the shape's name, red-to-green scores, the dark-and-gold look, gauges, treemaps, numbered headings,
 circle ticks, coloured "Label:" checks, AI prompts, upgrade buttons, ownership, insiders, management, forecasts,
-news, community, their wording. Proposed on 26 November (Igor, #60, for the group to decide): the overview shows a
+news, community, their wording. Agreed by the whole group on 26 November (#60): the overview shows a
 plain radar of our four areas, the share of assessed checks passed, in the accent colour, with an area that cannot
-be scored left off the shape; no total.
+be scored left off the shape (the line breaks at its corner; filled only when all four are scored); no total. The
+panel does not repeat the score chart's marks (Igor, 26 November).
 
 ## 3. The page, top to bottom (1366×768)
 

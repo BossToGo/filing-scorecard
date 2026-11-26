@@ -73,6 +73,7 @@ def test_synthetic_dividend_coverage():
     assert (cover.free_cash_flow, cover.dividends) == ("USD 130 m", "USD 56 m")
     assert (cover.gap, cover.gap_label) == ("USD 74 m", "Free cash flow above dividends")
     assert cover.share == 1.0  # the free cash flow bar is full when it covers the dividends
+    assert cover.bar_width == "100.0"  # the bar's width in percent, prepared here so the screen computes nothing
 
 
 def test_synthetic_balance_sheet_figures():
@@ -82,10 +83,10 @@ def test_synthetic_balance_sheet_figures():
     assert (rows["Current ratio"].text, rows["Current ratio"].kind) == ("1.50×", "derived")
 
 
-# --- the demo companies (AC12, AC13) -------------------------------------------------------------------------
+# --- the demo companies (AC16, AC17) -------------------------------------------------------------------------
 
 
-def test_ac12_coca_cola_overview():
+def test_ac16_coca_cola_overview():
     data = load_company("KO", demo=True)
     got = figures(data)
     assert (got["Revenue"].text, got["Revenue"].change) == ("USD 47.94 bn", "+1.9%")
@@ -99,7 +100,7 @@ def test_ac12_coca_cola_overview():
     assert {f.label: f.text for f in ov.balance}["Current ratio"] == "1.46×"
 
 
-def test_ac12_coca_cola_filing_details():
+def test_ac16_coca_cola_filing_details():
     filing = overview(load_company("KO", demo=True)).filing
     assert (filing.form, filing.accession) == ("10-K", "0001628280-26-010047")
     assert filing.filed == "20 February 2026"
@@ -107,7 +108,7 @@ def test_ac12_coca_cola_filing_details():
     assert (filing.metrics, filing.records) == (27, 119)
 
 
-def test_ac13_amazon_shows_no_dividend_paid_never_zero_percent():
+def test_ac17_amazon_shows_no_dividend_paid_never_zero_percent():
     cover = overview(load_company("AMZN", demo=True)).coverage
     assert cover.status == "no_dividend"
     assert cover.percent is None
@@ -116,17 +117,17 @@ def test_ac13_amazon_shows_no_dividend_paid_never_zero_percent():
     assert cover.note == "No dividends paid in FY2025. The Sources tab shows how this was read."
 
 
-# --- edge rules (AC14; Igor, 25 November) --------------------------------------------------------------------
+# --- edge rules (AC18; Igor, 25 November) --------------------------------------------------------------------
 
 
-def test_ac14_a_missing_year_gives_no_change_never_zero():
+def test_ac18_a_missing_year_gives_no_change_never_zero():
     data = changed(synthetic.company_data(), "net_income", FY1, None)
     net = figures(data)["Net income"]
     assert (net.text, net.change, net.direction) == ("USD 140 m", "n/a", None)
     assert "2024" in net.note
 
 
-def test_ac14_missing_operating_cash_flow_leaves_free_cash_flow_and_coverage_open():
+def test_ac18_missing_operating_cash_flow_leaves_free_cash_flow_and_coverage_open():
     data = changed(synthetic.company_data(), "operating_cash_flow", FY0, None)
     ov = overview(data)
     fcf = {f.label: f for f in ov.key_figures}["Free cash flow"]
@@ -152,6 +153,8 @@ def test_negative_free_cash_flow_shows_both_amounts_and_no_percentage():
     assert (cover.status, cover.percent, cover.share) == ("negative", None, 0.0)
     assert (cover.free_cash_flow, cover.dividends) == ("USD −35 m", "USD 56 m")
     assert cover.text == "Free cash flow was negative"
+    assert (cover.gap, cover.gap_label) == ("USD 91 m", "Dividends above free cash flow")  # 56 − (−35) = 91
+    assert cover.bar_width == "0.0"
 
 
 def test_revenue_at_zero_gives_no_margin():
@@ -195,3 +198,47 @@ def test_the_fiscal_year_end_and_the_years_covered_are_written_for_the_header():
     ov = overview(load_company("KO", demo=True))
     assert (ov.fiscal_year_end, ov.years_text) == ("31 December 2025", "FY2021 – FY2025")
 
+
+
+# --- edge rules the audit of 26 November found untested; hand working in each comment -----------------------------
+
+
+def test_a_prior_year_of_exactly_zero_gives_not_meaningful():
+    data = changed(synthetic.company_data(), "net_income", FY1, 0)  # a change from 0 cannot be a percentage
+    net = figures(data)["Net income"]
+    assert (net.change, net.direction) == ("not meaningful", None)
+
+
+def test_a_figure_with_no_entry_at_all_is_missing_never_zero():
+    data = synthetic.company_data()
+    items = {m: dict(by_year) for m, by_year in data.items.items()}
+    del items["cash"][FY0]  # no entry at all, not an entry marked missing
+    rows = {f.label: f for f in overview(replace(data, items=items)).balance}
+    assert (rows["Cash and equivalents"].text, rows["Cash and equivalents"].kind) == ("n/a", "missing")
+
+
+def test_free_cash_flow_of_exactly_zero_covers_none_of_the_dividends():
+    data = changed(synthetic.company_data(), "operating_cash_flow", FY0, 85)  # 85 − 85 = 0
+    cover = overview(data).coverage
+    assert (cover.status, cover.percent, cover.share, cover.bar_width) == ("not_covered", "0.0%", 0.0, "0.0")
+    assert (cover.gap, cover.gap_label) == ("USD 56 m", "Dividends above free cash flow")
+
+
+def test_free_cash_flow_equal_to_the_dividends_covers_them_exactly():
+    data = changed(synthetic.company_data(), "operating_cash_flow", FY0, 141)  # 141 − 85 = 56, the dividends
+    cover = overview(data).coverage
+    assert (cover.status, cover.percent, cover.share) == ("covered", "100.0%", 1.0)
+    assert (cover.gap, cover.gap_label) == ("USD 0 m", "Free cash flow equals the dividends")
+
+
+def test_coverage_above_1000_percent_is_written_with_a_thousands_separator():
+    data = changed(synthetic.company_data(), "dividends_paid", FY0, 10)  # 130 ÷ 10 = 13 → 1,300.0%
+    assert overview(data).coverage.percent == "1,300.0%"  # Nvidia read "9925.7%" (audit of 26 November)
+
+
+def test_negative_dividends_are_a_sign_error_never_no_dividend_paid():
+    # a payment is filed as a positive amount; a negative one is a sign error, as D1 says (code review, 26 November)
+    data = changed(synthetic.company_data(), "dividends_paid", FY0, -56)
+    cover = overview(data).coverage
+    assert (cover.status, cover.text, cover.percent) == ("missing", "Dividend coverage is not available", None)
+    assert "negative" in cover.note

@@ -68,6 +68,7 @@ class Coverage:
     text: str  # the sentence shown when there is no percentage
     percent: str | None = None  # "60.3%"
     share: float | None = None  # free cash flow ÷ dividends for the bar, between 0 and 1
+    bar_width: str = "0.0"  # the same share in percent for the bar's width, so the screen computes nothing
     free_cash_flow: str = NA
     dividends: str = NA
     gap: str = ""  # "USD 3.48 bn"
@@ -242,7 +243,12 @@ def _coverage(data: CompanyData, fy0: date) -> Coverage:
     fcf, fcf_why = _free_cash_flow(data, fy0)
     dividends, div_why = _value(data, "dividends_paid", fy0)
     fcf_text = NA if fcf is None else amount_text(fcf)
-    if dividends is not None and dividends <= 0:  # treated as nil (SPEC §7, plan Q1) or reported as zero
+    if dividends is not None and dividends < 0:  # a payment is filed as a positive amount: a sign error, as in D1
+        return Coverage("missing", "Dividend coverage is not available", free_cash_flow=fcf_text,
+                        dividends=amount_text(dividends),
+                        note=f"dividends paid for {_year(fy0)} are filed as a negative amount, which is read as a "
+                             "sign error, never as no dividend")
+    if dividends is not None and dividends == 0:  # treated as nil (SPEC §7, plan Q1) or reported as zero
         # plain words for the reader; the tags searched stay in the fact's note, on the Sources tab
         note = f"No dividends paid in {_year(fy0)}. The Sources tab shows how this was read."
         return Coverage("no_dividend", "No dividend paid", free_cash_flow=fcf_text, note=note)
@@ -255,15 +261,20 @@ def _coverage(data: CompanyData, fy0: date) -> Coverage:
                         dividends=div_text, gap=amount_text(dividends - fcf), gap_label="Dividends above free cash flow")
     ratio = fcf / dividends
     covered = fcf >= dividends
+    if fcf == dividends:
+        gap_label = "Free cash flow equals the dividends"
+    else:
+        gap_label = "Free cash flow above dividends" if covered else "Dividends above free cash flow"
     return Coverage(
         "covered" if covered else "not_covered",
         "Free cash flow covers the dividends" if covered else "Free cash flow does not cover the dividends",
-        percent=f"{ratio * 100:.1f}%",
+        percent=f"{ratio * 100:,.1f}%",  # "9,925.7%", not "9925.7%" (Nvidia)
         share=min(ratio, 1.0),
+        bar_width=f"{min(ratio, 1.0) * 100:.1f}",
         free_cash_flow=fcf_text,
         dividends=div_text,
         gap=amount_text(abs(fcf - dividends)),
-        gap_label="Free cash flow above dividends" if covered else "Dividends above free cash flow",
+        gap_label=gap_label,
     )
 
 
@@ -370,6 +381,30 @@ def _area_summary(area: str, results) -> AreaSummary:
     share = score.passed / score.assessed if on_shape else None
     return AreaSummary(area, label, marks, score.passed, score.assessed, f"{note} · {short}" if note else short,
                        short, note, share, f"{share * 100:.0f}%" if share is not None else (note or short))
+
+
+RADAR_ORDER = ("financial_health", "past_performance", "valuation", "dividend")  # axes: top, right, bottom, left
+
+
+@dataclass(frozen=True)
+class RadarShape:
+    points: tuple[tuple[str, float], ...]  # (area, share in percent) for each scored area, in RADAR_ORDER
+    edges: tuple[tuple[str, str], ...]  # neighbouring scored areas joined by a line, in RADAR_ORDER
+    filled: bool  # only when all four areas are scored
+
+
+def radar_shape(card: "Scorecard") -> RadarShape:
+    """What the radar draws. Two areas are joined only when both are scored and next to each other, and the shape is
+    filled only when all four are scored: an area off the shape breaks the line at its own axis instead of being
+    crossed through the centre, where it would read as 0% (SPEC §3; Igor, 26 November)."""
+    shares = {a.area: a.share for a in card.areas}
+    scored = [area for area in RADAR_ORDER if shares.get(area) is not None]
+    neighbours = [(RADAR_ORDER[i], RADAR_ORDER[(i + 1) % len(RADAR_ORDER)]) for i in range(len(RADAR_ORDER))]
+    return RadarShape(
+        points=tuple((area, shares[area] * 100) for area in scored),
+        edges=tuple((a, b) for a, b in neighbours if a in scored and b in scored and len(scored) > 1),
+        filled=len(scored) == len(RADAR_ORDER),
+    )
 
 
 def scorecard(results) -> Scorecard:

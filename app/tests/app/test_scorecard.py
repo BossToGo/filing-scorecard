@@ -284,10 +284,15 @@ def test_until_e_s_texts_a_closed_check_says_its_result_and_figures():
     Test change (rule 14.6, Simon's written agreement of 25 November 2026): the rows show E's names since #17, so the
     check is found by its name, looked up in texts.yaml (`name_of`), no longer by its id; no score, count or figure
     changed."""
-    assert closed_row("H1", "pass", 31_044e6, 21_281e6, (), "x").endswith(
-        f"**{name_of('H1')}.** Passed. USD 31,044 m against USD 21,281 m.")
-    assert closed_row("H1", "fail", 31_044e6, 49_260e6, (), "x") == (
-        f"{FAILED_ICON} **{name_of('H1')}.** Failed. USD 31,044 m against USD 49,260 m.")
+    # Test change (rule 14.6, Simon's written agreement of 26 November 2026; Igor's review of #47): a closed row no
+    # longer shows only two numbers ("Passed. USD 31,044 m against USD 21,281 m."), but the check's own sentence (its
+    # explanation, written by the check's owner). The sentence is Coca-Cola's H1 as shown on screen; no figure changed.
+    sentence = ("On 31 December 2025, short-term assets were USD 31,044 million, above short-term liabilities of "
+                "USD 21,281 million. Assets must be higher to pass.")
+    assert closed_row("H1", "pass", 31_044e6, 21_281e6, (), sentence).endswith(
+        f"**{name_of('H1')}.** Passed. {sentence}")
+    assert closed_row("H1", "fail", 31_044e6, 49_260e6, (), sentence) == (
+        f"{FAILED_ICON} **{name_of('H1')}.** Failed. {sentence}")
     # Test change (rule 14.6, Simon's written agreement of 25 November 2026, Igor's review of #54 point 2): a pass or
     # fail without a value shows the check's explanation in the row (was "Passed." alone, which says nothing).
     assert closed_row("D3", "pass", None, None, (), "x").endswith(f"**{name_of('D3')}.** Passed. x")
