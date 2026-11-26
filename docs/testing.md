@@ -59,3 +59,18 @@ years are below FY0; `test_p2_compares_with_four_years_earlier_not_the_year_befo
 All 12 caught. Each exact boundary (40% for H3, 20% for H5, 5 times for H6, equal assets for H1, an unchanged
 share for H4) has its own test, so a changed comparison is caught even where Appendix A is not at the boundary.
 
+### S4 (benchmark loader, `app/src/benchmarks/loader.py`)
+
+| Break | Check | What was broken | Caught by (failing tests) |
+|---|---|---|---|
+| S4-a | S4 | units: a ratio read as a percent (x100) | 2: `test_three_original_source_cells_keep_their_values_and_provenance`, `test_v4_market_pe_excludes_financials_but_d2_yield_uses_the_whole_market` |
+| S4-b | S4 | blank cell read as zero instead of missing | 2: `test_blank_benchmark_is_missing_and_a_real_zero_is_preserved`, `test_blank_source_cell_preserves_its_structured_provenance` |
+| S4-c | S4 | wrong company: every company gets the first industry in the file | 9: `test_demo_industries_match_the_original_lookup[KO-Beverage`, `test_demo_industries_match_the_original_lookup[AAPL-Computers/Peripherals-36]` and 7 more |
+| S4-d | S4 | wrong market group: V4 compared with the market including financials | 14: `test_demo_industries_match_the_original_lookup[KO-Beverage`, `test_demo_industries_match_the_original_lookup[AAPL-Computers/Peripherals-36]` and 12 more |
+
+All 4 caught: a percent read as a decimal, a blank cell turned into zero, a company given another company's
+industry, and V4's market row with financial companies.
+
+**Summary:** 28 deliberate breaks in B's area, 28 caught, 1 test added. The independent read-only review of B's
+code by a member of another area (SPEC §15) is still to come.
+
