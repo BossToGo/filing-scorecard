@@ -139,3 +139,86 @@ def test_main_coca_cola_without_a_price_needs_a_share_price_ac10():
     app = show("KO", "")
     assert not app.exception
     assert "Needs a share price" in tab_text(valuation_tab(app))
+
+
+# --- Igor's review of #63, point 1: benchmarks in the open checks (Coca-Cola, demo mode, price USD 65.40) ----------
+# Expected values read by hand from B's file app/data/benchmarks_us_2026.csv (KO rows, Beverage (Soft); market rows)
+# and Igor's example (P5: "20.5%", "as of 5 January 2026", no sec.gov link); the risk-free rate is the saved value
+# 0.0393 of settings.yaml (period ending 20 November 2026).
+
+import re  # noqa: E402
+
+SEC_ACCESSION = re.compile(r"\d{10}-\d{2}-\d{6}")
+
+
+def open_check(app: AppTest, check_id: str):
+    from ui.scorecard import _plain_name, load_texts
+
+    name = _plain_name(check_id, load_texts())
+    return next(e for e in app.expander if f"**{name}.**" in e.label)
+
+
+def figure(check, label: str):
+    table = check.table[0].value
+    rows = table[table["Figure"] == label]
+    assert len(rows) == 1, (label, list(table["Figure"]))
+    return rows.iloc[0]
+
+
+def test_igor_p5_the_industry_margin_reads_20_5_percent_as_of_5_january_2026():
+    p5 = open_check(show("KO", "65.40"), "P5")
+    margin = figure(p5, "Operating margin")
+    assert (margin["Value"], margin["Period"]) == ("20.5%", "as of 5 January 2026")
+
+
+def test_benchmark_values_and_dates_in_the_open_checks():
+    app = show("KO", "65.40")
+    expected = {  # check: (figure, value, period)
+        "P4": ("Return on equity", "30.9%", "as of 5 January 2026"),   # 0.30916
+        "D2": ("Dividend yield", "1.1%", "as of 5 January 2026"),      # market 0.01104
+        "V3": ("Price to earnings", "37.1 times", "as of 5 January 2026"),   # industry 37.113
+        "V4": ("Price to earnings", "60.3 times", "as of 5 January 2026"),   # market 60.258
+        "V5": ("Price to book", "6.9 times", "as of 5 January 2026"),        # 6.869
+        "V1": ("Industry unlevered beta", "0.56", "as of 5 January 2026"),   # 0.55567
+    }
+    for check_id, (label, value, period) in expected.items():
+        row = figure(open_check(app, check_id), label)
+        assert (row["Value"], row["Period"]) == (value, period), check_id
+    rate = figure(open_check(app, "V1"), "Risk-free rate")
+    assert (rate["Value"], rate["Period"]) == ("3.93%", "as of 20 November 2026")
+
+
+def test_company_figures_keep_fiscal_year_ended():
+    p5 = open_check(show("KO", "65.40"), "P5")
+    table = p5.table[0].value
+    company = table[table["Figure"] != "Operating margin"]
+    assert len(company) and all(p.startswith("fiscal year ended ") for p in company["Period"])
+
+
+def test_the_filing_line_links_only_sec_filings_never_a_benchmark():
+    app = show("KO", "65.40")
+    for check_id in ("P4", "P5", "D2", "V1", "V3", "V4", "V5"):
+        lines = [m.value for m in open_check(app, check_id).markdown if m.value.startswith("**Filing:**")]
+        for line in lines:
+            assert "Damodaran" not in line and ".xls" not in line, check_id
+            assert all(SEC_ACCESSION.fullmatch(a) for a in re.findall(r"\[([^\]]+)\]", line)), check_id
+
+
+def test_the_valuation_tab_benchmark_table_uses_the_same_format():
+    tables = [t.value for t in valuation_tab(show("KO", "65.40")).table]
+    bench = next(t for t in tables if "Benchmark" in t.columns)
+    shown = dict(zip(bench["Benchmark"] + " / " + bench["Group"], bench["Value"]))
+    assert shown["Operating margin / Beverage (Soft)"] == "20.5%"
+    assert shown["Price to earnings / Beverage (Soft)"] == "37.1 times"
+    assert shown["Industry unlevered beta / Beverage (Soft)"] == "0.56"
+    assert shown["Price to earnings / Whole US market"] == "60.3 times"
+
+
+def test_the_typed_price_is_not_an_input_of_any_check():
+    """Flo's decision d (S8 docstring): V1-V6 name the price in their texts, never as a Fact. Confirmed, not built."""
+    from src.data.company import load_company
+    from ui.results import run_checks
+
+    run = run_checks(load_company("KO", demo=True), 65.40, demo=True)
+    metrics = {f.metric for area in run.results.values() for r in area for f in r.inputs}
+    assert not {m for m in metrics if "price" in m}

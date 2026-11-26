@@ -15,7 +15,7 @@ import streamlit as st
 
 from src.contracts import Fact
 from src.data.company import FRED_NOTICE
-from ui.format import beta, fact_value, rate, share_price, usd_m
+from ui.format import beta, fact_value, in_style, rate, share_price, usd_m
 from ui.results import Market
 
 NEEDS_PRICE = ("Needs a share price. Type it in US dollars in the Share price box above, then show the scorecard "
@@ -48,6 +48,11 @@ LABELS = {
 RATES = {"risk_free_rate", "equity_risk_premium", "cost_of_equity", "terminal_growth", "free_cash_flow_margin",
          "past_revenue_growth", "starting_growth", "roe", "operating_margin", "dividend_yield"}
 BETAS = {"unlevered_beta", "levered_beta"}
+# Figures that do not come from a filing (Igor's review of #63, point 1): B's six benchmarks and A's risk-free rate,
+# recognised by their metric, never by their kind or a missing accession (a missing company figure has neither).
+BENCHMARK_METRICS = ("unlevered_beta", "roe", "operating_margin", "pe", "pb", "dividend_yield")
+NOT_FROM_A_FILING = frozenset((*BENCHMARK_METRICS, "risk_free_rate"))
+MULTIPLES = {"pe", "pb"}
 
 
 def label(metric: str) -> str:
@@ -65,6 +70,21 @@ def shown(fact: Fact | None) -> str:
     if fact.metric in BETAS:
         return beta(fact.value)
     return fact_value(fact)
+
+
+def benchmark_value(fact: Fact) -> str:
+    """A benchmark or market figure as written in the valuation tab and in the open checks: rates in percent with one
+    decimal ("20.5%"), multiples in times ("37.1 times"), a beta with two decimals; the risk-free rate as in the cost
+    of equity build-up ("3.93%"). A missing one is "n/a" with its reason."""
+    if fact.value is None or fact.kind == "missing":
+        return fact_value(fact)
+    if fact.metric in MULTIPLES:
+        return in_style(fact.value, "times")
+    if fact.metric in BETAS:
+        return beta(fact.value)
+    if fact.metric == "risk_free_rate":
+        return rate(fact.value)
+    return in_style(fact.value, "percent")
 
 
 def _rows(facts) -> pd.DataFrame:
@@ -133,7 +153,7 @@ def render_industry(market: Market, texts: Mapping) -> None:
     note = texts.get("industry_note")  # Emma's text (#56), shown once it is merged
     if isinstance(note, str) and note:
         st.caption(note)
-    rows = [{"Benchmark": label(f.metric), "Group": group, "Value": shown(f), "Source file": f.form or "",
+    rows = [{"Benchmark": label(f.metric), "Group": group, "Value": benchmark_value(f), "Source file": f.form or "",
              "Column": f.tag or "", "Note": f.note}
             for group, facts in ((b.industry or "none", (b.fact(m) for m in ("unlevered_beta", "roe",
                                                                              "operating_margin", "pe", "pb"))),

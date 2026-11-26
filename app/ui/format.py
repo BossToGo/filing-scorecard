@@ -89,6 +89,11 @@ def share_price(price: float) -> str:
     return f"USD {price:,.2f}"
 
 
+def in_style(value: float, style: str) -> str:
+    """A value in one of STYLES with its default decimals: 0.20525 "percent" -> "20.5%", 37.113 "times" -> "37.1 times"."""
+    return _write(value, STYLES[style], STYLES[style].decimals)
+
+
 def rate(value: float) -> str:
     """A rate stored as a decimal, shown as a percent with two decimals: 0.0903325 -> "9.03%" (S10b)."""
     return _write(value, _Style(100.0, 2, "{}%"), 2)

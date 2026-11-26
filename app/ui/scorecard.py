@@ -21,7 +21,7 @@ from src.contracts import CheckResult, CompanyData, Fact
 from src.scores import area_score, dividend_note, not_assessed
 from ui.format import check_value, fact_value, share_price
 from ui.results import AREA_CHECKS, AREAS, Market
-from ui.valuation import LABELS, render_detail, render_estimate
+from ui.valuation import LABELS, NOT_FROM_A_FILING, benchmark_value, render_detail, render_estimate
 
 TEXTS_FILE = Path(__file__).with_name("texts.yaml")  # E's plain-language texts (PR #17)
 AREA_TITLES = {"past_performance": "Past performance", "financial_health": "Financial health",
@@ -236,15 +236,27 @@ def render_score_chart(results: Mapping[str, Sequence[CheckResult] | None]) -> N
 # --- checks -----------------------------------------------------------------------------------------------------
 
 
+SEC_ACCESSION = re.compile(r"\d{10}-\d{2}-\d{6}")
+
+
 def filing_link(data: CompanyData, fact: Fact) -> str | None:
     """Address of the SEC filing a reported figure comes from, or None (synthetic, derived, missing)."""
-    if fact.form in (None, "SYNTHETIC") or not fact.accession or not data.cik.strip("0"):
+    # Only a real SEC accession number (0000021344-26-000010): never a benchmark's "Damodaran:..." source or the
+    # risk-free rate (Igor's review of #63, point 1)
+    if fact.form in (None, "SYNTHETIC") or not SEC_ACCESSION.fullmatch(fact.accession or "") or not data.cik.strip("0"):
         return None
     return f"https://www.sec.gov/Archives/edgar/data/{int(data.cik)}/{fact.accession.replace('-', '')}/"
 
 
 def _period(fact: Fact) -> str:
+    """A company figure's fiscal year; a benchmark or the risk-free rate is dated, not a fiscal year (Igor, #63)."""
+    if fact.metric in NOT_FROM_A_FILING:
+        return f"as of {_day(fact.period_end)}"
     return f"fiscal year ended {_day(fact.period_end)}"
+
+
+def _input_value(fact: Fact) -> str:
+    return benchmark_value(fact) if fact.metric in NOT_FROM_A_FILING else fact_value(fact)
 
 
 def render_check(data: CompanyData, result: CheckResult, texts: Mapping) -> None:
@@ -276,7 +288,7 @@ def render_check(data: CompanyData, result: CheckResult, texts: Mapping) -> None
             shown, against = check_value(result.check_id, result.value, result.threshold)
             st.markdown(f"**Value:** {shown}" + (f" · **compared with:** {against}" if against else ""))
         if result.inputs:
-            st.table(pd.DataFrame([{"Figure": LABELS.get(f.metric, f.metric), "Period": _period(f), "Value": fact_value(f), "Kind": f.kind}
+            st.table(pd.DataFrame([{"Figure": LABELS.get(f.metric, f.metric), "Period": _period(f), "Value": _input_value(f), "Kind": f.kind}
                                    for f in result.inputs]))
             # Filing number with its dashes, as on the sources page (e.g. 0000063908-26-000035)
             links = sorted({(f.accession, link) for f in result.inputs if (link := filing_link(data, f))})
