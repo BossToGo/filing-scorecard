@@ -26,15 +26,24 @@ with the note "negative equity" and no ratio is shown. This rule is in the SPEC 
 on 23 November) and is tested on McDonald's real data.
 
 **4. What happens when a figure is missing from the annual report?**
-The check shows "insufficient data" and the reason. A missing figure is never treated as zero and never guessed.
-Example: Apple's interest expense is not in its SEC data for fiscal years 2024 to 2026, so interest cover (H6)
-shows "insufficient data" for Apple. For a company outside our five, there is no industry group, so the seven
-checks that need an industry figure or the industry beta show "insufficient data" too.
+The check shows "not assessed" and the reason. A missing figure is never treated as zero and never guessed.
+Example: Apple's interest expense is not in its SEC data for fiscal years 2024 to 2026, so interest cover (H6) is
+"not assessed" for Apple. For a company outside our five, there is no industry group, so the seven checks that need
+an industry figure or the industry beta are "not assessed" too.
 
 **5. How do you know your calculations are right?**
-Four ways. First, the expected results of all 12 checks on a made-up test company were worked out by hand (Simon
+Five ways. First, the expected results of all 12 checks on a made-up test company were worked out by hand (Simon
 for ten of them, I did P4 and P5 myself and compared the rest) and signed off before the code was trusted. Second,
 the comparisons use exact fractions, so a value exactly at a limit (like 40% or 5 times) never passes or fails by a
 rounding error. Third, in the break-it round I broke each formula on purpose, 28 times (a wrong year, a dropped
-term, swapped inputs, a changed comparison), and a test caught every one. Fourth, I checked six of Apple's figures
-by hand against its printed 10-K: all six match the app.
+term, swapped inputs, a changed comparison), and a test caught every one. Fourth, Flo, from another area, then
+tried to break my checks independently; every case he raised is now covered by a test, the 30 benchmark values are
+pinned to Damodaran's published tables, and no result changed. Fifth, I checked six of Apple's figures by hand
+against its printed 10-K: all six match the app.
+
+**6. Why do V3 and V4 (price to earnings below the industry and below the US market) pass for all five companies?**
+Because the comparison figures are high in this edition. Damodaran's US market P/E, excluding financial companies,
+is 60.3 (January 2026): it is an average of the P/Es of profitable companies, so many small companies with very
+high P/Es pull it up. We kept this column on purpose: its earnings period is documented as the latest fiscal year,
+the same basis as our own company P/E, and we did not change data after the feature freeze. So "below the market
+P/E" is a low bar in this edition, and we say so openly rather than hide it.
