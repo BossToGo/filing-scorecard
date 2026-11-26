@@ -43,7 +43,8 @@ def test_usd_millions_with_thousands_separator():
 
 
 def test_usd_millions_keeps_the_sign():
-    assert usd_m(-540_000_000) == "USD -540 m"
+    # Test change (rule 14.6, Simon's written agreement of 26 November 2026; Greg's note on #47): negative values are written with the minus sign U+2212, as in the rest of the app; no figure changed.
+    assert usd_m(-540_000_000) == "USD −540 m"
 
 
 def test_a_typed_share_price_in_usd_with_two_decimals():
@@ -74,7 +75,8 @@ def test_amounts_close_to_each_other_get_the_decimals_that_tell_them_apart():
 
 
 def _number(text: str) -> float:
-    return float(text.replace("USD", "").replace("m", "").replace("%", "").replace(",", "").strip())
+    # Test change (rule 14.6, Simon's written agreement of 26 November 2026; Greg's note on #47): negative values are written with the minus sign U+2212, as in the rest of the app; no figure changed. So the helper reads "−" back as a minus.
+    return float(text.replace("−", "-").replace("USD", "").replace("m", "").replace("%", "").replace(",", "").strip())
 
 
 def _compares_like_the_real_ones(value: float, threshold: float) -> None:
@@ -105,7 +107,8 @@ def test_two_values_closer_than_the_finest_decimal_may_show_as_equal():
 def test_a_pass_or_fail_without_a_value_shows_no_value_never_zero_or_none():
     shown, against = check_value("D3", None, -0.10)
     assert shown == NO_VALUE
-    assert against == "-10.0%"
+    # Test change (rule 14.6, Simon's written agreement of 26 November 2026; Greg's note on #47): negative values are written with the minus sign U+2212, as in the rest of the app; no figure changed.
+    assert against == "−10.0%"
     assert "None" not in shown and "0" not in shown
 
 
@@ -159,7 +162,8 @@ def test_a_rate_is_shown_as_a_percent_with_two_decimals():
 
     assert rate(0.04) == "4.00%"
     assert rate(0.0903325) == "9.03%"
-    assert rate(-0.10) == "-10.00%"
+    # Test change (rule 14.6, Simon's written agreement of 26 November 2026; Greg's note on #47): negative values are written with the minus sign U+2212, as in the rest of the app; no figure changed.
+    assert rate(-0.10) == "−10.00%"
 
 
 def test_a_beta_is_shown_with_two_decimals():
@@ -167,3 +171,20 @@ def test_a_beta_is_shown_with_two_decimals():
 
     assert beta(0.90) == "0.90"
     assert beta(1.00665) == "1.01"  # Appendix A levered beta
+
+
+def test_negative_values_use_the_minus_sign_everywhere():
+    """Greg's note on #47: Apple's industry ROE read "-0.2%". B's file gives -0.0017413 (Computers/Peripherals), so
+    "−0.2%" with one decimal; the other cases are hand values (Simon, 26 November 2026)."""
+    from ui.format import beta, in_style
+    from ui.valuation import benchmark_value
+
+    roe = fact("roe", -0.0017413160406024974, unit="pure", kind="reported", note="B's file")
+    assert benchmark_value(roe) == "−0.2%"
+    assert in_style(-0.255, "percent") == "−25.5%"
+    assert in_style(-3.0, "times") == "−3.0 times"
+    assert beta(-0.5) == "−0.50"
+    assert fact_value(fact("fair_value", -1.5, unit="USD/shares", kind="derived", note="f")) == "USD −1.50 per share"
+    assert fact_value(fact("x", -0.25, unit="pure", kind="derived", note="f")) == "−0.25"
+    assert usd_m(-0.4e6) == "USD 0 m"  # rounds to zero: no sign, as before
+    assert "-" not in in_style(-0.255, "percent")

@@ -1,6 +1,6 @@
 """The overview above the tabs, drawn without a browser (Streamlit AppTest; slice S10c). Owner: A.
 
-Expected texts are the hand-worked values of docs/acceptance.md, "Overview (S10c)" (AC12 to AC14); the screen only
+Expected texts are the hand-worked values of docs/acceptance.md, "Overview (S10c)" (AC16 to AC18; numbered AC12 to AC14 until 26 November); the screen only
 shows what `src.overview` prepared, so these tests check that it shows all of it, and shows "n/a" with a reason.
 """
 
@@ -46,7 +46,7 @@ def visible(at: AppTest) -> str:
     return " ".join(html.unescape(text).split())
 
 
-def test_ac12_coca_cola_key_figures_coverage_and_balance_sheet_are_shown():
+def test_ac16_coca_cola_key_figures_coverage_and_balance_sheet_are_shown():
     text = shown(run("KO"))
     for expected in ("47.94", "+1.9%", "28.7", "+7.5 pp", "13.11", "+23.3%", "5.30", "+11.7%", "vs FY2024",
                      "60.3%", "USD 3.48 bn", "Dividends above free cash flow", "1.46×", "0001628280-26-010047",
@@ -68,13 +68,13 @@ def test_the_chart_has_a_table_view_with_the_same_figures():
         assert expected in text, expected
 
 
-def test_ac13_amazon_shows_no_dividend_paid():
+def test_ac17_amazon_shows_no_dividend_paid():
     text = shown(run("AMZN"))
     assert "No dividend paid" in text
     assert "0.0%" not in text
 
 
-def test_ac14_a_missing_figure_shows_na_with_its_reason_never_zero():
+def test_ac18_a_missing_figure_shows_na_with_its_reason_never_zero():
     at = run("SYN", "operating_cash_flow")
     text = shown(at)
     assert "n/a" in text and "operating cash flow for FY2025: not in the filing" in text
@@ -108,41 +108,65 @@ def run_with_checks(ticker: str) -> AppTest:
     return at
 
 
-def test_the_scorecard_panel_shows_the_radar_and_the_checks_by_area_without_a_total():
-    # was "the total, the radar and the checks by area": the total is out (the group's answers on #60, 26 November;
-    # rule 14.6, agreed by Igor); the radar is back at Igor's request
-    from src.data.company import load_company
-    from src.overview import scorecard
-    from ui.results import check_results
-
-    card = scorecard(check_results(load_company("KO", demo=True)))
+def test_the_panel_shows_the_radar_and_explains_it_without_repeating_the_marks():
+    # was "the radar and the checks by area": the panel's own rows of marks and legend repeated the score chart below
+    # it, which shows the same marks with each check's name and reason (Simon's open point on #63; Igor's decision,
+    # 26 November; rule 14.6, agreed by Igor). The total and the area to read first stay out (#60).
     at = run_with_checks("KO")
-    text = shown(at)
-    seen = visible(at)
-    assert "Checks by area" in seen
-    for area in card.areas:  # was `area.count_text in text`, which also matched the hidden aria-label; the visible
-        # count is `short_text` since Emma's review of #60 (26 November; rule 14.6, agreed by Igor)
-        assert area.label in seen and area.short_text in seen, area.label
-    assert text.count('class="fs-ov-mk') >= 24 + 4  # six marks per area, plus the legend
+    text, seen = shown(at), visible(at)
+    assert "Checks by area" in seen and "Centre 0% · edge 100%" in seen
+    assert "score chart below" in seen  # where each area's six checks are listed, with their reasons
     assert len(at.get("plotly_chart")) == 2  # the radar and the five-year chart
-    assert "Centre 0% · edge 100%" in seen
-    for gone in ("fs-ov-total", "fs-ov-strong", "fs-ov-focus"):  # the total, its label and the area to read first
+    for gone in ("fs-ov-mk", "fs-ov-area", "fs-ov-total", "fs-ov-strong", "fs-ov-focus"):  # marks, rows, total, focus
         assert gone not in text, gone
 
 
-def test_the_radar_and_the_legend_say_they_are_not_a_rating():
-    # was "the total and the radar" (twice): the total is out, so the sentence is under the radar and in the legend, as
-    # SPEC §3 asks of every score chart's legend (rule 14.6, agreed by Igor)
-    assert visible(run_with_checks("KO")).count("Not a rating of the share and not advice") >= 2
+def test_the_radar_labels_each_area_with_its_share_or_why_it_is_off_the_shape():
+    from src.data.company import load_company
+    from src.overview import scorecard
+    from ui import overview as ui_overview
+    from ui.results import check_results
+
+    card = scorecard(check_results(load_company("AMZN", demo=True)))
+    labels = " ".join(str(t) for trace in ui_overview._radar(card).data for t in (trace.theta or ()))
+    for area in card.areas:
+        assert area.label.split()[0] in labels and area.share_text in labels, area.label
+    assert "No dividend paid" in labels  # Amazon's dividend: off the shape, said in words
 
 
-def test_the_marks_are_square_as_on_the_main_chart():
-    # Simon's condition on #60 for keeping the checks by area (26 November): the same square marks as the score chart
+def test_the_radar_fills_only_a_complete_shape_and_never_draws_through_the_centre():
+    from src.contracts import CheckResult
+    from src.overview import radar_shape, scorecard
+    from ui import overview as ui_overview
+
+    def card(valuation):
+        found = {"past_performance": ("pass",) * 4 + ("insufficient_data",) * 2, "financial_health": ("pass",) * 6,
+                 "dividend": ("pass",) * 6, "valuation": valuation}
+        letters = {"past_performance": "P", "financial_health": "H", "dividend": "D", "valuation": "V"}
+        return scorecard({a: None if st is None else tuple(CheckResult(f"{letters[a]}{n}", s, None, None, (), s)
+                                                             for n, s in enumerate(st, 1)) for a, st in found.items()})
+
+    open_card, full_card = card(None), card(("pass",) * 3 + ("fail",) * 3)
+    open_fig, full_fig = ui_overview._radar(open_card), ui_overview._radar(full_card)
+    assert not any(t.fill == "toself" for t in open_fig.data)  # valuation off: no filled shape
+    lines = [t for t in open_fig.data if t.mode and "lines" in t.mode]
+    assert len(lines) == len(radar_shape(open_card).edges) == 2  # top–right and left–top, never right–left
+    assert sum(t.fill == "toself" for t in full_fig.data) == 1  # all four scored: one closed, filled shape
+
+
+def test_the_radar_says_it_is_not_a_rating():
+    # was "the radar and the legend" (twice): the panel's legend went with its rows; the score chart's legend below
+    # says it too on the page (rule 14.6, agreed by Igor)
+    assert visible(run_with_checks("KO")).count("Not a rating of the share and not advice") >= 1
+
+
+def test_the_overview_leaves_the_page_width_to_the_score_chart():
+    # replaces "the marks are square as on the main chart": the panel has no marks any more. Once D placed the
+    # overview above the score chart (#63), its page-wide width rule overrode D's (audit of 26 November).
     from ui import overview as ui_overview
 
     css = ui_overview._style()
-    rule = css[css.index(".fs-ov-mk {"):].split("}", 1)[0]
-    assert "border-radius:4px" in rule and "50%" not in rule
+    assert "stMainBlockContainer" not in css and "stSidebar" not in css
 
 
 def test_without_check_results_there_is_no_scorecard_panel():
@@ -151,10 +175,9 @@ def test_without_check_results_there_is_no_scorecard_panel():
 
 
 def test_amazon_panel_says_no_dividend_paid():
-    # was a search of the HTML source, where the text sat only in the aria-label; now the visible text (Emma's
-    # review of #60, SPEC §3 and AC15; rule 14.6, agreed by Igor)
-    seen = visible(run_with_checks("AMZN"))
-    assert "No dividend paid" in seen and "0 passed of 1 assessed" in seen
+    # was also "0 passed of 1 assessed" in the panel's rows; the rows went to the score chart (see above). The words
+    # stay visible in the coverage card and under the radar's dividend axis (rule 14.6, agreed by Igor)
+    assert "No dividend paid" in visible(run_with_checks("AMZN"))
 
 
 def test_an_area_not_in_this_version_reads_as_on_the_main_screen():

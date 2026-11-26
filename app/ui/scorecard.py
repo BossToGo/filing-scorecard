@@ -248,9 +248,25 @@ def filing_link(data: CompanyData, fact: Fact) -> str | None:
     return f"https://www.sec.gov/Archives/edgar/data/{int(data.cik)}/{fact.accession.replace('-', '')}/"
 
 
+# Plain names of company figures, taken from A's overview (src/overview.py), so the same figure has the same name
+# everywhere (Igor's review of #47; Simon, 26 November 2026). Figures without a name there keep their code name until
+# Emma names them (listed in the S10d pull request); none is invented here.
+OVERVIEW_NAMES = {"revenue": "Revenue", "net_income": "Net income", "cash": "Cash and equivalents",
+                  "financial_debt": "Financial debt", "total_assets": "Total assets"}
+FIGURE_NAMES = {**OVERVIEW_NAMES, **LABELS}
+# Figures read at a date that is not a fiscal year end: the share count, from the cover of the annual report
+# (Igor's review of #47). Balance-sheet figures are at the fiscal year end and keep "fiscal year ended".
+DATED = {"shares"}
+
+
+def figure_name(metric: str) -> str:
+    return FIGURE_NAMES.get(metric, metric)
+
+
 def _period(fact: Fact) -> str:
-    """A company figure's fiscal year; a benchmark or the risk-free rate is dated, not a fiscal year (Igor, #63)."""
-    if fact.metric in NOT_FROM_A_FILING:
+    """A company figure's fiscal year; a benchmark, the risk-free rate or the share count is dated, not a fiscal year
+    (Igor's reviews of #63 and #47)."""
+    if fact.metric in NOT_FROM_A_FILING or fact.metric in DATED:
         return f"as of {_day(fact.period_end)}"
     return f"fiscal year ended {_day(fact.period_end)}"
 
@@ -260,35 +276,25 @@ def _input_value(fact: Fact) -> str:
 
 
 def render_check(data: CompanyData, result: CheckResult, texts: Mapping) -> None:
-    """A closed check shows its icon, its name and one sentence (SPEC 2.4.2 §3 item 5). Until E's texts (#17): the
-    result and the figures, "Passed. USD 31,044 m against USD 21,281 m."; not assessed or does not apply: the word
-    and the check's own explanation, unchanged."""
+    """A closed check shows its icon, its name and one sentence (SPEC 2.4.2 §3 item 5): the result word and the
+    check's own explanation, written by the check's owner, e.g. "Passed. On 31 December 2025, short-term assets were
+    USD 31,044 million, above ..." (Igor's review of #47: no longer two numbers alone, "USD 31,044 m against
+    USD 21,281 m"). The open detail does not repeat the explanation (Igor's review of #35: once)."""
     word = MARK_WORDS[result.status]
-    # The row shows the explanation when the check is not assessed, does not apply, uses an assumed figure or has no
-    # value; the open detail then does not repeat it (Igor's review of #35: once; Simon, 25 November 2026)
     assumed = any(f.kind == "assumption" for f in result.inputs)  # e.g. dividends treated as nil: never "USD 0 m"
-    no_value = result.value is None  # e.g. McDonald's negative equity: "Failed." alone says nothing (Igor, #54)
-    in_row = result.status not in ("pass", "fail") or assumed or no_value
-    if result.status in ("pass", "fail") and in_row:
-        # A figure is an assumption (e.g. dividends treated as nil) or there is no value: the check's own words,
-        # never "USD 0 m" (Flo's rule, plan Q1; Simon's look of 25 November 2026; Igor's review of #54, point 2)
+    if result.status in ("pass", "fail"):
         sentence = f"{word}. {result.explanation.translate(_MARKDOWN)}"
-    elif result.status in ("pass", "fail"):
-        shown, against = check_value(result.check_id, result.value, result.threshold)
-        sentence = f"{word}. {shown}" + (f" against {against}" if against else "") + "."
     else:  # the word only when the explanation's first clause does not already say it (Simon, 25 November 2026)
         sentence = f":gray[{_word_before(word, result.explanation)}{result.explanation.translate(_MARKDOWN)}]"
     with st.expander(f"{ICONS[result.status]} **{_plain_name(result.check_id, texts)}.** {sentence}"):
         rule = texts.get(result.check_id, {}).get("rule")
         if rule:
             st.markdown(f"**Rule:** {rule}")
-        if not in_row:
-            st.markdown(f"**How it is calculated:** {result.explanation}")
         if (result.value is not None or result.threshold is not None) and not assumed:  # the table says it
             shown, against = check_value(result.check_id, result.value, result.threshold)
             st.markdown(f"**Value:** {shown}" + (f" · **compared with:** {against}" if against else ""))
         if result.inputs:
-            st.table(pd.DataFrame([{"Figure": LABELS.get(f.metric, f.metric), "Period": _period(f), "Value": _input_value(f), "Kind": f.kind}
+            st.table(pd.DataFrame([{"Figure": figure_name(f.metric), "Period": _period(f), "Value": _input_value(f), "Kind": f.kind}
                                    for f in result.inputs]))
             # Filing number with its dashes, as on the sources page (e.g. 0000063908-26-000035)
             links = sorted({(f.accession, link) for f in result.inputs if (link := filing_link(data, f))})

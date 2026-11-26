@@ -10,7 +10,7 @@ with a check that does not apply stays off the shape.
 
 from src.contracts import CheckResult
 from src.data.company import load_company
-from src.overview import scorecard
+from src.overview import radar_shape, scorecard
 from tests.fixtures import synthetic
 
 AC3 = {  # SPEC Appendix A tier 1 statuses (Simon's AC3 sign-off), valuation not part of tier 1
@@ -125,3 +125,42 @@ def test_one_count_format_everywhere():
     assert areas["financial_health"].short_text == "4 passed of 6 assessed"
     assert areas["valuation"].short_text == "Not part of this version"
     assert areas["dividend"].note == ""
+
+
+# --- the radar's shape (Igor, 26 November): an area off the shape breaks the line at its axis ---------------------
+# Axes in order top, right, bottom, left: financial health, past performance, valuation, dividend. Hand working: the
+# shares are passed ÷ assessed (4 ÷ 4 = 100%, 4 ÷ 6 = 66.67%, 3 ÷ 6 = 50%, 5 ÷ 5 = 100%); two areas are joined only
+# when both are scored and next to each other, and the shape is filled only when all four are scored, so a missing
+# area is never drawn through the centre, where it would read as 0% (SPEC §3).
+
+
+def test_the_radar_closes_and_fills_only_when_all_four_areas_are_scored():
+    statuses = dict(AC3, valuation=["pass", "pass", "pass", "fail", "fail", "fail"])
+    shape = radar_shape(scorecard(results(statuses)))
+    assert [area for area, _ in shape.points] == ["financial_health", "past_performance", "valuation", "dividend"]
+    assert [round(percent, 2) for _, percent in shape.points] == [66.67, 100.0, 50.0, 100.0]
+    assert shape.edges == (("financial_health", "past_performance"), ("past_performance", "valuation"),
+                           ("valuation", "dividend"), ("dividend", "financial_health"))
+    assert shape.filled
+
+
+def test_an_area_off_the_shape_breaks_the_line_at_its_axis_never_through_the_centre():
+    shape = radar_shape(scorecard(results(AC3)))  # valuation: not part of this version
+    assert [area for area, _ in shape.points] == ["financial_health", "past_performance", "dividend"]
+    # past performance (right) and dividend (left) face each other: never joined across the centre
+    assert shape.edges == (("financial_health", "past_performance"), ("dividend", "financial_health"))
+    assert not shape.filled
+
+
+def test_with_two_areas_off_the_shape_only_neighbours_are_joined():
+    statuses = dict(AC3, dividend=["fail"] + ["not_applicable"] * 5)  # like Amazon: no dividend, no valuation
+    shape = radar_shape(scorecard(results(statuses)))
+    assert [area for area, _ in shape.points] == ["financial_health", "past_performance"]
+    assert shape.edges == (("financial_health", "past_performance"),) and not shape.filled
+
+
+def test_a_single_scored_area_is_a_point_without_lines():
+    statuses = {"past_performance": AC3["past_performance"], "financial_health": ["insufficient_data"] * 6,
+                "dividend": ["insufficient_data"] * 6}
+    shape = radar_shape(scorecard(results(statuses)))
+    assert shape.points == (("past_performance", 100.0),) and shape.edges == () and not shape.filled
