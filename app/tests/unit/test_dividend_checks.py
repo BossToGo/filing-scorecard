@@ -107,6 +107,15 @@ def test_d2_is_not_assessed_until_s9_and_says_what_it_needs():
     assert "share price" in d2.explanation and "dividend yield" in d2.explanation
 
 
+def test_with_six_fiscal_years_the_checks_use_the_latest_five():
+    # S18 (break D-FY0). SPEC §7 notation: FY0 is the latest fiscal year, FY-4 four years earlier. 2020 is too old.
+    r = results(company([18, 20, 22, 24, 26, 28], years=(2020,) + YEARS))
+    assert figures(r["D1"]) == [("dividends_paid", 2025)]
+    assert figures(r["D3"]) == [("dividends_paid", y) for y in YEARS]
+    assert figures(r["D4"]) == [("dividends_paid", 2025), ("dividends_paid", 2021)]
+    assert figures(r["D5"]) == [("dividends_paid", 2025), ("net_income", 2025)]
+
+
 def test_the_thresholds_come_from_the_settings_not_the_code():
     r = results(company(PAYER))
     assert r["D3"].threshold == pytest.approx(-SETTINGS["dividend"]["max_dividend_cut"])

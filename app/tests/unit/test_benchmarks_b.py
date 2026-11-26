@@ -195,3 +195,56 @@ def test_a_missing_industry_figure_is_explained_in_plain_words():
     # The note reaches customers through the valuation engine ("industry beta: ...").
     note = load_benchmarks("MSFT").fact("unlevered_beta").note
     assert note == "No industry figure: industry benchmarks cover only the five demo companies."
+
+
+# --- Flo's S18 read-only review (#64), points 3 and 7: the values themselves -----------------------------------------
+# Expected values come from Damodaran's own web tables of the same January 2026 edition ("Updated in January 2026"),
+# https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/<page>, accessed 26 November 2026, as shown there
+# (percent with two decimals, multiples and betas with two decimals). The six dividend yields are not on those pages
+# (divfund.html shows cash returned, not the yield), so they stay checked against divfund.xls only.
+WEB_TABLES = [
+    ('AAPL', 'unlevered_beta', '1.31', 36),  # Computers/Peripherals, Betas.html
+    ('AAPL', 'roe', '-0.17%', 36),  # Computers/Peripherals, roe.html
+    ('AAPL', 'operating_margin', '22.48%', 36),  # Computers/Peripherals, margin.html
+    ('AAPL', 'pe', '80.95', 36),  # Computers/Peripherals, pedata.html
+    ('AAPL', 'pb', '34.08', 36),  # Computers/Peripherals, pbvdata.html
+    ('AMZN', 'unlevered_beta', '0.76', 23),  # Retail (General), Betas.html
+    ('AMZN', 'roe', '26.05%', 23),  # Retail (General), roe.html
+    ('AMZN', 'operating_margin', '6.80%', 23),  # Retail (General), margin.html
+    ('AMZN', 'pe', '46.68', 23),  # Retail (General), pedata.html
+    ('AMZN', 'pb', '7.19', 23),  # Retail (General), pbvdata.html
+    ('KO', 'unlevered_beta', '0.56', 27),  # Beverage (Soft), Betas.html
+    ('KO', 'roe', '30.92%', 27),  # Beverage (Soft), roe.html
+    ('KO', 'operating_margin', '20.53%', 27),  # Beverage (Soft), margin.html
+    ('KO', 'pe', '37.11', 27),  # Beverage (Soft), pedata.html
+    ('KO', 'pb', '6.87', 27),  # Beverage (Soft), pbvdata.html
+    ('MCD', 'unlevered_beta', '0.77', 64),  # Restaurant/Dining, Betas.html
+    ('MCD', 'roe', '0.10%', 64),  # Restaurant/Dining, roe.html
+    ('MCD', 'operating_margin', '15.79%', 64),  # Restaurant/Dining, margin.html
+    ('MCD', 'pe', '67.67', 64),  # Restaurant/Dining, pedata.html
+    ('MCD', 'pb', '74.74', 64),  # Restaurant/Dining, pbvdata.html
+    ('NVDA', 'unlevered_beta', '1.49', 66),  # Semiconductor, Betas.html
+    ('NVDA', 'roe', '31.36%', 66),  # Semiconductor, roe.html
+    ('NVDA', 'operating_margin', '35.33%', 66),  # Semiconductor, margin.html
+    ('NVDA', 'pe', '70.13', 66),  # Semiconductor, pedata.html
+    ('NVDA', 'pb', '13.31', 66),  # Semiconductor, pbvdata.html
+    (None, 'unlevered_beta', '0.72', 5994),  # Total Market, Betas.html
+    (None, 'roe', '17.21%', 5994),  # Total Market, roe.html
+    (None, 'operating_margin', '12.82%', 5994),  # Total Market, margin.html
+    (None, 'pe', '60.26', 4822),  # Total Market (without financials), pedata.html
+    (None, 'pb', '4.61', 5994),  # Total Market, pbvdata.html
+]
+
+
+def _shown(cell: str) -> tuple[float, int]:
+    return (float(cell[:-1]) / 100, 4) if cell.endswith("%") else (float(cell), 2)
+
+
+@pytest.mark.parametrize("ticker,metric,cell,firms", WEB_TABLES)
+def test_benchmark_value_matches_damodarans_published_table(ticker, metric, cell, firms):
+    data = load_benchmarks(ticker or "KO")
+    fact = data.fact(metric) if ticker else data.market_fact(metric)
+    expected, decimals = _shown(cell)
+    assert round(fact.value, decimals) == round(expected, decimals), (ticker, metric, fact.value, cell)
+    if ticker:
+        assert data.num_firms == firms
