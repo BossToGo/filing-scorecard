@@ -19,6 +19,17 @@ def test_one_accent_colour_and_the_page_colours_are_in_the_theme():
         assert COLOUR.match(theme[name]), name
 
 
+def test_a_dark_theme_with_the_same_roles_and_the_menu_to_switch():
+    """SPEC 2.4.2 §3: a light and a dark theme, both defined once here; the viewer switches in the app menu."""
+    config = tomllib.loads(CONFIG.read_text(encoding="utf-8"))
+    dark = config["theme"]["dark"]
+    for name in ("primaryColor", "backgroundColor", "secondaryBackgroundColor", "textColor", "linkColor",
+                 "grayTextColor"):
+        assert COLOUR.match(dark[name]), name
+        assert COLOUR.match(config["theme"][name]), name
+    assert config["client"]["toolbarMode"] == "viewer"  # keeps the theme menu, hides Deploy
+
+
 def test_no_colour_is_written_in_the_interface_code():
     files = [APP / "main.py", *sorted((APP / "ui").glob("*.py"))]
     found = {f.name: COLOUR.findall(f.read_text(encoding="utf-8")) for f in files}
