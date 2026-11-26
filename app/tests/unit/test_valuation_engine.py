@@ -21,7 +21,7 @@ import pytest
 
 from src.contracts import CompanyData, Fact
 from src.settings import load_settings
-from src.valuation.equity_method import starting_growth, value_company
+from src.valuation.equity_method import forecast, growth_path, starting_growth, value_company
 from tests.fixtures import synthetic
 
 MILLION = 1_000_000.0
@@ -227,6 +227,12 @@ MISSING_INPUTS = [
     ("shares zero", lambda: changed("shares", 2025, 0), {}, ["shares", "zero or negative"]),
     ("share price zero", lambda: None, {"price": 0.0}, ["share price", "zero or negative"]),
     ("industry beta zero", lambda: None, {"beta": rate(0.0, "unlevered_beta")}, ["industry beta", "zero or negative"]),
+    # S18 (breaks GE-negative-share-count, GE-price-negative, GE-beta-negative): only zero was tested,
+    # not a negative number.
+    ("shares negative", lambda: changed("shares", 2025, -100), {}, ["shares", "zero or negative"]),
+    ("share price negative", lambda: None, {"price": -5.0}, ["share price", "zero or negative"]),
+    ("industry beta negative", lambda: None, {"beta": rate(-0.5, "unlevered_beta")},
+     ["industry beta", "zero or negative"]),
 ]
 
 
@@ -595,3 +601,55 @@ def test_a_negative_free_cash_flow_in_fy0_is_shown_with_a_line_and_a_record():
     assert v.status == "ok"
     assert any("negative" in n and "31 December 2025" in n for n in v.notes)
     assert any("negative" in r and "31 December 2025" in r for r in v.records)
+
+
+# --- S18, break-it round (26 November): breaks that no test caught ---------------------------------------------------
+# Every expected result is the rule itself (SPEC §7, §8.3, §8.6) or a relation between two runs: no worked numbers.
+
+
+def test_with_six_fiscal_years_the_valuation_uses_the_latest_five():
+    # Break E-FY0. SPEC §7: FY0 is the latest fiscal year, FY-4 four years earlier, so a revenue of 2020 changes nothing.
+    data = synthetic.company_data()
+    old = data.fact("revenue", date(2021, 12, 31))
+    older = dataclasses.replace(old, value=500 * MILLION, period_start=date(2020, 1, 1), period_end=date(2020, 12, 31))
+    v = value(data.with_fact(older))
+    assert [f.period_end.year for f in v.inputs if f.metric == "revenue"] == [2021, 2022, 2023, 2024, 2025]
+    assert v.fair_value.value == value().fair_value.value
+
+
+def test_e19_an_equity_value_of_exactly_zero_means_not_applicable():
+    # Break FIT-c. SPEC §8.6: equity value ≤ 0. Minority interests set to the present value of the same company.
+    data = synthetic.company_data()
+    nil = data.fact("minority_interest", FY0)
+    v = value(data.with_fact(dataclasses.replace(nil, value=value().forecast.present_value)))
+    assert v.status == "not_applicable" and "minority interests" in v.reason
+    assert v.fair_value is None
+
+
+def test_a_free_cash_flow_of_exactly_zero_in_fy0_is_not_called_negative():
+    # Break GE-fy0-note. SPEC §8.6: the line is for a negative FY0. Capital expenditure FY2025 is 85, so 85 − 85 = 0.
+    v = value(changed("operating_cash_flow", 2025, 85))
+    assert v.status == "ok"
+    assert not any("valuation uses the average" in line for line in v.notes + v.records)
+
+
+@pytest.mark.parametrize("cost_of_equity", [0.025, 0.02], ids=["equal to terminal growth", "below it"])
+def test_a_cost_of_equity_not_above_terminal_growth_is_refused(cost_of_equity):
+    # Breaks GE-forecast-rate, GE-forecast-rate-eq. SPEC §8.3: the terminal value divides by (cost of equity − gT),
+    # which must stay above zero.
+    with pytest.raises(ValueError):
+        forecast(100 * MILLION, growth_path(0.05, 0.025, 2, 10), cost_of_equity, 0.025)
+
+
+def test_starting_growth_refuses_a_company_with_only_four_fiscal_years():
+    # Break GE-g1-years. SPEC §8.6: fewer than five fiscal years.
+    with pytest.raises(ValueError, match="five fiscal years"):
+        starting_growth(without(synthetic.company_data(), "revenue", 2021), SETTINGS)
+
+
+@pytest.mark.parametrize("year, millions", [(2021, None), (2021, 0), (2025, 0)],
+                         ids=["FY-4 missing", "FY-4 zero", "FY0 zero"])
+def test_starting_growth_refuses_unusable_revenue(year, millions):
+    # Break GE-g1-unusable. SPEC §8.6: revenue missing, or FY0 or FY-4 ≤ 0.
+    with pytest.raises(ValueError, match="revenue"):
+        starting_growth(changed("revenue", year, millions), SETTINGS)
