@@ -32,7 +32,8 @@ Decisions (Flo, 24 November 2026):
   layer (S2b) supplies the rate (FRED, or the dated fallback in settings.yaml); B's benchmark loader (S4) the beta.
   This module never reads a fallback itself, so a missing rate is "insufficient data", never a guess.
 - The share price is the number the user typed in (SPEC §3). It is not among `Valuation.inputs` (it has no filing
-  source); the checks V1, V2 and V6 (S9) add it to their own inputs.
+  source). The checks V1, V2 and V6 (S9) use it as their value and name it in their texts, never as a `Fact`
+  (Flo's decision d, 25 November).
 - A negative capital expenditure or a negative financial debt is a sign error that the data layer keeps as filed
   and flags (SPEC §5.4): it is never flipped, so the valuation is "insufficient data" (as in the dividend checks).
 - The growth note names the terminal growth actually used (2.5%, or the risk-free rate when that is lower).
