@@ -70,13 +70,13 @@ V2:
   rule: "The share price you typed is at or below 80% of the estimate."
 V3:
   name: "Price to earnings below industry"
-  rule: "The value of the whole company at the price you typed, divided by its latest yearly profit (price to earnings), is lower than the average of companies in the same industry. A loss or zero profit fails the check."
+  rule: "The value of all its shares at the price you typed, divided by its latest yearly profit (price to earnings), is lower than the average of companies in the same industry. A loss or zero profit fails the check."
 V4:
   name: "Price to earnings below the US market"
-  rule: "The value of the whole company at the price you typed, divided by its latest yearly profit (price to earnings), is lower than the average of the whole US stock market. A loss or zero profit fails the check."
+  rule: "The value of all its shares at the price you typed, divided by its latest yearly profit (price to earnings), is lower than the average of the whole US stock market. A loss or zero profit fails the check."
 V5:
   name: "Price to book below industry"
-  rule: "The value of the whole company at the price you typed, divided by its equity (what the company owns minus what it owes, the part that belongs to its shareholders) at the latest year end (price to book), is lower than the average of companies in the same industry. Zero or negative equity fails the check."
+  rule: "The value of all its shares at the price you typed, divided by its equity (what the company owns minus what it owes, the part that belongs to its shareholders) at the latest year end (price to book), is lower than the average of companies in the same industry. Zero or negative equity fails the check."
 V6:
   name: "Price does not demand heroic growth"
   rule: "The share price you typed is at or below the estimate recalculated as if the company's growth started at 30% a year, the highest the model allows."
