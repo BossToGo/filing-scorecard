@@ -112,6 +112,8 @@ def test_ac13_amazon_shows_no_dividend_paid_never_zero_percent():
     assert cover.status == "no_dividend"
     assert cover.percent is None
     assert cover.text == "No dividend paid"
+    # in plain words, not the list of SEC tags the data layer searched (those stay on the Sources tab)
+    assert cover.note == "No dividends paid in FY2025. The Sources tab shows how this was read."
 
 
 # --- edge rules (AC14; Igor, 25 November) --------------------------------------------------------------------

@@ -36,6 +36,16 @@ def shown(at: AppTest) -> str:
     return "\n".join(m.value for m in at.markdown) + "\n".join(c.value for c in at.caption)
 
 
+def visible(at: AppTest) -> str:
+    """What a reader sees: the page text without tags and attributes (so not an aria-label or a title)."""
+    import html
+    import re
+
+    text = re.sub(r"<style>.*?</style>", " ", shown(at), flags=re.S)
+    text = re.sub(r"<[^>]+>", " ", text)
+    return " ".join(html.unescape(text).split())
+
+
 def test_ac12_coca_cola_key_figures_coverage_and_balance_sheet_are_shown():
     text = shown(run("KO"))
     for expected in ("47.94", "+1.9%", "28.7", "+7.5 pp", "13.11", "+23.3%", "5.30", "+11.7%", "vs FY2024",
@@ -109,8 +119,10 @@ def test_the_scorecard_panel_shows_the_total_the_radar_and_the_checks_by_area():
     passed, assessed = card.headline
     assert f">{passed}<small> / {assessed}</small>" in text and "assessed checks passed" in text
     assert f"{card.failed} failed · {card.not_assessed} not assessed" in text
-    for area in card.areas:
-        assert area.label in text and area.count_text in text
+    seen = visible(at)
+    for area in card.areas:  # was `area.count_text in text`, which also matched the hidden aria-label; the visible
+        # count is `short_text` since Emma's review of #60 (26 November; rule 14.6, agreed by Igor)
+        assert area.label in seen and area.short_text in seen, area.label
     assert text.count('class="fs-ov-mk') >= 24 + 4  # six marks per area, plus the legend
     charts = at.get("plotly_chart")
     assert len(charts) == 2  # the radar and the five-year chart
@@ -121,7 +133,67 @@ def test_without_check_results_there_is_no_scorecard_panel():
 
 
 def test_amazon_panel_says_no_dividend_paid():
-    assert "No dividend paid · 0 passed of 1 assessed" in shown(run_with_checks("AMZN"))
+    # was a search of the HTML source, where the text sat only in the aria-label; now the visible text (Emma's
+    # review of #60, SPEC §3 and AC15; rule 14.6, agreed by Igor)
+    seen = visible(run_with_checks("AMZN"))
+    assert "No dividend paid" in seen and "0 passed of 1 assessed" in seen
+
+
+def test_the_total_and_the_radar_say_they_are_not_a_rating():
+    at = run_with_checks("KO")
+    assert visible(at).count("Not a rating of the share and not advice") >= 2  # by the total and under the radar
+
+
+def test_an_area_not_in_this_version_reads_as_on_the_main_screen():
+    from src.data.company import load_company
+    from ui.results import check_results
+
+    missing = [area for area, found in check_results(load_company("KO", demo=True)).items() if found is None]
+    seen = visible(run_with_checks("KO"))
+    for area in missing:
+        assert "Not part of this version" in seen, area
+
+
+def page_with_frame(ticker: str) -> None:
+    from src.data.company import load_company
+    from src.overview import overview
+    from ui.overview import render_overview, render_page_shell
+    from ui.results import check_results
+
+    data = load_company(ticker, demo=True)
+    render_page_shell(data, overview(data))
+    render_overview(data, check_results(data))
+
+
+def test_each_menu_link_goes_to_its_own_section_with_the_main_screens_names():
+    from ui.overview import NAV
+
+    at = AppTest.from_function(page_with_frame, args=("KO",), default_timeout=30)
+    at.run()
+    assert not at.exception, at.exception
+    page = shown(at) + "\n".join(m.value for m in at.sidebar.markdown)
+    anchors = [anchor for _, anchor, _ in NAV]
+    assert len(set(anchors)) == len(anchors)  # "Cash flow" and "Dividends" both went to the coverage card
+    for anchor in anchors:
+        assert f'href="#{anchor}"' in page and f'id="{anchor}"' in page, anchor
+    labels = [label for label, _, _ in NAV]
+    assert "Sources" in labels and "Dividend" in labels  # the Sources tab and the Dividend area of the main screen
+    for word in ("Company research", "Company report"):  # one name for the page (Emma's review of #60)
+        assert word not in page, word
+
+
+def test_passed_is_the_accent_and_failed_the_text_colour_never_green_or_red(monkeypatch):
+    import streamlit as st
+
+    from ui import overview as ui_overview
+
+    theme = {"theme.primaryColor": "#111111", "theme.textColor": "#222222", "theme.greenColor": "#00ff00",
+             "theme.redColor": "#ff0000"}
+    monkeypatch.setattr(st, "get_option", lambda key: theme.get(key))
+    assert ui_overview._pass_colour() == "#111111"
+    css = ui_overview._style()
+    assert "--ov-pass:light-dark(#111111, #111111)" in css and "--ov-fail:light-dark(#222222, #222222)" in css
+    assert "#00ff00" not in css and "#ff0000" not in css  # SPEC §3; decision log "never red or green"
 
 
 def test_chart_colours_given_as_text_on_the_command_line_are_read_as_a_list(monkeypatch):

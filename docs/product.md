@@ -62,7 +62,9 @@ Agreed visuals:
    shape and by the label "4 passed of 5 assessed, 1 not assessed", never by colour alone; a legend says the scores
    are not a rating of the share and not advice. The overview's scorecard panel adds the total of assessed checks
    passed and a radar of the four areas (share of assessed checks passed, centre 0%, edge 100%; an area not assessed
-   is labelled and left off the shape), with the checks by area next to it.
+   is labelled and left off the shape; drawn in the accent colour), with the checks by area next to it (round marks, as
+   in Igor's design; the count as "N passed of M assessed"). The total and the radar each carry the sentence "Not a
+   rating of the share and not advice."
 2. **Check details**: tables, not charts. The overview's five-year chart (below) is the one chart so far (#47). Every figure with unit and fiscal year; missing figures shown as "n/a"
    with the reason, never as 0.
 3. The synthetic test company always carries a "SYNTHETIC DATA" mark.

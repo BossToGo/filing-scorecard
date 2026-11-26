@@ -49,7 +49,9 @@ def test_the_share_of_assessed_checks_passed_per_area_for_the_radar():
     assert [a.label for a in areas.values()] == ["Past performance", "Financial health", "Dividend", "Valuation"]
     assert areas["past_performance"].share == 1.0 and areas["past_performance"].share_text == "100%"
     assert areas["financial_health"].share_text == "67%"  # 4 ÷ 6
-    assert (areas["valuation"].share, areas["valuation"].share_text) == (None, "Not assessed")
+    # was "Not assessed": an area whose checks are not in this version reads as on the main screen (Emma's review
+    # of #60, 26 November; rule 14.6, agreed by Igor)
+    assert (areas["valuation"].share, areas["valuation"].share_text) == (None, "Not part of this version")
 
 
 def test_the_area_to_read_first_is_the_weakest_assessed_one():
@@ -63,7 +65,7 @@ def test_each_area_lists_its_six_marks_in_order():
     assert areas["financial_health"].marks == ("pass", "fail", "fail", "pass", "pass", "pass")
     assert areas["dividend"].marks[1] == "not_assessed"
     assert areas["valuation"].marks == ("not_assessed",) * 6
-    assert areas["valuation"].count_text == "Not assessed"
+    assert areas["valuation"].count_text == "Not part of this version"  # was "Not assessed": same reason as above
 
 
 def test_no_dividend_counts_one_assessed_check_and_five_that_do_not_apply():
@@ -72,6 +74,7 @@ def test_no_dividend_counts_one_assessed_check_and_five_that_do_not_apply():
     assert (dividend.passed, dividend.assessed, dividend.share_text) == (0, 1, "0%")
     assert dividend.marks == ("fail",) + ("not_applicable",) * 5
     assert dividend.count_text == "No dividend paid · 0 passed of 1 assessed"
+    assert (dividend.short_text, dividend.note) == ("0 passed of 1 assessed", "No dividend paid")  # both on screen
 
 
 def test_an_area_with_nothing_assessed_is_left_off_the_radar_and_the_focus():
@@ -79,6 +82,7 @@ def test_an_area_with_nothing_assessed_is_left_off_the_radar_and_the_focus():
     card = scorecard(results(statuses))
     health = by_area(card)["financial_health"]
     assert (health.share, health.share_text, health.count_text) == (None, "Not assessed", "Not assessed")
+    assert health.short_text == "Not assessed"
     assert card.focus.area != "financial_health"
 
 
@@ -99,9 +103,13 @@ def test_coca_cola_totals_equal_a_count_of_its_check_results():
     assert card.not_assessed == statuses.count("insufficient_data") + 6 * sum(1 for a in checks.values() if a is None)
 
 
-def test_the_short_counts_of_igors_design():
-    areas = by_area(scorecard(results(AC3)))
-    assert areas["financial_health"].short_text == "4 of 6 passed"
-    assert areas["financial_health"].focus_text == "4 of 6 checks passed"
-    assert areas["valuation"].short_text == "Not assessed"
+def test_one_count_format_everywhere():
+    # was "4 of 6 passed" and "4 of 6 checks passed" (Igor's design): one format, "N passed of M assessed", as SPEC
+    # §3 writes it (Emma's review of #60, 26 November; rule 14.6, agreed by Igor). The focus reuses the same text.
+    card = scorecard(results(AC3))
+    areas = by_area(card)
+    assert areas["financial_health"].short_text == "4 passed of 6 assessed"
+    assert card.focus.short_text == "4 passed of 6 assessed"
+    assert areas["valuation"].short_text == "Not part of this version"
+    assert areas["dividend"].note == ""
 

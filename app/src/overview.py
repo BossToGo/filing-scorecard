@@ -239,11 +239,11 @@ def _series(data: CompanyData, years: list[date]) -> Series:
 
 def _coverage(data: CompanyData, fy0: date) -> Coverage:
     fcf, fcf_why = _free_cash_flow(data, fy0)
-    dividends_fact = data.fact("dividends_paid", fy0)
     dividends, div_why = _value(data, "dividends_paid", fy0)
     fcf_text = NA if fcf is None else amount_text(fcf)
     if dividends is not None and dividends <= 0:  # treated as nil (SPEC §7, plan Q1) or reported as zero
-        note = dividends_fact.note if dividends_fact is not None else ""
+        # plain words for the reader; the tags searched stay in the fact's note, on the Sources tab
+        note = f"No dividends paid in {_year(fy0)}. The Sources tab shows how this was read."
         return Coverage("no_dividend", "No dividend paid", free_cash_flow=fcf_text, note=note)
     if dividends is None or fcf is None:
         return Coverage("missing", "Dividend coverage is not available", free_cash_flow=fcf_text,
@@ -340,10 +340,10 @@ class AreaSummary:
     failed: int
     not_assessed: int
     share: float | None  # passed ÷ assessed for the radar; None when nothing is assessed (left off the shape)
-    share_text: str  # "100%" or "Not assessed"
+    share_text: str  # "100%", "Not assessed", or "Not part of this version" (no check module yet)
     count_text: str  # "4 passed of 4 assessed", "Not assessed", "No dividend paid · 0 passed of 1 assessed"
-    short_text: str = ""  # Igor's design: "4 of 4 passed" (of the assessed checks), "Not assessed"
-    focus_text: str = ""  # "3 of 6 checks passed"
+    short_text: str = ""  # the count on screen, one format (SPEC §3): "4 passed of 4 assessed", "Not assessed"
+    note: str = ""  # shown under the marks: "No dividend paid", else empty
 
 
 @dataclass(frozen=True)
@@ -357,23 +357,28 @@ class Scorecard:
     focus: AreaSummary | None  # the weakest assessed area: the one to read first
 
 
+NOT_IN_THIS_VERSION = "Not part of this version"  # as the main screen says (ui/scorecard.py, design spec §6)
+
+
 def _area_summary(area: str, results) -> AreaSummary:
     marks = (tuple(MARKS.get(r.status, "not_assessed") for r in results) if results
              else ("not_assessed",) * CHECKS_PER_AREA)
     passed, failed = marks.count("pass"), marks.count("fail")
     assessed = passed + failed
     share = passed / assessed if assessed else None
-    if not assessed:
-        count = "Not assessed"
+    if results is None:
+        short = NOT_IN_THIS_VERSION
     else:
-        count = f"{passed} passed of {assessed} assessed"
-        if area == "dividend" and marks == ("fail",) + ("not_applicable",) * (len(marks) - 1):
-            count = f"No dividend paid · {count}"
-    short = f"{passed} of {assessed} passed" if assessed else "Not assessed"
+        short = f"{passed} passed of {assessed} assessed" if assessed else "Not assessed"
+    if results is None:
+        share_text = NOT_IN_THIS_VERSION
+    else:
+        share_text = "Not assessed" if share is None else f"{share * 100:.0f}%"
+    no_dividend = area == "dividend" and assessed and marks == ("fail",) + ("not_applicable",) * (len(marks) - 1)
+    note = "No dividend paid" if no_dividend else ""
     return AreaSummary(area, AREA_LABELS.get(area, area.replace("_", " ").capitalize()), marks, passed, assessed,
-                       failed, marks.count("not_assessed"), share,
-                       "Not assessed" if share is None else f"{share * 100:.0f}%", count, short,
-                       f"{passed} of {assessed} checks passed" if assessed else "Not assessed")
+                       failed, marks.count("not_assessed"), share, share_text,
+                       f"{note} · {short}" if note else short, short, note)
 
 
 def scorecard(results) -> Scorecard:

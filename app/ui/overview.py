@@ -46,8 +46,9 @@ def _series_colours() -> tuple[str | None, ...]:
 
 
 def _pass_colour() -> str | None:
-    """Passed checks and the radar: the theme's green when set, else its accent."""
-    return _option("greenColor") or _option("primaryColor")
+    """Passed checks and the radar: the theme's accent (SPEC §3). Never green or red, so a colour never reads as
+    good or bad on its own; the tick, the cross and the words carry the meaning (Igor's choice, 26 November)."""
+    return _option("primaryColor")
 
 
 def _theme(key: str) -> str:
@@ -67,8 +68,8 @@ def _theme_or(key: str, fallback: str) -> str:
 def _style() -> str:
     """One CSS block for the overview (Igor's design of 25 November). Colours come from the theme file only."""
     return f"""<style>
-.fs-ov, [class*="st-key-ov_card"], .fs-ov-shell {{--ov-pass:{_theme_or('greenColor', 'primaryColor')};
-  --ov-fail:{_theme_or('redColor', 'textColor')}; --ov-page:{_theme('backgroundColor')};
+.fs-ov, [class*="st-key-ov_card"], .fs-ov-shell {{--ov-pass:{_theme('primaryColor')};
+  --ov-fail:{_theme('textColor')}; --ov-page:{_theme('backgroundColor')};
   --ov-panel:{_theme_or('secondaryBackgroundColor', 'backgroundColor')}; --ov-accent:{_theme('primaryColor')};
   --ov-muted:color-mix(in srgb, currentColor 62%, transparent); --ov-line:color-mix(in srgb, currentColor 14%, transparent);
   font-variant-numeric:tabular-nums}}
@@ -98,7 +99,7 @@ def _style() -> str:
 .fs-ov-bar {{display:flex; justify-content:space-between; font-size:17px; margin-bottom:10px}}
 .fs-ov-bar b {{font-weight:600}}
 .fs-ov-track {{height:9px; border-radius:5px; background:var(--ov-line); margin-bottom:24px}}
-.fs-ov-fill {{height:9px; border-radius:5px; background:var(--ov-accent)}}  .fs-ov-fill.fs-ov-mint {{background:var(--ov-pass)}}
+.fs-ov-fill {{height:9px; border-radius:5px; background:var(--ov-accent)}}
 .fs-ov-gap {{border-top:1px solid var(--ov-line); padding-top:18px; display:flex; gap:22px; align-items:baseline;
   font-size:17px; color:var(--ov-muted)}}
 .fs-ov-gap b {{font-size:28px; font-weight:700; color:var(--ov-accent); white-space:nowrap}}
@@ -115,9 +116,11 @@ table.fs-ov-rows td.fs-ov-plain {{color:var(--ov-muted)}}
 .fs-ov-focus b {{display:block; font-family:Georgia, 'Times New Roman', serif; font-weight:400; font-size:25px;
   color:var(--ov-accent); margin-top:10px; white-space:nowrap}}
 .fs-ov-area {{padding:12px 0; border-bottom:1px solid var(--ov-line)}}
-.fs-ov-area-top {{display:flex; justify-content:space-between; gap:12px; font-size:17px; font-weight:600; white-space:nowrap}}
-.fs-ov-area-top span {{font-weight:400; font-size:15px; color:var(--ov-muted); text-align:right}}
+.fs-ov-area-top {{font-size:17px; font-weight:600}}
+.fs-ov-area-top span {{display:block; font-weight:400; font-size:15px; color:var(--ov-muted); margin-top:2px}}
 .fs-ov-marks {{display:flex; gap:8px; margin-top:10px}}
+.fs-ov-area-note {{font-size:14px; color:var(--ov-muted); margin-top:8px}}
+.fs-ov-rating {{font-size:14px; color:var(--ov-muted); margin-top:10px}}
 .fs-ov-mk {{width:19px; height:19px; border-radius:50%; box-sizing:border-box; display:inline-grid; place-items:center;
   font-size:11px; font-weight:800; line-height:1; flex:none; color:var(--ov-panel)}}
 .fs-ov-mk.fs-ov-pass {{background:var(--ov-pass)}}  .fs-ov-mk.fs-ov-fail {{background:var(--ov-fail)}}
@@ -196,8 +199,10 @@ def _coverage(cover: Coverage) -> str:
         note = f'<div class="fs-ov-note">{_e(cover.note)}</div>' if cover.note else ""
         return f'<div class="fs-ov">{head}{note}</div>'
     share = f"{(cover.share or 0) * 100:.1f}"  # bar width only, from the prepared share
+    fcf = _series_colours()[2 % len(_series_colours())]  # the free cash flow line's colour in the chart
+    fill = f"width:{share}%" + (f"; background:{fcf}" if fcf else "")
     bars = (f'<div class="fs-ov-bar"><span>Free cash flow</span><b>{_e(cover.free_cash_flow)}</b></div>'
-            f'<div class="fs-ov-track"><div class="fs-ov-fill fs-ov-mint" style="width:{share}%"></div></div>'
+            f'<div class="fs-ov-track"><div class="fs-ov-fill" style="{fill}"></div></div>'
             f'<div class="fs-ov-bar"><span>Dividends paid</span><b>{_e(cover.dividends)}</b></div>'
             f'<div class="fs-ov-track"><div class="fs-ov-fill" style="width:100%"></div></div>')
     gap = f'<div class="fs-ov-gap"><b>{_e(cover.gap)}</b><span>{_e(cover.gap_label)}</span></div>' if cover.gap else ""
@@ -243,6 +248,7 @@ def _table(series: Series) -> str:
 MARK_LOOKS = {"pass": ("fs-ov-pass", "✓", "Passed"), "fail": ("fs-ov-fail", "✕", "Failed"),
               "not_assessed": ("fs-ov-wait", "", "Not assessed"), "not_applicable": ("fs-ov-none", "–", "Does not apply")}
 RADAR_ORDER = ("financial_health", "past_performance", "valuation", "dividend")  # top, right, bottom, left
+NOT_A_RATING = "Not a rating of the share and not advice."  # SPEC §1 and §3, by the total and the radar
 
 
 def _mark(look: str) -> str:
@@ -255,9 +261,12 @@ def _radar(card: Scorecard) -> go.Figure:
     keeps its axis and label but is left off the shape, so it never reads as 0%."""
     areas = {a.area: a for a in card.areas}
     colour = _pass_colour()
-    labels = [f"<b>{areas[k].label}</b><br><span style='color:{colour}'>{areas[k].share_text}</span>"
-              if areas[k].share is not None else f"<b>{areas[k].label}</b><br>{areas[k].share_text}"
-              for k in RADAR_ORDER]
+    def name(k: str, side: bool) -> str:  # a side label on two lines ("Past / performance"), so it is not cut off
+        return areas[k].label.replace(" ", "<br>", 1) if side else areas[k].label
+
+    labels = [f"<b>{name(k, i % 2)}</b><br><span style='color:{colour}'>{areas[k].share_text}</span>"
+              if areas[k].share is not None else f"<b>{name(k, i % 2)}</b><br>{areas[k].share_text}"
+              for i, k in enumerate(RADAR_ORDER)]
     scored = [(label, areas[k].share * 100) for k, label in zip(RADAR_ORDER, labels) if areas[k].share is not None]
     fig = go.Figure()
     fig.add_trace(go.Scatterpolar(r=[0] * len(labels), theta=labels, mode="markers", marker={"opacity": 0},
@@ -293,21 +302,23 @@ def render_scorecard_panel(card: Scorecard, fiscal_year: int | None) -> None:
                 total = (f'<div class="fs-ov-total">{_e(passed)}<small> / {_e(assessed)}</small></div>'
                          f'<div class="fs-ov-strong">assessed checks passed</div>'
                          f'<div class="fs-ov-note" style="font-size:16px">{card.failed} failed · '
-                         f'{card.not_assessed} not assessed</div>')
+                         f'{card.not_assessed} not assessed</div>'
+                         f'<div class="fs-ov-rating">{NOT_A_RATING}</div>')
             else:
                 total = '<div class="fs-ov-big" style="margin-top:22px">No check assessed yet</div>'
-            focus = (f'<div class="fs-ov-focus">{_e(card.focus.label)}<b>{_e(card.focus.focus_text)}</b></div>'
+            focus = (f'<div class="fs-ov-focus">{_e(card.focus.label)}<b>{_e(card.focus.short_text)}</b></div>'
                      if card.focus else "")
             st.markdown(f'<div class="fs-ov">{total}{focus}</div>', unsafe_allow_html=True)
         with middle:
             st.plotly_chart(_radar(card), theme="streamlit", config={"displayModeBar": False}, key="scorecard_radar")
-            st.markdown('<div class="fs-ov fs-ov-caption">Share of assessed checks passed · centre 0% / edge 100%'
-                        "</div>", unsafe_allow_html=True)
+            st.markdown('<div class="fs-ov fs-ov-caption">Share of assessed checks passed per area<br>'
+                        f"Centre 0% · edge 100%<br>{NOT_A_RATING}</div>", unsafe_allow_html=True)
         with right:
             rows = "".join(
                 f'<div class="fs-ov-area" role="group" aria-label="{_e(a.label)}: {_e(a.count_text)}">'
                 f'<div class="fs-ov-area-top">{_e(a.label)}<span>{_e(a.short_text)}</span></div>'
-                f'<div class="fs-ov-marks">{"".join(_mark(m) for m in a.marks)}</div></div>'
+                f'<div class="fs-ov-marks">{"".join(_mark(m) for m in a.marks)}</div>'
+                + (f'<div class="fs-ov-area-note">{_e(a.note)}</div>' if a.note else "") + "</div>"
                 for a in card.areas)
             legend = "".join(f"<span>{_mark(look)}{word}</span>" for look, (_, _, word) in MARK_LOOKS.items())
             st.markdown(_heading("Checks by area", sans=True) + f'<div class="fs-ov" style="margin-top:12px">{rows}'
@@ -317,11 +328,10 @@ def render_scorecard_panel(card: Scorecard, fiscal_year: int | None) -> None:
 NAV = (("Overview", "ov-overview", '<rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" '
         'height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/>'),
        ("Performance", "ov-performance", '<path d="M3 16h14M4 13l4-4 3 3 5-6"/>'),
-       ("Cash flow", "ov-cash", '<path d="M4 7h11l-3-3M16 13H5l3 3"/>'),
-       ("Balance sheet", "ov-balance", '<path d="M3 8h14M4 8v8M8 8v8M12 8v8M16 8v8M3 16h14M10 3l7 4H3z"/>'),
-       ("Dividends", "ov-cash", '<circle cx="10" cy="10" r="7"/><path d="M12.5 7.5c-.5-.8-1.4-1.2-2.5-1.2-1.4 0-2.4.8'
+       ("Dividend", "ov-dividend", '<circle cx="10" cy="10" r="7"/><path d="M12.5 7.5c-.5-.8-1.4-1.2-2.5-1.2-1.4 0-2.4.8'
         '-2.4 1.8 0 2.4 5 1.2 5 3.7 0 1-1 1.8-2.6 1.8-1.2 0-2.2-.5-2.7-1.3M10 5v1.3M10 13.7V15"/>'),
-       ("Source data", "ov-source", '<path d="M6 3h6l3 3v11H6z"/><path d="M12 3v3h3M8 10h5M8 13h5"/>'))
+       ("Balance sheet", "ov-balance", '<path d="M3 8h14M4 8v8M8 8v8M12 8v8M16 8v8M3 16h14M10 3l7 4H3z"/>'),
+       ("Sources", "ov-source", '<path d="M6 3h6l3 3v11H6z"/><path d="M12 3v3h3M8 10h5M8 13h5"/>'))
 
 
 def _icon(paths: str) -> str:
@@ -340,16 +350,16 @@ def render_page_shell(data: CompanyData, ov: Overview, active: str = "Overview")
                    'height="10" rx="1" fill="currentColor"/><rect x="10" y="6" width="5" height="16" rx="1" '
                    'fill="currentColor"/><rect x="19" y="0" width="5" height="22" rx="1" fill="currentColor"/></svg>'
                    'Filing Scorecard</span><span class="fs-ov-sep"></span>'
-                   '<span class="fs-ov-note" style="font-size:17px">Company research</span></div>',
+                   '<span class="fs-ov-note" style="font-size:17px">Annual filing checks</span></div>',
                    unsafe_allow_html=True)
     nav = "".join(f'<a class="fs-ov-nav{" fs-ov-on" if label == active else ""}" href="#{anchor}">{_icon(paths)}'
                   f"<span>{_e(label)}</span></a>" for label, anchor, paths in NAV)
-    st.sidebar.markdown(f'<div class="fs-ov-shell"><div class="fs-ov-nav-eyebrow">Company report</div>{nav}'
+    st.sidebar.markdown(f'<div class="fs-ov-shell"><div class="fs-ov-nav-eyebrow">Company scorecard</div>{nav}'
                         f'<div class="fs-ov-coverage"><span class="fs-ov-nav-eyebrow" style="margin:0">Data coverage'
                         f'</span><b>{_e(ov.years_text)}</b></div></div>', unsafe_allow_html=True)
     year = f"FY{ov.fiscal_year}" if ov.fiscal_year else ""
     pill = f'<span class="fs-ov-pill">{_e(year)}</span>' if year else ""
-    st.markdown(f'<div class="fs-ov-shell" id="ov-overview"><div class="fs-ov-crumbs"><span>Company reports</span>'
+    st.markdown(f'<div class="fs-ov-shell" id="ov-overview"><div class="fs-ov-crumbs"><span>Company scorecard</span>'
                 f'<span>/</span><b>{_e(active)}</b></div><div class="fs-ov-title-row"><div>'
                 f'<div class="fs-ov-title">{_e(data.name)}</div><div class="fs-ov-title-meta"><b>{_e(data.ticker)}</b>'
                 f"&nbsp;&nbsp;/ Fiscal year ended {_e(ov.fiscal_year_end)} / USD</div></div>{pill}</div></div>",
@@ -387,7 +397,7 @@ def render_overview(data: CompanyData, results=None) -> Overview:
             st.plotly_chart(_chart(ov.series), theme="streamlit", config={"displayModeBar": False},
                             key="overview_chart")
     with right, st.container(border=True, height="stretch", key="ov_card_coverage"):
-        st.markdown('<span id="ov-cash"></span>' + _heading("Dividend coverage",
+        st.markdown('<span id="ov-dividend"></span>' + _heading("Dividend coverage",
                     "Free cash flow as a share of dividends paid"), unsafe_allow_html=True)
         st.markdown(_coverage(ov.coverage), unsafe_allow_html=True)
 
