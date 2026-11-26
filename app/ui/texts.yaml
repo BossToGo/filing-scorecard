@@ -16,7 +16,7 @@ P3:
   rule: "Profit grew faster in the latest year than its average yearly growth over the last 4 years."
 P4:
   name: "Return on equity above its industry"
-  rule: "Profit divided by equity (what the company owns minus what it owes), called return on equity, is higher than the average of companies in the same industry."
+  rule: "Profit divided by equity (what the company owns minus what it owes, the part that belongs to its shareholders), called return on equity, is higher than the average of companies in the same industry."
 P5:
   name: "Margin above its industry"
   rule: "The share of each dollar of sales left after operating costs (operating margin) is higher than the average of companies in the same industry."
@@ -32,7 +32,7 @@ H2:
   rule: "What the company owns that turns into cash within a year covers what it must pay after more than a year."
 H3:
   name: "Moderate debt"
-  rule: "Debt minus cash (net debt) is less than 40% of equity (what the company owns minus what it owes)."
+  rule: "Debt minus cash (net debt) is less than 40% of equity (what the company owns minus what it owes, the part that belongs to its shareholders)."
 H4:
   name: "Debt falling against equity"
   rule: "Debt (money borrowed) compared with equity is lower than 4 years earlier."
