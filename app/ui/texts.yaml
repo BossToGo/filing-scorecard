@@ -76,10 +76,10 @@ V4:
   rule: "The value of the whole company at the price you typed, divided by its latest yearly profit (price to earnings), is lower than the average of the whole US stock market. A loss or zero profit fails the check."
 V5:
   name: "Price to book below industry"
-  rule: "The value of the whole company at the price you typed, divided by its equity (what the company owns minus what it owes) at the latest year end (price to book), is lower than the average of companies in the same industry. Zero or negative equity fails the check."
+  rule: "The value of the whole company at the price you typed, divided by its equity (what the company owns minus what it owes, the part that belongs to its shareholders) at the latest year end (price to book), is lower than the average of companies in the same industry. Zero or negative equity fails the check."
 V6:
   name: "Price does not demand heroic growth"
   rule: "The share price you typed is at or below the estimate recalculated as if the company's growth started at 30% a year, the highest the model allows."
 
 # Shown under "Industry: [group] (Damodaran lookup)" and on the sources page (SPEC §9.1; key agreed with D on #56)
-industry_note: "Each company in Professor Damodaran's (NYU) list is classified into an industry group, and the industry averages are calculated from the companies in that group, using his public data."
+industry_note: "Each company in Professor Damodaran's (NYU) list is classified into an industry group, and the industry average shown is his published figure for that group."
