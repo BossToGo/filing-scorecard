@@ -141,8 +141,9 @@ Rule: twelve months = last fiscal year (10-K) + this year's year to date (10-Q) 
 comparison column of the same 10-Q); when the 10-K is the latest report, that fiscal year. Figures in USD million,
 read from the SEC company facts downloaded on 18 November 2026 (`app/.cache/sec/`, the same files as the demo data),
 each with its tag and accession number; the arithmetic written out by Claude Code on 26 November 2026, recalculated
-by a separate script that reads the raw files (not the app's code). **Status: for Igor to check with a calculator
-(rule 14.5) before the pull request is merged.** Amazon's 10-Q states its own twelve-month totals (S2c-AMZN): an
+by a separate read-only script that does not use the app's code (not committed), and re-read independently from the
+raw files by the code and test reviewer agents on 27 November (every value matches). **Status: for Igor to check
+with a calculator (rule 14.5) before the pull request is merged.** Amazon's 10-Q states its own twelve-month totals (S2c-AMZN): an
 independent source for three of its figures. Tests: `app/tests/integration/test_twelve_months_demo.py`; the rule
 itself on a hand-made company in `app/tests/unit/test_twelve_months.py` (its arithmetic written in the test).
 
@@ -158,6 +159,20 @@ itself on a hand-made company in `app/tests/unit/test_twelve_months.py` (its ari
 | S2c-BS-MCD | McDonald's, 2026-09-30 (10-Q 0000063908-26-000083); cover dated 2026-09-30 | debt: `LongTermDebtNoncurrent` 39,820, the only debt tag in the 10-Q; McDonald's classifies short-term debt inside long-term debt (company override in `tag_map.yaml`), so nothing is added (the figure's note still says "no current portion reported"; agreed by Igor, 26 November); no minority interest: nil | debt 39,820; minority 0 (nil); shares 705,784,744 |
 | S2c-BS-NVDA | Nvidia, 2026-07-26 (10-Q 0001045810-26-000075); cover 2026-08-21 | debt: `LongTermDebt` 33,366 (= 32,366 + 1,000), no short-term borrowings; no minority interest: nil | debt 33,366; minority 0 (nil); shares 24,100,000,000 |
 | S2c-BS-AAPL | Apple, 2026-09-26 (the 10-K, as for the annual figures); cover 2026-10-23 | debt: `LongTermDebt` 78,114 (= 68,208 + 9,906) + `CommercialPaper` 1,997; no minority interest: nil | debt 80,111; minority 0 (nil); shares 14,532,182,000 |
+
+Rule cases from the review of PR #72 (27 November 2026). Each one is a unit test on the hand-made company, with its
+arithmetic, in `app/tests/unit/test_twelve_months.py`. The real cases were checked on the cached downloads of
+18 November (not committed, so not a test):
+
+| Case | Real company (USD m) | Expected |
+|---|---|---|
+| Last year's year to date restated in this 10-Q by more than 1% | S&P Global: nine months 2025 first filed 11,420 (0000064040-25-000167), 10,117 in the 2026 10-Q (0000064040-26-000058); the FY2025 10-K (15,336) is on the earlier basis, so 15,336 + 11,074 − 10,117 = 16,293 would mix two bases (14,990 on the 10-K's basis). CrowdStrike's net income likewise (−187.9 first filed, −174.4 restated) | missing, both values in the reason |
+| A 10-Q after the 10-K, but no year to date starting the day after the fiscal year end (e.g. a fiscal year end moved) | none of the 100 cached companies | the four twelve-month figures missing; debt, minority interest and shares from that 10-Q |
+| No debt tag in the 10-Q | Caterpillar 36,210 and Western Digital 1,052 at their fiscal year ends | the fiscal-year-end debt, dated, said in the note (Igor, 27 November) |
+| Minority interest: 0 in the 10-K, nothing in the 10-Q | Dell | nil |
+| Minority interest missing at the fiscal year end (reported the year before), nothing in the 10-Q | Eli Lilly (79.5 at 2024-12-31) | missing |
+| No minority interest tagged, total equity above equity by more than 1% at the quarter end | Uber (28,575 against equity) | nil, with MINORITY_UNTAGGED in the note |
+| The 10-Q uses another tag than the 10-K's fiscal-year figure | ADP revenue, Marriott capital expenditure (5 figures of 400 in the 100 companies) | missing (the definitions may differ) |
 
 ### S8 cases (synthetic company, changed one figure at a time)
 
