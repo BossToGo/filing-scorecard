@@ -105,6 +105,7 @@ Filing Scorecard will change not only what the customer sees but also what the b
 - **Model validation and risk** reviews the thresholds used by the checks, the tests, and the hand reconciliation of the figures. Because the calculation uses fixed rules and no AI, the same inputs always give the same result, which can be audited.
 - **Compliance** confirms that the tool stays information, never advice, and approves showing scores next to the order screen.
 - **Advisers and customer service** can explain what the scorecard shows when a customer asks, for example why a check says "not assessed" or why a company shows "no dividend paid".
+- **Brokerage** owns the order screen where the scorecard appears.
 - **Product owner** decides where and how the tool appears in the app (next to the order screen) and which companies are shown.
 
 So, the customer remains the only one who decides on the investment: the tool will never recommend buying or selling. What changes is that the customer now has a checking step before placing the order. They see which checks the company passes or fails and can trace each figure back to its source, although this does not guarantee a good investment decision.
@@ -117,7 +118,7 @@ Our aim for the bank is to be more transparent with its customers, by offering a
 
 A pilot would show whether these aims are met, for example by measuring how many customers open the scorecard before buying, which checks they look at most, and which questions they ask advisers most often.
 
-The tool also has limits. It does not replace investment advice and does not adapt to each customer's needs, so the bank keeps all its usual responsibilities towards its customers. The product only covers companies that file annual reports (10-K) with the SEC; it does not work for banks, insurers or REITs, whose accounts are built differently, so the checks do not apply to them. Finally, it is still a prototype: the demo covers five companies, which is enough to test the workflow but too few for a customer rollout (see Next steps).
+The tool also has limits. It does not replace investment advice and does not adapt to each customer's needs, so the bank keeps all its usual responsibilities (other limits: see Systems view and risks).
 
 <!-- from sections/A-data-and-controls.md -->
 ## Systems view and risks
@@ -231,7 +232,7 @@ For Filing Scorecard to become a real bank product, several steps are needed.
 
 ## References
 
-AMF (2024, October). "Nouveaux investisseurs, nouvelles pratiques d'investissement", *Lettre de l'Observatoire de l'épargne de l'AMF*, n° 58. Autorité des marchés financiers. https://www.amf-france.org/fr/actualites-publications/publications/observatoire-de-lepargne/lettres-de-lobservatoire-de-lepargne/lettre-de-lobservatoire-de-lepargne-de-lamf-ndeg58-octobre-2024 ; PDF: https://www.amf-france.org/sites/institutionnel/files/private/2025-06/loe-58_juin-2025.pdf (accessed 21 November 2026).
+AMF (2024, October). "Nouveaux investisseurs, nouvelles pratiques d'investissement", *Lettre de l'Observatoire de l'épargne de l'AMF*, n° 58 (study "Les nouvelles pratiques d'investissement", Audirep for the AMF, July 2024). Autorité des marchés financiers. https://www.amf-france.org/fr/actualites-publications/publications/observatoire-de-lepargne/lettres-de-lobservatoire-de-lepargne/lettre-de-lobservatoire-de-lepargne-de-lamf-ndeg58-octobre-2024 ; PDF: https://www.amf-france.org/sites/institutionnel/files/private/2025-06/loe-58_juin-2025.pdf (accessed 21 November 2026).
 
 AMF (2025a, 22 July). *L'activité des investisseurs particuliers actifs sur les actions au plus haut depuis 2020*. Autorité des marchés financiers. https://www.amf-france.org/fr/actualites-publications/actualites/lactivite-des-investisseurs-particuliers-actifs-sur-les-actions-au-plus-haut-depuis-2020
 

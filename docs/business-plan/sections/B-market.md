@@ -61,7 +61,7 @@ checked by hand against its 10-K, 30 in all (see Systems view and risks).
 
 ### References
 
-AMF (2024, October). "Nouveaux investisseurs, nouvelles pratiques d'investissement", *Lettre de l'Observatoire de l'épargne de l'AMF*, n° 58. Autorité des marchés financiers. https://www.amf-france.org/fr/actualites-publications/publications/observatoire-de-lepargne/lettres-de-lobservatoire-de-lepargne/lettre-de-lobservatoire-de-lepargne-de-lamf-ndeg58-octobre-2024 ; PDF: https://www.amf-france.org/sites/institutionnel/files/private/2025-06/loe-58_juin-2025.pdf (accessed 21 November 2026).
+AMF (2024, October). "Nouveaux investisseurs, nouvelles pratiques d'investissement", *Lettre de l'Observatoire de l'épargne de l'AMF*, n° 58 (study "Les nouvelles pratiques d'investissement", Audirep for the AMF, July 2024). Autorité des marchés financiers. https://www.amf-france.org/fr/actualites-publications/publications/observatoire-de-lepargne/lettres-de-lobservatoire-de-lepargne/lettre-de-lobservatoire-de-lepargne-de-lamf-ndeg58-octobre-2024 ; PDF: https://www.amf-france.org/sites/institutionnel/files/private/2025-06/loe-58_juin-2025.pdf (accessed 21 November 2026).
 
 AMF (2025a, 22 July). *L'activité des investisseurs particuliers actifs sur les actions au plus haut depuis 2020*. Autorité des marchés financiers. https://www.amf-france.org/fr/actualites-publications/actualites/lactivite-des-investisseurs-particuliers-actifs-sur-les-actions-au-plus-haut-depuis-2020
 
