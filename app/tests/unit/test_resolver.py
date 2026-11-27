@@ -122,6 +122,24 @@ def test_a_change_of_fiscal_year_end_does_not_create_overlapping_years():
     assert "FY_CHANGE" in codes(data)
 
 
+@pytest.mark.parametrize("start, end, gap", [("2024-12-16", "2025-12-31", False), ("2025-01-01", "2026-01-01", True)])
+def test_a_gap_is_counted_the_way_a_year_is(start, end, gap):
+    # Found in the S18 break-it round (27 November). Years end on 15 December, then the year end moves. §5.3.1 counts
+    # a year from its start date to its end date: 2024-12-16 to 2025-12-31 is 380 days, a year that starts the day
+    # after the previous year end, so no year is missing, although the two year ends are 381 days apart. §5.3.9 (as
+    # clarified on 27 November) counts a gap the same way: a gap is a next year end more than 381 days after the last,
+    # i.e. more than a 380-day year after it. 2026-01-01 is 382 days after 2024-12-15 (2025-01-01 to 2026-01-01 is 365
+    # days, so 16 days are not covered): a gap, and only the year after it is kept.
+    revenue = [entry(1000 * M, f"{y}-12-15", start=f"{y - 1}-12-16") for y in (2021, 2022, 2023, 2024)]
+    revenue.append(entry(1100 * M, end, start=start, filed="2026-02-20"))
+    data = run({"Revenues": revenue}, with_revenue=False)
+    if gap:
+        assert data.fiscal_years("revenue") == [date.fromisoformat(end)] and "FY_GAP" in codes(data)
+    else:
+        assert data.fiscal_years("revenue") == [date(y, 12, 15) for y in (2021, 2022, 2023, 2024)] + [fy(2025)]
+        assert "FY_GAP" not in codes(data)
+
+
 # --- §5.3.1 only 10-K / 10-K/A; flows cover 350 to 380 days ------------------------------------------------------
 
 
