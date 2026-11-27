@@ -56,8 +56,11 @@ def write(path: Path, data: dict) -> None:
     half-written evidence file."""
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(path.name + ".tmp")
-    temporary.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
-    os.replace(temporary, path)
+    try:
+        temporary.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)  # after a failure: the old file stays, no temporary file is left
     print(f"  saved   {_shown(path)} ({path.stat().st_size:,} bytes)")
 
 
@@ -68,18 +71,22 @@ def save(path: Path, data: dict) -> None:
     write(path, data)
 
 
-def retrim_from_cache(cache: Path, evidence: Path = EVIDENCE, tickers: list[str] = DEMO) -> None:
+def retrim_from_cache(cache: Path, evidence: Path = EVIDENCE, tickers: tuple[str, ...] = tuple(DEMO)) -> None:
     """Re-trim the companyfacts.json files from the recorded raw downloads in `cache` (no network). Every company is
     checked before anything is written: one raw file that is not the recorded download leaves the whole set as it
-    was (review of PR #72)."""
+    was (review of PR #72). If writing itself stops halfway (a full disk), each file is still whole: run it again,
+    it gives the same files."""
     checked = []
     for ticker in tickers:  # first pass: read and check, write nothing
         record_path = evidence / ticker / "provenance.json"
         record = json.loads(record_path.read_text(encoding="utf-8"))
+        facts_record = next((f for f in record.get("files", []) if f.get("file") == "companyfacts.json"), None)
+        if facts_record is None or "cik" not in record:
+            raise ValueError(f"{ticker}: provenance.json has no company number or no companyfacts.json record; "
+                             "nothing was written")
         if not re.fullmatch(r"\d{10}", str(record["cik"])):
             raise ValueError(f"{ticker}: the company number {record['cik']!r} in provenance.json is not 10 digits; "
                              "nothing was written")
-        facts_record = next(f for f in record["files"] if f["file"] == "companyfacts.json")
         raw = (cache / f"companyfacts_{record['cik']}.json").read_bytes()
         try:
             check_same_download(raw, facts_record)

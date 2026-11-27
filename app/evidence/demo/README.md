@@ -30,7 +30,9 @@ test and every member's work run on these files. **Never edit them by hand** (SP
   (`app/tests/integration/test_twelve_months_demo.py`). The five files grew from about 12 MB to about 33 MB.
 - **Has a file changed since?** `test_the_saved_company_facts_have_not_changed_since_the_re_trim` pins a SHA-256 of
   each file's content (its JSON with sorted keys, so line endings do not matter): a hand edit fails it. Anyone with
-  the downloads of 2026-11-18 can repeat the re-trim with the command above; `git status` must then show no change.
+  the downloads of 2026-11-18 can repeat the re-trim with the command above: the five `companyfacts.json` files then
+  show no change, and only the date in each `provenance.json` "trimmed" line moves. A run stopped halfway (a full
+  disk) leaves each file whole; running it again gives the same files.
 - **Made by:** `app/scripts/fetch_demo_data.py` (run from `app/`; needs `SEC_USER_AGENT` in `app/.env`). Raw
   downloads stay in `app/.cache/sec/` (git-ignored). Use is allowed for the demo "for now" (decision log,
   2026-11-18, SPEC §16.4).

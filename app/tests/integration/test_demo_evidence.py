@@ -97,7 +97,9 @@ def test_the_company_facts_come_from_the_download_of_18_november(ticker):
 # SHA-256 of each saved companyfacts.json's content (its JSON with sorted keys and no spaces, so Windows line endings
 # do not matter), as re-trimmed on 26 November 2026. A hand edit, or a re-trim from another download, changes it
 # (review of #72: nobody can read a 1.1-million-line diff). To check by hand, from app/: re-run
-# `scripts/fetch_demo_data.py --retrim-from-cache <folder with the 18 November downloads>`; `git status` stays clean.
+# `scripts/fetch_demo_data.py --retrim-from-cache <folder with the 18 November downloads>`: the companyfacts.json files
+# stay unchanged (only the date in each provenance.json moves). Changing these values needs a written reason the
+# owner agrees to (AGENTS.md, team rule 4), like any expected value.
 CONTENT_SHA256 = {
     "KO": "db6174eb9cc6fd36b40866d69f1415ac53ba84ff73961db0c6fdd7548e3f4018",
     "AAPL": "916cc78f4da12de24e9d8a69c92f8d3220c29a1e376c5d41fe242816819dce36",
