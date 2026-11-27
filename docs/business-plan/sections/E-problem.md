@@ -12,7 +12,7 @@ This problem has a real cost. First, it is a cost for the customer. Attention-dr
 
 The customer therefore needs a simple, sourced view of a company's accounts at the moment they buy its shares. Investors also prefer information presented in a visual format, with bullets, charts and graphs (SEC, 2012). The next section presents our solution.
 
-These studies show that the problem exists, not that customers will use our app; most of them describe US investors and some are more than a decade old (see the sources annex).
+These studies show that the problem exists, not that customers will use Filing Scorecard; most of them describe US investors and some are more than a decade old (see the sources annex).
 
 ### References
 
@@ -20,12 +20,12 @@ Barber, B. M., Huang, X., Odean, T. and Schwarz, C. (2022). "Attention-Induced T
 
 Cohen, L., Malloy, C. and Nguyen, Q. (2020). "Lazy Prices". *Journal of Finance*, 75(3), 1371–1415. DOI: 10.1111/jofi.12885. Earlier version: NBER Working Paper No. 25084 (2018); the "more than six times longer" figure is from the NBER Digest summary, November 2018. https://www.nber.org/digest/nov18/are-investors-inattentive-sec-mandated-corporate-reports (accessed 21 November 2026).
 
-European Commission (2023). "Eurobarometer survey reveals low levels of financial literacy across the EU", press release, 18 July 2023. https://finance.ec.europa.eu/news/eurobarometer-survey-reveals-low-levels-financial-literacy-across-eu-2023-07-18_en (accessed 21 November 2026).
+European Commission (2023, 18 July). "Eurobarometer survey reveals low levels of financial literacy across the EU", press release. https://finance.ec.europa.eu/news/eurobarometer-survey-reveals-low-levels-financial-literacy-across-eu-2023-07-18_en (accessed 21 November 2026).
 
-FINRA Investor Education Foundation and CFA Institute (2023). *Gen Z and Investing: Social Media, Crypto, FOMO, and Family*, May 2023. https://rpc.cfainstitute.org/research/reports/2023/gen-z-investing ; press release: https://finra.org/media-center/newsreleases/2023/finra-foundation-cfa-institute-research-focuses-gen-z-investors (accessed 22 November 2026).
+FINRA Investor Education Foundation and CFA Institute (2023, May). *Gen Z and Investing: Social Media, Crypto, FOMO, and Family*. https://rpc.cfainstitute.org/research/reports/2023/gen-z-investing ; press release: https://finra.org/media-center/newsreleases/2023/finra-foundation-cfa-institute-research-focuses-gen-z-investors (accessed 22 November 2026) (cited as FINRA Foundation and CFA Institute, 2023).
 
-Lin, J. T., Bumcrot, C., Valdes, O., Mottola, G., Sarver, S., Ganem, R., Kieffer, C. and Walsh, G. (2025). *Investors in the United States: A Report of the National Financial Capability Study*, 4th edition, December 2025. FINRA Investor Education Foundation. https://www.finrafoundation.org/sites/finrafoundation/files/2025-11/NFCS_Investor_Survey_Report_White_Paper.pdf (accessed 21 November 2026).
+Lin, J. T., Bumcrot, C., Valdes, O., Mottola, G., Sarver, S., Ganem, R., Kieffer, C. and Walsh, G. (2025, December). *Investors in the United States: A Report of the National Financial Capability Study*, 4th edition. FINRA Investor Education Foundation. https://www.finrafoundation.org/sites/finrafoundation/files/2025-11/NFCS_Investor_Survey_Report_White_Paper.pdf (accessed 21 November 2026).
 
 Loughran, T. and McDonald, B. (2017). "The Use of EDGAR Filings by Investors". *Journal of Behavioral Finance*, 18(2), 231–248. DOI: 10.1080/15427560.2017.1308945. Abstract only. https://ideas.repec.org/a/taf/hbhfxx/v18y2017i2p231-248.html (accessed 21 November 2026).
 
-U.S. Securities and Exchange Commission, Office of Investor Education and Advocacy (2012). *Study Regarding Financial Literacy Among Investors*, as required by Section 917 of the Dodd-Frank Act, August 2012. Press release 2012-172: https://www.sec.gov/news/press-release/2012-2012-172htm ; study: https://www.sec.gov/files/917-financial-literacy-study-part1.pdf (accessed 22 November 2026).
+SEC (2012, August). *Study Regarding Financial Literacy Among Investors*, as required by Section 917 of the Dodd-Frank Act. U.S. Securities and Exchange Commission, Office of Investor Education and Advocacy. Press release 2012-172: https://www.sec.gov/news/press-release/2012-2012-172htm ; study: https://www.sec.gov/files/917-financial-literacy-study-part1.pdf (accessed 22 November 2026).

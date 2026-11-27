@@ -5,7 +5,7 @@
 | **Customer** | Does not read the annual reports, which are long and technical; may buy a share because the company is well known, because it is trending, or because of an article seen online. | Sees four areas (past performance, financial health, dividend, valuation) and up to 24 checks, each figure linked to the source it comes from (mostly the annual report), so it can be checked. |
 | **Bank** | Has no neutral, sourced view of the company's accounts to offer next to its order screen. | Offers factual information, the same for every customer, without any investment advice. |
 
-The tool will change not only what the customer sees but also what the bank must do to provide it. Several teams in the bank must take on new tasks. These roles are derived from our product design (they have not yet been tested in a bank).
+Filing Scorecard will change not only what the customer sees but also what the bank must do to provide it. Several teams in the bank must take on new tasks. These roles are derived from our product design (they have not yet been tested in a bank).
 
 - **Data and IT** connects the tool to the bank's own share quote (instead of the price typed by hand in the demo), updates the data, and checks each new annual report.
 - **Model validation and risk** reviews the thresholds used by the checks, the tests, and the hand reconciliation of the figures. Because the calculation uses fixed rules and no AI, the same inputs always give the same result, which can be audited.
@@ -23,4 +23,4 @@ Our aim for the bank is to be more transparent with its customers, by offering a
 
 A pilot would show whether these aims are met, for example by measuring how many customers open the scorecard before buying, which checks they look at most, and which questions they ask advisers most often.
 
-The tool also has limits. It does not replace investment advice and does not adapt to each customer's needs, so the bank keeps all its usual responsibilities towards its customers. The product only covers companies that file annual reports (10-K) with the SEC; it does not work for banks, insurers or real estate investment trusts (REITs), whose accounts are built differently, so the checks do not apply to them. Finally, it is still a prototype: the demo covers five companies, which is enough to test the workflow but too few for a customer rollout (see next steps).
+The tool also has limits. It does not replace investment advice and does not adapt to each customer's needs, so the bank keeps all its usual responsibilities towards its customers. The product only covers companies that file annual reports (10-K) with the SEC; it does not work for banks, insurers or REITs, whose accounts are built differently, so the checks do not apply to them. Finally, it is still a prototype: the demo covers five companies, which is enough to test the workflow but too few for a customer rollout (see Next steps).
