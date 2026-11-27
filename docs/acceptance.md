@@ -166,11 +166,14 @@ arithmetic, in `app/tests/unit/test_twelve_months.py`. The real cases were check
 
 | Case | Real company (USD m) | Expected |
 |---|---|---|
-| Last year's year to date restated in this 10-Q by more than 1% | S&P Global: nine months 2025 first filed 11,420 (0000064040-25-000167), 10,117 in the 2026 10-Q (0000064040-26-000058); the FY2025 10-K (15,336) is on the earlier basis, so 15,336 + 11,074 − 10,117 = 16,293 would mix two bases (14,990 on the 10-K's basis). CrowdStrike's net income likewise (−187.9 first filed, −174.4 restated) | missing, both values in the reason |
+| Last year's year to date restated in this 10-Q by more than 1% | S&P Global: nine months 2025 first filed 11,420 (0000064040-25-000167), 10,117 in the 2026 10-Q (0000064040-26-000058); its FY2025 10-K (15,336) did not restate 2024, so 15,336 + 11,074 − 10,117 = 16,293 would mix two bases, and no figure on one basis can be built from the filings (its 2026 nine months, 11,074, are recast too). CrowdStrike's net income (−187.9 first filed, −174.4 restated) is a careful miss: its FY2026 10-K had itself restated FY2025 (−19.3 to −15.2), so it may be on the same basis; the rule does not try to tell (second review round, 27 November) | missing, both values in the reason, which says the 10-K year *may* be on another basis |
 | A 10-Q after the 10-K, but no year to date starting the day after the fiscal year end (e.g. a fiscal year end moved) | none of the 100 cached companies | the four twelve-month figures missing; debt, minority interest and shares from that 10-Q |
 | No debt tag in the 10-Q | Caterpillar 36,210 and Western Digital 1,052 at their fiscal year ends | the fiscal-year-end debt, dated, said in the note (Igor, 27 November) |
 | Minority interest: 0 in the 10-K, nothing in the 10-Q | Dell | nil |
 | Minority interest missing at the fiscal year end (reported the year before), nothing in the 10-Q | Eli Lilly (79.5 at 2024-12-31) | missing |
+| Minority interest reported at the fiscal year end (not 0), nothing in the 10-Q | Southern Company (2,851 at 2025-12-31; 10-Q to 2026-03-31) | the fiscal-year-end figure, dated and said (Igor, 27 November, second round), as for debt and shares |
+| The 10-K is the latest report and its year runs 53 weeks | Micron (2025-08-29 to 2026-09-03), Disney (2025-09-28 to 2026-10-03): 371 days | the fiscal year, its note saying "371 days" |
+| The SEC's filing list names a 10-Q its company facts do not hold yet | Southern Company (10-Q filed 2026-11-05), NextEra (filed 2026-10-21): figures to 2026-03-31 | figures from the latest 10-Q in the company facts, every note naming the missing 10-Q |
 | No minority interest tagged, total equity above equity by more than 1% at the quarter end | Uber (28,575 against equity) | nil, with MINORITY_UNTAGGED in the note |
 | The 10-Q uses another tag than the 10-K's fiscal-year figure | ADP revenue, Marriott capital expenditure (5 figures of 400 in the 100 companies) | missing (the definitions may differ) |
 
