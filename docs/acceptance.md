@@ -162,7 +162,9 @@ dividend coverage = free cash flow ÷ dividends paid; current ratio = current as
 USD 1 bn or more in USD bn with two decimals, smaller ones in USD m with none. Edge rules (Igor, 25 November):
 FY-1 at or below zero gives "not meaningful" instead of a change; negative free cash flow shows both amounts and
 "free cash flow was negative", never a negative coverage; revenue or current liabilities missing or at or below zero
-give "n/a" with the reason; a dividend treated as nil reads "No dividend paid".
+give "n/a" with the reason; a dividend treated as nil reads "No dividend paid". A change that rounds to 0.0% or
+0.0 pp is unchanged and shown without an up or down arrow (Igor, 27 November, S18): revenue 1,000 → 1,000.4 is
+1,000.4 ÷ 1,000 − 1 = 0.04%, shown "+0.0%" with no arrow (`test_a_change_that_rounds_to_zero_is_shown_without_an_arrow`).
 
 **Synthetic company** (USD m, SPEC Appendix A line items):
 
