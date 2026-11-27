@@ -116,7 +116,10 @@ def test_the_panel_shows_the_radar_and_explains_it_without_repeating_the_marks()
     text, seen = shown(at), visible(at)
     assert "Checks by area" in seen and "Centre 0% · edge 100%" in seen
     assert "score chart below" in seen  # where each area's six checks are listed, with their reasons
-    assert len(at.get("plotly_chart")) == 2  # the radar and the five-year chart
+    # was "== 2  # the radar and the five-year chart": the overview has one section of charts per area since S10d
+    # (Igor, 26 November; rule 14.6, agreed by Igor); the radar is still one of them, and only one
+    keys = [chart.key for chart in at.get("plotly_chart")]
+    assert keys.count("scorecard_radar") == 1 and "overview_chart" in keys
     for gone in ("fs-ov-mk", "fs-ov-area", "fs-ov-total", "fs-ov-strong", "fs-ov-focus"):  # marks, rows, total, focus
         assert gone not in text, gone
 
@@ -242,3 +245,107 @@ def test_chart_colours_given_as_text_on_the_command_line_are_read_as_a_list(monk
                         if key == "theme.chartCategoricalColors" else real(key))
     assert ui_overview._series_colours() == ("#111111", "#222222", "#333333")
 
+
+
+# --- the charts of S10d (Igor, 26 November): one section per area, the valuation first --------------------------
+
+
+def page_at_price(ticker: str, price: float | None) -> None:
+    from src.data.company import load_company
+    from ui.overview import render_overview
+    from ui.results import run_checks
+
+    data = load_company(ticker, demo=True)
+    render_overview(data, run_checks(data, price, demo=True).results)
+
+
+def run_at_price(ticker: str, price: float | None) -> AppTest:
+    at = AppTest.from_function(page_at_price, args=(ticker, price), default_timeout=30)
+    at.run()
+    assert not at.exception, at.exception
+    return at
+
+
+def test_the_valuation_comes_first_with_the_price_against_the_estimate():
+    from src.data.company import load_company
+    from ui.results import run_checks
+
+    v1 = next(r for r in run_checks(load_company("KO", demo=True), 97.59, demo=True).results["valuation"]
+              if r.check_id == "V1")
+    at = run_at_price("KO", 97.59)
+    seen = visible(at)
+    assert seen.index("Share price against the estimate") < seen.index("Checks by area")  # on top (Igor's pitch)
+    # the chart shows V1's own figures, so the chart and the check cannot disagree
+    assert f"USD {v1.value:,.2f}" in seen and f"USD {v1.threshold:,.2f}" in seen
+    assert "above the estimate of" in seen and "80% of the estimate or less" in seen
+    keys = [chart.key for chart in at.get("plotly_chart")]
+    assert {"chart_price", "chart_ratio_pe", "chart_ratio_pb"} <= set(keys)
+    assert "Price to earnings 32.02× against 37.11× for the industry and 60.26× for the US market." in seen
+
+
+def test_without_a_price_the_valuation_says_how_to_get_it():
+    at = run_at_price("KO", None)
+    seen = visible(at)
+    assert "type it in to assess them" in seen
+    assert "chart_price" not in [chart.key for chart in at.get("plotly_chart")]
+
+
+def test_every_area_has_its_charts_and_each_chart_says_what_it_shows():
+    at = run_at_price("KO", 97.59)
+    keys = {chart.key for chart in at.get("plotly_chart")}
+    assert {"chart_flow", "chart_split", "chart_position", "chart_debt", "chart_dividends", "chart_payout",
+            "chart_yield"} <= keys
+    seen = visible(at)
+    for sentence in ("net income was USD 13.11 bn, 27.3% of revenue.",  # hand working in docs/acceptance.md
+                     "Of total assets of USD 104.82 bn, cash and equivalents are 9.8%",
+                     "Financial debt was 141.4% of shareholder equity in FY2025",
+                     "Free cash flow covered the dividends paid in 3 of 5 years; not in FY2024 and FY2025.",
+                     "Dividends paid were 67.0% of net income in FY2025."):
+        assert sentence in seen, sentence
+    assert seen.count("Figures") >= 7  # every chart's figures as a table under it
+
+
+def test_amazon_shows_no_payout_ring_and_says_why():
+    at = run_at_price("AMZN", 244.43)
+    assert "chart_payout" not in [chart.key for chart in at.get("plotly_chart")]
+    assert "No dividend paid in FY2025." in visible(at)
+
+
+def test_the_charts_take_no_background_from_the_server():
+    # a theme switch left the dark theme's panel colour behind the charts (audit of 26 November): no background is
+    # set in the figures any more; the overview's CSS makes them see-through on any theme
+    from src.data.company import load_company
+    from src.overview import charts as chart_data, overview, scorecard
+    from ui import overview as ui_overview
+    from ui.results import check_results
+
+    data = load_company("KO", demo=True)
+    found = check_results(data)
+    figures = [ui_overview._chart(overview(data).series), ui_overview._radar(scorecard(found))]
+    ch = chart_data(data, found)
+    figures += [ui_overview._flow_chart(ch.money_flow), ui_overview._split_chart(ch.split), ui_overview._ring(ch.payout)]
+    for fig in figures:
+        assert fig.layout.paper_bgcolor is None and fig.layout.plot_bgcolor is None
+    assert "background:transparent" in ui_overview._style()
+
+
+def test_end_labels_of_lines_ending_close_together_do_not_overlap():
+    # Nvidia FY2026: cash USD 10.61 bn and debt USD 8.47 bn end a few pixels apart on a scale up to 157 bn; the upper
+    # label moves up so both stay readable (layout only, the values are not touched)
+    from src.data.company import load_company
+    from src.overview import charts
+    from ui import overview as ui_overview
+
+    history = charts(load_company("NVDA", demo=True)).debt_history
+    fig = ui_overview._chart(history)
+    ends = {a.text: (a.y, a.yshift or 0) for a in fig.layout.annotations}
+    (low, low_shift), (high, high_shift) = sorted([ends["8.47"], ends["10.61"]])
+    assert high_shift > low_shift  # the higher of the two is lifted away from the lower one
+
+
+def test_each_five_year_card_names_its_own_unit():
+    # the synthetic company: revenue USD 1.30 bn (chart in billions) but debt, equity, cash, dividends and free cash
+    # flow all below USD 1 bn (charts in millions); the cards said "USD billions" for all three (independent check)
+    seen = visible(run("SYN"))
+    assert "Annual results / USD billions" in seen
+    assert seen.count("Five years / USD millions") == 2
