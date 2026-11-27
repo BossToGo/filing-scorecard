@@ -118,7 +118,7 @@ Our aim for the bank is to be more transparent with its customers, by offering a
 
 A pilot would show whether these aims are met, for example by measuring how many customers open the scorecard before buying, which checks they look at most, and which questions they ask advisers most often.
 
-The tool also has limits. It does not replace investment advice and does not adapt to each customer's needs, so the bank keeps all its usual responsibilities (other limits: see Systems view and risks).
+The tool also has limits. It does not replace investment advice and does not adapt to each customer's needs, so the bank keeps all its usual responsibilities. Banks, insurers and REITs are out of scope, because their accounts are built differently (other limits: see Systems view and risks).
 
 <!-- from sections/A-data-and-controls.md -->
 ## Systems view and risks
