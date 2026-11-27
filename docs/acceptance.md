@@ -142,8 +142,8 @@ comparison column of the same 10-Q); when the 10-K is the latest report, that fi
 read from the SEC company facts downloaded on 18 November 2026 (`app/.cache/sec/`, the same files as the demo data),
 each with its tag and accession number; the arithmetic written out by Claude Code on 26 November 2026, recalculated
 by a separate read-only script that does not use the app's code (not committed), and re-read independently from the
-raw files by the code and test reviewer agents on 27 November (every value matches). **Status: for Igor to check
-with a calculator (rule 14.5) before the pull request is merged.** Amazon's 10-Q states its own twelve-month totals (S2c-AMZN): an
+raw files by the code and test reviewer agents on 27 November (every value matches). **Status: checked by Igor
+with a calculator on 27 November 2026, every row: all match (rule 14.5).** Amazon's 10-Q states its own twelve-month totals (S2c-AMZN): an
 independent source for three of its figures. Tests: `app/tests/integration/test_twelve_months_demo.py`; the rule
 itself on a hand-made company in `app/tests/unit/test_twelve_months.py` (its arithmetic written in the test).
 
