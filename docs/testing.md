@@ -683,12 +683,12 @@ least one of A's own tests.
 
 ### What the round found
 
-- **A real bug, reported to Igor and not fixed here** (S18 changes no app code): rule 1 measures a year from its start
-  date to its end date, SPEC §5.3.9 measures a gap from year end to year end. A last fiscal year of exactly 380 days by
+- **A real bug, fixed in its own pull request (#77)** (the round itself changed no app code): rule 1 measured a year from its start
+  date to its end date, SPEC §5.3.9 measured a gap from year end to year end. A last fiscal year of exactly 380 days by
   rule 1's count (16 December 2024 to 31 December 2025) after a year ending on 15 December 2024 puts the two year
   ends 381 days apart: the resolver flags FY_GAP and keeps only the latest year, although no year is missing. Rare (a
   fiscal year extended by about two weeks) and on the cautious side (the checks show "insufficient data"), but wrong.
-  In `docs/plan.md`, Known problems.
+  #77 counts a gap as rule 1 counts a year and clarifies SPEC §5.3.9; no company in the saved SEC cache had the case.
 - **Two weak tests, now backed by new ones:** `test_current_debt_larger_than_total_debt_is_flagged` passed on another
   DEBT_CHECK (the one for a total the principal cannot settle), so dropping the check went unnoticed; and
   `test_after_a_failed_download_fred_is_asked_again_only_after_ten_minutes` counts from `fred.FAILURE_PAUSE_SECONDS`
@@ -708,4 +708,5 @@ dismissed; the tests were added only after #70 was merged (Igor's decision of 27
 where a push would dismiss its approval). No app code changed. Expected results are the rules cited in each test (SPEC §5.3, §6, §8.3,
 `tag_map.yaml`, `settings.yaml`, `docs/acceptance.md`), with the arithmetic in a comment, never the code's output.
 
-The independent read-only review of A's code by a member of another area (SPEC §15) is still to come.
+The independent read-only review of A's code by a member of another area (SPEC §15): Simon (D) reviewed and approved
+#75 on 27 November.
