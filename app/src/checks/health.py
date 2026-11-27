@@ -57,8 +57,15 @@ def health_checks(data: CompanyData, *, settings: Mapping[str, float]) -> tuple[
         ratio = (rational(debt.value) - rational(cash.value)) / rational(equity.value)
         limit = limits["max_net_debt_to_equity"]
         moderate = ratio < rational(limit)
-        checks.append(result("H3", moderate, float(ratio), limit, leverage,
-                             f"On {day(equity.period_end)}, financial debt of {money(debt.value)} less cash of {money(cash.value)} was about {float(ratio):.2%} of shareholder equity of {money(equity.value)}, {compared(moderate, 'below', 'not below')} the limit of {limit:.2%}. It must be below to pass."))
+        if ratio < 0:  # more cash than debt: say so, instead of "debt less cash was about -1.36% of equity" (Flo, S18)
+            text = (f"On {day(equity.period_end)}, cash of {money(cash.value)} was more than financial debt of "
+                    f"{money(debt.value)} (net cash), so net debt was about {float(ratio):.2%} of shareholder equity of "
+                    f"{money(equity.value)}, below the limit of {limit:.2%}. It must be below to pass.")
+        else:
+            text = (f"On {day(equity.period_end)}, financial debt of {money(debt.value)} less cash of {money(cash.value)} "
+                    f"was about {float(ratio):.2%} of shareholder equity of {money(equity.value)}, "
+                    f"{compared(moderate, 'below', 'not below')} the limit of {limit:.2%}. It must be below to pass.")
+        checks.append(result("H3", moderate, float(ratio), limit, leverage, text))
 
     old_debt, old_equity = inputs.fact("financial_debt", 4), inputs.fact("equity", 4)
     debt_pair = debt, old_debt
@@ -122,6 +129,13 @@ def health_checks(data: CompanyData, *, settings: Mapping[str, float]) -> tuple[
         ratio = rational(operating.value) / rational(interest.value)
         limit = limits["min_interest_cover"]
         covered = ratio >= rational(limit)
-        checks.append(result("H6", covered, float(ratio), limit, interest_cover,
-                             f"Operating profit of {money(operating.value)} covered interest expense of {money(interest.value)} about {float(ratio):.2f} times for the year ended {day(operating.period_end)}, {compared(covered, 'at or above', 'below')} the required {limit:g} times."))
+        if operating.value < 0:  # a loss pays no interest: never "covered ... -5.00 times" (Flo, S18)
+            text = (f"Operating profit was a loss of {money(-operating.value)} for the year ended "
+                    f"{day(operating.period_end)}, so there was no operating profit to pay interest expense of "
+                    f"{money(interest.value)}; at least {limit:g} times is required.")
+        else:
+            text = (f"Operating profit of {money(operating.value)} covered interest expense of {money(interest.value)} "
+                    f"about {float(ratio):.2f} times for the year ended {day(operating.period_end)}, "
+                    f"{compared(covered, 'at or above', 'below')} the required {limit:g} times.")
+        checks.append(result("H6", covered, float(ratio), limit, interest_cover, text))
     return tuple(checks)

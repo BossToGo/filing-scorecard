@@ -3,6 +3,7 @@
 The constructed threshold examples come from the published rules (40%, 20%, 5x),
 not the app's output. No locked Appendix A expected values are used.
 """
+import re
 from dataclasses import replace
 from datetime import date, timedelta
 
@@ -371,3 +372,50 @@ def test_h6_just_below_five_times_does_not_read_like_a_pass():
     result = run(change(company(), "operating_income", 4.9999))["H6"]
     assert result.status == "fail"
     assert "below the required 5 times" in result.explanation
+
+
+# --- Flo's S18 read-only review of B's checks (#64, 26 November): cases no test covered -------------------------
+
+def test_h5_negative_operating_cash_flow_fails():
+    # Operating cash flow -50 against debt 100: -50% is below the required 20% -> fail
+    # (taking the size of the ratio, 50%, would wrongly pass it).
+    data = change(change(company(), "financial_debt", 100), "operating_cash_flow", -50)
+    assert run(data)["H5"].status == "fail"
+
+
+@pytest.mark.parametrize("check", ["H3", "H4", "H5"])
+def test_negative_financial_debt_is_not_assessed(check):
+    # Debt -10 is a figure to check, not "less than no debt": H3, H4 and H5 are not assessed.
+    result = run(change(company(), "financial_debt", -10))[check]
+    assert result.status == "insufficient_data" and result.value is None
+
+
+@pytest.mark.parametrize("metric", ["interest_expense", "operating_income"])
+def test_h6_a_half_year_figure_is_not_used_as_a_full_year(metric):
+    latest = company().fact(metric, date(2025, 12, 31))
+    data = company().with_fact(replace(latest, period_start=date(2025, 7, 1)))
+    assert run(data)["H6"].status == "insufficient_data"
+
+
+def test_h3_net_cash_is_described_as_net_cash_with_a_minus_sign():
+    # Debt 40 less cash 60 = -20, which is -20% of equity 100: below 40% -> pass, described as net cash.
+    result = run(change(company(), "cash", 60))["H3"]
+    assert result.status == "pass"
+    assert "net cash" in result.explanation and "−20.00%" in result.explanation
+    assert not re.search(r"(?<![\w])-\d", result.explanation)
+
+
+def test_h6_an_operating_loss_does_not_cover_interest():
+    # Operating income -5 against interest 1: a loss covers no interest -> fail, and the sentence does not say
+    # it "covered" interest "-5.00 times".
+    result = run(change(company(), "operating_income", -5))["H6"]
+    assert result.status == "fail"
+    assert "loss" in result.explanation and "covered" not in result.explanation
+    assert not re.search(r"(?<![\w])-\d", result.explanation)
+
+
+def test_h_sentences_write_negative_amounts_with_a_minus_sign():
+    data = change(company(), "equity", -50)
+    for result in run(data).values():
+        assert not re.search(r"(?<![\w])-\d", result.explanation), result.explanation
+    assert "USD −" in run(data)["H3"].explanation

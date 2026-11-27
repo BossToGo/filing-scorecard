@@ -7,12 +7,21 @@ window is the resolver's SPEC §5.3 convention; its multiples allow 52/53-week c
 from __future__ import annotations
 
 import math
+import re
 from datetime import date
 from fractions import Fraction
 
 from src.contracts import CheckResult, CompanyData, Fact
 
 FLOWS = {"revenue", "net_income", "operating_income", "operating_cash_flow", "interest_expense"}
+
+
+_HYPHEN_MINUS = re.compile(r"(?<![\w])-(?=\d)")
+
+
+def minus(text: str) -> str:
+    """Negative numbers written with the minus sign "−" (U+2212), as in the screen's tables (#65, Flo's S18 review)."""
+    return _HYPHEN_MINUS.sub("\u2212", text)
 
 
 def rational(value: float) -> Fraction:
@@ -70,7 +79,7 @@ def unavailable(check: str, facts: tuple[Fact, ...], reason: str) -> CheckResult
     gaps = ", ".join(dict.fromkeys(f.metric.replace("_", " ") for f in facts if f.kind == "missing"))
     if gaps:
         gaps = f"Unavailable figures: {gaps}. See their source notes for details."
-    return CheckResult(check, "insufficient_data", None, None, facts, f"{reason} {gaps}".strip())
+    return CheckResult(check, "insufficient_data", None, None, facts, minus(f"{reason} {gaps}".strip()))
 
 
 def missing(facts: tuple[Fact, ...]) -> bool:
@@ -91,4 +100,4 @@ def result(check: str, passed: bool, value: float | None, threshold: float | Non
            facts: tuple[Fact, ...], explanation: str) -> CheckResult:
     if any(v is not None and not math.isfinite(v) for v in (value, threshold)):
         return unavailable(check, facts, "The calculation exceeds the supported finite numeric range.")
-    return CheckResult(check, "pass" if passed else "fail", value, threshold, facts, explanation)
+    return CheckResult(check, "pass" if passed else "fail", value, threshold, facts, minus(explanation))

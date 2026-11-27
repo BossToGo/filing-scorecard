@@ -79,7 +79,7 @@ def past_checks(data: CompanyData, *, settings: Mapping[str, float],
         accelerating = (rational(net[0].value) ** 3 * rational(net[4].value)
                         > rational(net[1].value) ** 4) if net[0].value else False
         checks.append(result("P3", accelerating, recent, compound, growth_inputs,
-                             f"Net income {change(recent)} in the year ended {day(net[0].period_end)}, against an average of about {compound:.2%} a year since {day(net[4].period_end)}. The latest change is {compared(accelerating, 'faster', 'not faster')} than the average; it must be faster to pass."))
+                             f"Net income {change(recent)} in the year ended {day(net[0].period_end)}, against an average change of about {compound:.2%} a year since {day(net[4].period_end)}. The latest change is {compared(accelerating, 'higher', 'not higher')} than the average; it must be higher to pass."))
 
     equity = inputs.fact("equity"), inputs.fact("equity", 1)
     if any(f.kind != "missing" and f.value <= 0 for f in equity):
