@@ -425,3 +425,53 @@ def test_the_interface_gets_freds_notice_from_the_company_module():
         "This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis."
     )
     assert "FRED_NOTICE" in company.__all__
+
+
+
+# --- S18 break-it round (27 November 2026): breaks no earlier test caught ------------------------------------------
+# Each test failed against its deliberate break in a throwaway copy and passes on the unchanged code, except where its
+# comment says otherwise.
+
+
+def test_the_pause_after_a_failure_is_ten_minutes(key_file):
+    # FRED-pause-60. The earlier test counts from fred.FAILURE_PAUSE_SECONDS itself, so a shorter pause passed. Igor's
+    # decision (24 November, module docstring): ten minutes. At 599 seconds FRED is not asked; at 600 it is.
+    clock = Clock()
+    live(FakeSession(error=requests.ConnectionError("no route")), key_file, clock=clock)
+    working = FakeSession(answer())
+
+    clock.now += 599
+    assert live(working, key_file, clock=clock).kind == "assumption" and working.requests == []
+    clock.now += 1
+    assert live(working, key_file, clock=clock).kind == "derived"
+
+
+def test_quotes_around_the_key_in_the_environment_are_removed(monkeypatch, tmp_path):
+    # FRED-key-quotes. A key set with its quotes (FRED_API_KEY="..." typed in a Windows shell) is still the key, as for
+    # SEC_USER_AGENT (test_quotes_around_the_user_agent_are_removed).
+    monkeypatch.setenv("FRED_API_KEY", f'"{KEY}"')
+    session = FakeSession(answer())
+
+    assert live(session, tmp_path / "absent.env").kind == "derived"
+    assert session.requests[0]["params"]["api_key"] == KEY
+
+
+def test_a_settings_file_saved_with_a_byte_order_mark_is_read(tmp_path):
+    # Windows Notepad saves "UTF-8 with BOM"; the key in such a file must still be found. Written for the break
+    # FRED-bom, which it does not catch: python-dotenv removes the mark itself, so that break changes nothing.
+    env_file = tmp_path / "bom.env"
+    env_file.write_text(f'FRED_API_KEY="{KEY}"\n', encoding="utf-8-sig")
+    session = FakeSession(answer())
+
+    assert live(session, env_file).kind == "derived"
+    assert session.requests[0]["params"]["api_key"] == KEY
+
+
+def test_the_real_settings_average_five_years(key_file):
+    # SET-rf-years. SPEC v2.3 §4 and §8.1 (decided by Igor, 20 November): the last five years. With the real
+    # settings.yaml, 24 November 2026 asks FRED from 24 November 2021.
+    session = FakeSession(answer())
+
+    live(session, key_file, settings=load_settings())
+
+    assert session.requests[0]["params"]["observation_start"] == "2021-11-24"
