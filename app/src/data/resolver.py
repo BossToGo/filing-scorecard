@@ -202,7 +202,11 @@ class _Resolver:
         kept: list[date] = []
         newer: date | None = None  # the period end looked at just before, kept or left out
         for end in sorted(ends, reverse=True):
-            gap, newer = newer is not None and (newer - end).days > self.settings["flow_period_max_days"], end
+            # A year that starts the day after `end` and ends at `newer` covers (newer − end) − 1 days, counted as rule
+            # 1 counts a year (end date − start date). More than a year's maximum in between is a gap (S18, 27 November
+            # 2026: counted from year end to year end, a 380-day year after a normal one was taken for a gap).
+            gap = newer is not None and (newer - end).days - 1 > self.settings["flow_period_max_days"]
+            newer = end
             if gap:
                 # A missing year (or a transition period filed on another form): "four years earlier" would span
                 # more than four years, so the window ends at the gap (audit of 21 November 2026). The period left
