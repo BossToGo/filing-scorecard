@@ -2,6 +2,79 @@
 
 Five likely jury questions and answers per area (SPEC §12, working rule 10). Each owner writes their area; Emma (E) edits the whole.
 
+## A: the SEC and FRED data, missing figures and the overview (Igor)
+
+**1. Where do your company figures come from, and how can a reader check one?**
+From the SEC's EDGAR database: the figures each company files in machine-readable form with its annual report (Form
+10-K), for five fiscal years. Every figure keeps its source: the label it was filed under (its "tag"), the form, the
+accession number (the SEC's reference for one filing), the filing date, the period and the day we downloaded it. The
+Sources tab shows one row per figure with all of these, and an open check links to the filing on sec.gov. Example:
+Coca-Cola's revenue of USD 47.94 bn for 2025 is the 47,941 million on page 61 of its 10-K, accession
+0001628280-26-010047; I checked it on that page myself. Each member read six figures for one of the five companies
+from the printed 10-K: all 30 match the app within USD 0.5 million. Before that, we compared each figure of 30
+companies with a second route in the same filing (for example earnings per share × shares against net income): 727
+comparisons. They found three bugs, all fixed with tests first; the worst was Mastercard's share count, taken from a
+2009/2010 cover page and about eight times too low. Any ticker other than our five shows "not fully checked".
+
+**2. What happens when a figure is missing, or a company files it differently?**
+A missing figure stays missing: never zero, never guessed. Our shared data shapes refuse a missing value stored as a
+number, so the rule is enforced by the code, not only written down. A check that needs the figure shows "not assessed"
+with the reason, and the overview shows "n/a" with the reason. Amazon reads "No dividend paid" only because none of
+nine dividend tags has a value in any of its five years; with any trace of a dividend, the years stay missing.
+Companies also file the same line under different tags, so each line item has a short list of tags tried in order
+(Apple stopped using `Revenues` in 2018). If two tags give different values for the same year, the Sources tab flags
+it; nothing is chosen silently. A restated figure uses the latest filing and keeps the original. On 21 November four
+reviewer agents audited the project: 1 blocker and 19 major findings (nine of them on screens not built yet). The
+blocker was ours: debt counted twice when a company also files its current maturities as short-term borrowings (AMD,
+IBM, T-Mobile). We reproduced each data finding on 100 saved companies, wrote a failing test, then fixed it; the five
+demo companies' figures did not change. A few findings stay open and are listed in our plan, for example companies
+whose recent years were restated after a spin-off but not the older ones (GE); none of the 30 companies we verified is
+affected.
+
+**3. Which risk-free rate do you use, and why don't you store it?**
+The average of the 10-year US Treasury yield over the last five years, from FRED (the St. Louis Fed's database, series
+DGS10), downloaded when the app needs it. An average because the estimate is sensitive to the rate: on our test
+company, 4.0% gives USD 20.13 a share and 5.07% gives USD 17.26, about 14% less. On 24 November the live download gave
+1,247 daily values with an average of 3.9297%, the same to every digit as a separate script on FRED's public file.
+FRED's terms forbid storing its data without written consent (Flo pointed this out), so the live average stays only in
+the running app's memory for the day. For the offline demo, without a key or when FRED cannot be reached, the app uses
+a saved, dated value from the US Treasury's own daily yields, which are public domain: 3.93% for 24 November 2021 to
+20 November 2026, the same 1,247 days with the same value on every day. The Valuation tab shows the rate with its
+source and period. The limit: a bank is commercial use, which needs FRED's written consent or another source (business
+plan, section A).
+
+**4. How do the overview's figures and charts get their numbers, and how did you check them?**
+Every number and sentence of the overview is computed in one file, `src/overview.py`, from the same SEC figures as the
+checks; the screen code only draws. So each value can be tested without the screen. On `main` since 25 and 26
+November: key figures with the change on the year before, a five-year chart of revenue, net income and free cash flow
+with a table view, dividend coverage, the balance sheet, filing details and the radar of checks by area. Their
+expected values were worked by hand for the test company and Coca-Cola, and I checked them: for example Coca-Cola's
+revenue USD 47.94 bn (+1.9% on 2024), free cash flow USD 5.30 bn (+11.7%), and free cash flow covering 60.3% of the
+dividends paid. The edge rules are mine: a change from a year at or below zero is "not meaningful", negative free cash
+flow shows both amounts and no percentage, and a missing figure is "n/a" with its reason and a gap in the chart. The
+new charts, one section per area with the valuation first (pull request #70), are in review, not merged yet. Their
+values were worked by hand for the test company, Coca-Cola and McDonald's, and I checked them with a calculator on 27
+November: all match. A separate AI agent also recomputed every chart value for the five companies and the test company
+from the raw 10-K entries. It found three small faults (two labels 0.01 off, a wrong unit in two subtitles, a note
+that was not true for McDonald's), all fixed with tests.
+
+**5. Why does the app read only annual reports, and what changes with the quarterly reports?**
+*(Status on 27 November, before the group's answer on issue #71 at 18:00; to be updated after it.)*
+The checks compare five full fiscal years, so the data layer takes figures only from the 10-K annual reports, and a
+yearly figure must cover 350 to 380 days; a nine-month figure is never read as a year. A report filed more than 15
+months before the data was read shows "Latest annual report is old" in the header. The cost is that an annual report
+can be almost a year old. Coca-Cola's free cash flow was USD 4.7 bn in 2024 and USD 5.3 bn in 2025, two years with
+one-off payments that its 10-Ks explain, and at the 25 November price of USD 97.59 our estimate was USD 31.80.
+**Built, in review (pull request #72, not merged):** the data layer also reads the quarterly reports (10-Q) and gives
+the last twelve months: the last annual figure + this year's year to date − last year's year to date, both from the
+same 10-Q. Coca-Cola, twelve months to 2 October 2026: operating cash flow USD 16,227 m − capital expenditure USD
+1,945 m = free cash flow USD 14,282 m. Amazon's 10-Q prints its own twelve-month totals, and they match the formula to
+the million; I checked the hand working with a calculator. These figures are kept apart, so no existing figure, check
+or warning changes, and a part that cannot be trusted (for example last year's figure restated) makes the figure
+missing, never zero. **Still a proposal:** starting the valuation from these twelve months, long-run growth equal to
+the risk-free rate, and Damodaran's published market risk premium (4.41%) instead of the course's 5%. That is C's
+model and the group's decision; without agreement, v0.2 keeps today's method and the business plan explains the gap.
+
 ## B: benchmarks, past performance (P1–P6) and financial health (H1–H6) (Greg)
 
 **1. Where do your industry figures come from, and why should we trust them?**
