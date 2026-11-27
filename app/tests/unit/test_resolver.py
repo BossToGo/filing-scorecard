@@ -122,6 +122,24 @@ def test_a_change_of_fiscal_year_end_does_not_create_overlapping_years():
     assert "FY_CHANGE" in codes(data)
 
 
+@pytest.mark.parametrize("start, end, gap", [("2024-12-16", "2025-12-31", False), ("2025-01-01", "2026-01-01", True)])
+def test_a_gap_is_counted_the_way_a_year_is(start, end, gap):
+    # Found in the S18 break-it round (27 November). Years end on 15 December, then the year end moves. §5.3.1 counts
+    # a year from its start date to its end date: 2024-12-16 to 2025-12-31 is 380 days, a year that starts the day
+    # after the previous year end, so no year is missing, although the two year ends are 381 days apart. §5.3.9 (as
+    # clarified on 27 November) counts a gap the same way: a gap is a next year end more than 381 days after the last,
+    # i.e. more than a 380-day year after it. 2026-01-01 is 382 days after 2024-12-15 (2025-01-01 to 2026-01-01 is 365
+    # days, so 16 days are not covered): a gap, and only the year after it is kept.
+    revenue = [entry(1000 * M, f"{y}-12-15", start=f"{y - 1}-12-16") for y in (2021, 2022, 2023, 2024)]
+    revenue.append(entry(1100 * M, end, start=start, filed="2026-02-20"))
+    data = run({"Revenues": revenue}, with_revenue=False)
+    if gap:
+        assert data.fiscal_years("revenue") == [date.fromisoformat(end)] and "FY_GAP" in codes(data)
+    else:
+        assert data.fiscal_years("revenue") == [date(y, 12, 15) for y in (2021, 2022, 2023, 2024)] + [fy(2025)]
+        assert "FY_GAP" not in codes(data)
+
+
 # --- §5.3.1 only 10-K / 10-K/A; flows cover 350 to 380 days ------------------------------------------------------
 
 
@@ -889,3 +907,224 @@ def test_a_company_without_company_facts_still_has_its_header():
     # JPMorgan in the demo data: only the submissions file, so the gates can refuse it by its industry code.
     data = resolve("TST", None, SUBMISSIONS, RETRIEVED)
     assert data.sic == "2080" and data.items == {} and "NO_ANNUAL_DATA" in codes(data)
+
+
+# --- S18 break-it round (27 November 2026): breaks no earlier test caught ------------------------------------------
+# Each test below failed against its deliberate break (named in the comment) in a throwaway copy, and passes on the
+# unchanged code. Expected values follow from the rule cited; the arithmetic is written out (docs/testing.md, part A).
+
+
+def test_a_restatement_of_exactly_one_percent_is_not_more_than_one_percent():
+    # RES-restated-1pc. SPEC §5.3.4: a warning only when they differ by MORE than 1%. 100 → 99: 1 ÷ 100 = 1%.
+    data = run({"NetIncomeLoss": [flow(100 * M, 2021, filed="2022-02-20"), flow(99 * M, 2021, filed="2024-02-20")]})
+    fact = data.fact("net_income", fy(2021))
+    assert fact.value == 99 * M and "restated" in fact.note
+    assert "RESTATED" not in codes(data)
+
+
+def test_one_percent_is_measured_against_the_larger_of_the_two_values():
+    # RES-reldiff-min. Igor's decision of 27 November (docs/architecture.md): "more than 1%" in SPEC §5.3.4 and §5.3.7
+    # is 1% of the larger value. Restated from 10,000 to 10,101: 101 ÷ 10,101 = 0.9999% → no warning (of the smaller
+    # value it would be 101 ÷ 10,000 = 1.01%).
+    data = run({"NetIncomeLoss": [flow(10_000 * M, 2021, filed="2022-02-20"),
+                                  flow(10_101 * M, 2021, filed="2024-02-20")]})
+    assert "RESTATED" not in codes(data)
+
+
+def test_a_restated_loss_is_compared_by_size_and_warned():
+    # RES-reldiff-sign. A loss of 100 restated to a loss of 103: 3 ÷ 103 = 2.9% > 1% → warning, as for a profit.
+    data = run({"NetIncomeLoss": [flow(-100 * M, 2021, filed="2022-02-20"), flow(-103 * M, 2021, filed="2024-02-20")]})
+    assert data.fact("net_income", fy(2021)).value == -103 * M
+    assert "RESTATED" in codes(data)
+
+
+def test_tags_exactly_one_percent_apart_are_noted_but_not_flagged():
+    # RES-conflict-1pc. SPEC §5.3.7, settings tag_conflict_warning: flagged when they differ by more than 1%.
+    # Depreciation tags should agree; 99 and 100: 1 ÷ 100 = 1%, not more.
+    data = run({"DepreciationDepletionAndAmortization": [flow(99 * M, 2025)],
+                "DepreciationAndAmortization": [flow(100 * M, 2025)]})
+    assert "100,000,000" in data.fact("depreciation_amortization", fy(2025)).note
+    assert "TAG_CONFLICT" not in codes(data)
+
+
+def test_a_later_interest_tag_exactly_50_percent_larger_is_not_flagged():
+    # RES-later-larger-eq. tag_map.yaml: a later tag MORE than 50% larger is a TAG_CONFLICT. 100 × 1.5 = 150.
+    data = run({"InterestExpense": [flow(100 * M, 2025)], "InterestExpenseDebt": [flow(150 * M, 2025)]})
+    assert "150,000,000" in data.fact("interest_expense", fy(2025)).note
+    assert "TAG_CONFLICT" not in codes(data)
+
+
+def test_a_payment_of_exactly_zero_is_not_a_sign_error():
+    # RES-outflow-zero. tag_map.yaml: a NEGATIVE payment is flagged (SPEC §5.4); a zero is a real zero.
+    data = run({"PaymentsToAcquirePropertyPlantAndEquipment": [flow(0, 2025)], "PaymentsOfDividends": [flow(0, 2025)]})
+    assert data.fact("capital_expenditure", fy(2025)).value == 0
+    assert "SIGN" not in codes(data)
+
+
+def test_a_reported_zero_interest_expense_is_kept():
+    # RES-positive-zero. SPEC §6: a NEGATIVE interest expense is flagged and not used; a reported 0 stays 0, and H6
+    # passes on it (B's rule of 23 November).
+    fact = run({"InterestExpense": [flow(0, 2025)]}).fact("interest_expense", fy(2025))
+    assert (fact.kind, fact.value) == ("reported", 0)
+
+
+def test_year_ends_exactly_380_days_apart_are_not_a_gap():
+    # RES-gap-380. SPEC §5.3.9 (clarified on 27 November): a gap is a next year end more than 381 days after the last,
+    # so 380 days apart is no gap under either wording. 2024-12-31 + 380 days =
+    # 2026-01-15; the last year runs from 2025-01-01, 379 days, so it is a year by §5.3.1.
+    revenue = [flow(1000 * M, y) for y in (2021, 2022, 2023, 2024)] + [entry(1100 * M, "2026-01-15",
+                                                                                 start="2025-01-01")]
+    data = run({"Revenues": revenue}, with_revenue=False)
+    assert data.fiscal_years("revenue") == [fy(2021), fy(2022), fy(2023), fy(2024), date(2026, 1, 15)]
+    assert "FY_GAP" not in codes(data)
+
+
+def test_a_year_without_revenue_is_still_a_fiscal_year():
+    # RES-fy-items. Resolver rule 2: a fiscal year has an annual figure for revenue, net income or operating cash
+    # flow. A missing revenue is missing for that year with its reason (SPEC §5.2), not a missing year.
+    data = run({"Revenues": revenue_years(2021, 2024), "NetIncomeLoss": [flow(100 * M, y) for y in range(2021, 2026)]},
+               with_revenue=False)
+    assert data.fiscal_years("net_income") == [fy(y) for y in range(2021, 2026)]
+    assert data.fact("revenue", fy(2025)).kind == "missing"
+
+
+def test_total_liabilities_without_total_equity_stay_missing():
+    # RES-liab-missing-zero. SPEC §5.2: a derived figure with a missing input stays missing; total equity is never 0.
+    fact = run({"Assets": [instant(1750 * M, 2025)]}).fact("total_liabilities", fy(2025))
+    assert fact.kind == "missing" and fact.value is None and "total_equity" in fact.note
+
+
+def test_a_dividend_declared_after_the_five_years_is_no_evidence():
+    # RES-nil-window-after. tag_map.yaml (plan Q1): evidence counts only "in the five fiscal years". A first dividend
+    # declared on 10 February 2026, after FY0 (2025), reported in the FY2025 10-K: none was paid in the five years.
+    tag = "CommonStockDividendsPerShareDeclared"
+    data = run({tag: [entry(0.25, "2026-02-10", start="2026-02-10", filed="2026-02-20")]}, units={tag: "USD/shares"})
+    assert all(f.kind == "assumption" and f.value == 0 for f in dividends(data))
+
+
+def test_a_dividend_shown_only_in_a_quarterly_report_is_no_evidence():
+    # RES-nil-forms. tag_map.yaml (plan Q1): evidence must be "in an annual report"; SPEC §5.3.1, 10-K and 10-K/A.
+    tag = "CommonStockDividendsPerShareDeclared"
+    data = run({tag: [entry(0.5, "2025-06-30", start="2025-04-01", form="10-Q", filed="2025-08-01")]},
+               units={tag: "USD/shares"})
+    assert all(f.kind == "assumption" and f.value == 0 for f in dividends(data))
+
+
+def test_dividends_filed_only_in_another_currency_stay_missing_never_nil():
+    # RES-nil-other-reason. Plan Q1 applies only when no amount is filed at all; a dividend filed in euros is missing
+    # because of its currency (SPEC §5.3.5), whatever its amount, and is never turned into "no dividend paid".
+    data = run({"PaymentsOfDividends": [flow(0, y) for y in range(2021, 2026)]}, units={"PaymentsOfDividends": "EUR"})
+    assert all(f.kind == "missing" and "EUR" in f.note for f in dividends(data))
+    assert "NIL_DIVIDEND" not in codes(data)
+
+
+def test_reported_zero_dividends_in_some_years_keep_the_other_years_missing():
+    # RES-nil-any-all. Plan Q1: nil only when NO fiscal year has a dividend amount; a reported 0 is an amount.
+    data = run({"PaymentsOfDividends": [flow(0, y) for y in (2021, 2022, 2023)]})
+    assert [f.kind for f in dividends(data)] == ["reported"] * 3 + ["missing"] * 2
+    assert "NIL_DIVIDEND" not in codes(data)
+
+
+def test_short_term_borrowings_exactly_1_percent_from_the_current_maturities_are_the_same_line():
+    # RES-debt-short-is-current-tol. SPEC §6: equal "within 1%" counts as the same line. 100 and 99: 1 ÷ 100 = 1%.
+    # Debt = 400 + 100 = 500; the 99 is not added again.
+    d, c, _ = debt({"LongTermDebtNoncurrent": [instant(400 * M, 2025)], "LongTermDebtCurrent": [instant(100 * M, 2025)],
+                    "ShortTermBorrowings": [instant(99 * M, 2025)]})
+    assert d.value == 500 * M and c.value == 100 * M
+
+
+def test_current_debt_above_total_debt_raises_its_own_check():
+    # RES-debt-current-above. The earlier test passes on the "cannot tell" DEBT_CHECK alone. LongTermDebt 0, DebtCurrent
+    # 50, no principal: total debt 0 + 0 = 0, current debt 50 > 0, so the check names both amounts.
+    _, c, data = debt({"LongTermDebt": [instant(0, 2025)], "DebtCurrent": [instant(50 * M, 2025)]})
+    assert c.value == 50 * M
+    assert any(w.startswith("DEBT_CHECK: 2025-12-31: current debt 50,000,000 is larger than total debt 0")
+               for w in data.warnings)
+
+
+def test_negative_equity_within_1_percent_of_total_equity_is_not_recorded():
+    # RES-untagged-abs. SPEC v2.3 §8.3: a record when total equity exceeds equity by more than 1% of equity's size.
+    # Equity −1,000, total equity −995: −995 − (−1,000) = 5, 1% of 1,000 = 10, 5 ≤ 10 → no record (McDonald's has
+    # negative equity).
+    data = run({"StockholdersEquity": [instant(-1_000 * M, 2025)],
+                "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest": [instant(-995 * M, 2025)]})
+    assert "MINORITY_UNTAGGED" not in codes(data)
+
+
+AVERAGE = "WeightedAverageNumberOfDilutedSharesOutstanding"
+
+
+def cover(*entries):
+    return {"EntityCommonStockSharesOutstanding": {"units": {"shares": list(entries)}}}
+
+
+def test_a_cover_count_dated_on_the_fiscal_year_end_is_not_the_latest_annual_reports():
+    # RES-cover-day0. Resolver (SPEC §6): only a cover count dated AFTER the fiscal year end counts.
+    data = run({AVERAGE: [flow(906_000_000, 2025)]}, units={AVERAGE: "shares"},
+               dei=cover(entry(4_300_000_000, "2025-12-31", filed="2026-02-20")))
+    assert data.latest("shares").value == 906_000_000 and "AVERAGE_SHARES" in codes(data)
+
+
+@pytest.mark.parametrize("day, used", [("2026-07-19", True), ("2026-07-20", False)])
+def test_a_cover_count_is_used_up_to_200_days_after_the_year_end(day, used):
+    # RES-cover-200, SET-cover. settings.yaml cover_page_max_days: "within 200 days after the latest fiscal year end".
+    # 2025-12-31 + 200 days = 2026-07-19 (31 + 28 + 31 + 30 + 31 + 30 + 19 = 200); 2026-07-20 is day 201.
+    data = run({AVERAGE: [flow(906_000_000, 2025)]}, units={AVERAGE: "shares"},
+               dei=cover(entry(4_300_000_000, day, filed="2026-07-25")))
+    assert (data.latest("shares").value == 4_300_000_000) is used
+
+
+def test_the_cover_count_of_an_amended_annual_report_wins():
+    # RES-cover-earliest. SPEC §6: the cover page of the LATEST annual report; a 10-K/A filed later is the latest.
+    data = run(dei=cover(entry(4_300_000_000, "2026-02-18", filed="2026-02-20"),
+                         entry(4_280_000_000, "2026-04-15", form="10-K/A", filed="2026-04-20")))
+    assert data.latest("shares").value == 4_280_000_000
+
+
+def test_an_average_of_exactly_100000_shares_is_plausible():
+    # RES-shares-plausible-eq. settings.yaml min_plausible_shares: a count BELOW 100,000 is treated as missing.
+    fact = run({AVERAGE: [flow(100_000, 2025)]}, units={AVERAGE: "shares"}).latest("shares")
+    assert (fact.kind, fact.value) == ("derived", 100_000)
+
+
+def test_the_latest_10k_date_ignores_a_later_quarterly_report():
+    # RES-latest-10k-forms. SPEC §5.3.1: only 10-K and 10-K/A are annual reports.
+    submissions = {**SUBMISSIONS, "filings": {"recent": {"form": ["10-Q", "10-K"],
+                                                         "filingDate": ["2026-05-01", "2026-02-20"]}}}
+    assert resolve("TST", facts(), submissions, RETRIEVED).latest_10k_filed == date(2026, 2, 20)
+
+
+def test_a_short_company_number_is_padded_to_ten_digits():
+    # RES-cik-pad. The SEC company number has ten digits; Coca-Cola's is 0000021344 (session 5, slide 30).
+    assert resolve("KO", facts(), {**SUBMISSIONS, "cik": 21344}, RETRIEVED).cik == "0000021344"
+
+
+def test_a_flow_keeps_its_period_start_and_a_balance_has_none():
+    # RES-period-start was caught only by other owners' tests. A flow covers a period (SPEC §5.3.1); a balance is
+    # taken at one date (SPEC §5.3.3).
+    data = run({"Assets": [instant(1750 * M, 2025)]})
+    assert data.fact("revenue", fy(2025)).period_start == date(2025, 1, 1)
+    assert data.fact("total_assets", fy(2025)).period_start is None
+
+
+@pytest.mark.parametrize("metric, filed, value", [
+    # TAG-revenue-order, TAG-revenue-samedef: SPEC §6 lists Revenues first; the contract revenue is a fallback that
+    # may leave out other revenue (tag_map.yaml), so 1,040 against 990 is noted, not flagged.
+    ("revenue", {"RevenueFromContractWithCustomerExcludingAssessedTax": [flow(990 * M, 2025)]}, 1040 * M),
+    # TAG-capex-order: SPEC §6 capital expenditure is PaymentsToAcquirePropertyPlantAndEquipment; productive assets
+    # (Nvidia, Amazon) only fill a gap.
+    ("capital_expenditure", {"PaymentsToAcquirePropertyPlantAndEquipment": [flow(85 * M, 2025)],
+                             "PaymentsToAcquireProductiveAssets": [flow(95 * M, 2025)]}, 85 * M),
+    # TAG-cash-order: SPEC §6 cash is CashAndCashEquivalentsAtCarryingValue; cash with restricted cash is a fallback.
+    ("cash", {"CashAndCashEquivalentsAtCarryingValue": [instant(100 * M, 2025)],
+              "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents": [instant(116 * M, 2025)]}, 100 * M),
+    # TAG-debt-noncurrent-order: SPEC §6 debt is LongTermDebtNoncurrent + LongTermDebtCurrent: 400 + 50 = 450, not
+    # the finance-lease name's 420 + 50 = 470.
+    ("financial_debt", {"LongTermDebtNoncurrent": [instant(400 * M, 2025)],
+                        "LongTermDebtAndCapitalLeaseObligations": [instant(420 * M, 2025)],
+                        "LongTermDebtCurrent": [instant(50 * M, 2025)]}, 450 * M),
+])
+def test_the_tag_listed_first_in_spec_6_is_used_when_both_are_filed(metric, filed, value):
+    data = run(filed)
+    assert data.fact(metric, fy(2025)).value == value
+    assert "TAG_CONFLICT" not in codes(data)

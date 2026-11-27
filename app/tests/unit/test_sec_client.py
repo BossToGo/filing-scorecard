@@ -405,3 +405,44 @@ def test_a_malformed_sec_number_is_refused(tmp_path, cik):
     with pytest.raises(InvalidCik):
         sec.submissions(cik)
     assert session.calls == []
+
+
+# --- S18 break-it round (27 November 2026): breaks no earlier test caught ------------------------------------------
+# Each test failed against its deliberate break in a throwaway copy and passes on the unchanged code, except where its
+# comment says otherwise. Not tested, with the reason in docs/testing.md: removing the UTF-16 check changes nothing,
+# because a UTF-16 file never decodes as UTF-8.
+
+
+def test_ten_requests_per_second_the_secs_own_limit_is_allowed(tmp_path):
+    # SEC-max-10. SPEC §4: the SEC allows 10 requests per second; only more than that is refused.
+    assert SecClient(AGENT, tmp_path, max_per_second=10).max_per_second == 10
+
+
+def test_a_cache_entry_saved_for_another_address_is_downloaded_again(tmp_path):
+    # SEC-cache-source. A cache file is reused only for the address it was downloaded from (its provenance record).
+    sec, session, _ = client({SUB_KO: [ok("KO", "submissions.json"), ok("KO", "submissions.json")]}, tmp_path)
+    sec.submissions(KO)
+    meta = tmp_path / "cache" / f"submissions_{KO}.provenance.json"
+    record = json.loads(meta.read_text(encoding="utf-8"))
+    meta.write_text(json.dumps({**record, "source": FACTS_KO}), encoding="utf-8")  # checksum still matches
+
+    again = sec.submissions(KO)
+
+    assert again.from_cache is False and len(session.calls) == 2
+
+
+@pytest.mark.parametrize("agent", ["Test Person\ntest.person@example.org", "Test\x7fPerson test.person@example.org"])
+def test_a_line_break_or_delete_character_is_refused_even_where_the_pattern_would_match(agent):
+    # SEC-agent-control, SEC-agent-del. Control characters (below 32, and 127) are refused before the name-and-e-mail
+    # pattern is tried: a line break before the e-mail would otherwise pass it and end up in the request header.
+    with pytest.raises(MissingUserAgent, match="control character"):
+        check_user_agent(agent)
+
+
+def test_an_env_file_saved_with_a_byte_order_mark_is_read(tmp_path, monkeypatch):
+    # Windows Notepad saves "UTF-8 with BOM"; the User-Agent in such a file must still be found. Written for the
+    # break SEC-bom, which it does not catch: python-dotenv removes the mark itself, so that break changes nothing.
+    env_file = tmp_path / ".env"
+    env_file.write_text(f'SEC_USER_AGENT="{AGENT}"\n', encoding="utf-8-sig")
+    monkeypatch.delenv("SEC_USER_AGENT", raising=False)
+    assert user_agent_from_env(env_file) == AGENT

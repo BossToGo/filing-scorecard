@@ -5,7 +5,7 @@ Expected values come from the hand working in docs/acceptance.md, "Overview (S10
 """
 
 from dataclasses import replace
-from datetime import date
+from datetime import date, datetime, timezone
 
 import pytest
 
@@ -242,3 +242,74 @@ def test_negative_dividends_are_a_sign_error_never_no_dividend_paid():
     cover = overview(data).coverage
     assert (cover.status, cover.text, cover.percent) == ("missing", "Dividend coverage is not available", None)
     assert "negative" in cover.note
+
+
+# --- S18 break-it round (27 November 2026): breaks no earlier test caught ------------------------------------------
+# Each test failed against its deliberate break in a throwaway copy and passes on the unchanged code.
+
+
+def test_missing_capital_expenditure_leaves_free_cash_flow_open_never_zero():
+    # OV-fcf-missing-zero. Free cash flow = operating cash flow − capital expenditure; a missing capex is not 0, so
+    # 215 − nothing is "n/a", not 215.
+    data = changed(synthetic.company_data(), "capital_expenditure", FY0, None)
+    ov = overview(data)
+    fcf = {f.label: f for f in ov.key_figures}["Free cash flow"]
+    assert (fcf.text, fcf.kind) == ("n/a", "missing") and "capital expenditure" in fcf.note
+    assert ov.coverage.status == "missing"
+
+
+def test_a_change_that_rounds_to_zero_is_shown_without_an_arrow():
+    # OV-change-unrounded, OV-pp-unrounded. Edge rule (Igor, 27 November, docs/acceptance.md): a change that rounds to
+    # 0.0% or 0.0 pp is unchanged. Revenue 1,000 → 1,000.4: 1,000.4 ÷ 1,000 − 1 = 0.04% → "+0.0%". Operating
+    # margin 160 ÷ 1,000 = 16.00% → 160.4 ÷ 1,000.4 = 16.03%: 0.03 pp → "+0.0 pp".
+    data = synthetic.company_data()
+    for metric, before, now in (("revenue", 1000, 1000.4), ("operating_income", 160, 160.4)):
+        data = changed(changed(data, metric, FY1, before), metric, FY0, now)
+    got = figures(data)
+    assert (got["Revenue"].change, got["Revenue"].direction) == ("+0.0%", 0)
+    assert (got["Operating margin"].change, got["Operating margin"].direction) == ("+0.0 pp", 0)
+
+
+def test_with_six_fiscal_years_the_overview_covers_the_latest_five():
+    # OV-oldest-five. The overview covers FY-4 to FY0, the latest five years (SPEC §7). A sixth, older year (2020,
+    # a copy of 2021) is left out.
+    data = synthetic.company_data()
+    old = date(2020, 12, 31)
+    items = {m: {**by_year, old: replace(by_year[min(by_year)], period_end=old,
+                                         period_start=date(2020, 1, 1) if by_year[min(by_year)].period_start else None)}
+             for m, by_year in data.items.items()}
+    ov = overview(replace(data, items=items))
+    assert ov.series.years == (2021, 2022, 2023, 2024, 2025) and ov.years_text == "FY2021 – FY2025"
+
+
+def with_revenue(data: CompanyData, millions: dict[int, float]) -> CompanyData:
+    for year, value in millions.items():
+        data = changed(data, "revenue", date(year, 12, 31), value)
+    return data
+
+
+def test_a_series_reaching_exactly_one_billion_is_drawn_in_billions():
+    # OV-series-scale. docs/acceptance.md, S10c: amounts of USD 1 bn OR MORE in USD bn. Revenue 900 m a year, then
+    # exactly 1,000 m in FY0; net income and free cash flow stay below.
+    data = with_revenue(synthetic.company_data(), {2021: 900, 2022: 900, 2023: 900, 2024: 900, 2025: 1000})
+    assert overview(data).series.unit == "USD bn"
+
+
+def test_a_loss_of_more_than_one_billion_sets_the_scale_too():
+    # OV-series-abs. The size of an amount sets the unit, whatever its sign: revenue 900 m a year, a net loss of
+    # 1,200 m in FY0 → USD bn (as amount_text writes −1,200 m as "USD −1.20 bn").
+    data = with_revenue(synthetic.company_data(), {2021: 900, 2022: 900, 2023: 900, 2024: 900, 2025: 900})
+    data = changed(data, "net_income", FY0, -1200)
+    assert overview(data).series.unit == "USD bn"
+
+
+def test_missing_dividends_give_the_reason_coverage_is_not_available():
+    # OV-cov-reason. docs/acceptance.md, S10c: a missing figure gives "n/a" with the reason.
+    cover = overview(changed(synthetic.company_data(), "dividends_paid", FY0, None)).coverage
+    assert cover.status == "missing" and "dividends paid for FY2025" in cover.note
+
+
+def test_dates_are_written_without_a_leading_zero():
+    # OV-day-format. Dates read "18 November 2026" (AC16), so the 5th is "5 November", not "05 November".
+    data = replace(synthetic.company_data(), retrieved=datetime(2026, 11, 5, 9, 30, tzinfo=timezone.utc))
+    assert overview(data).filing.retrieved == "5 November 2026, 09:30 UTC"
