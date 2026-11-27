@@ -15,7 +15,7 @@
    "retrieved": "2026-11-18T14:17:55+00:00",
    "raw_bytes": 3859564,
    "raw_sha256": "f085735b4d08fb116ade18d24247ffabe11df8eb52eae6556b165831f15ef1ad",
-   "trimmed": "only Form 10-K and 10-K/A entries (dei: all forms)",
+   "trimmed": "only Form 10-K, 10-K/A, 10-Q and 10-Q/A entries (dei: all forms); re-trimmed on 2026-11-26 from this same download, size and SHA-256 checksum checked (slice S2c, issue #71)",
    "file": "companyfacts.json"
   }
  ]

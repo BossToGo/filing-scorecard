@@ -137,6 +137,50 @@ Hand working by Flo (C), 22 November 2026, given in his S7 session; written down
 | S2b-RF2 | 4.00, 4.00, (no value), 5.00 (percent): mean and median differ | Igor's hand working, 24 November 2026: the three days with a value average 0.04333 as a decimal (the middle value would be 0.04); compared to half a unit of its last digit | 0.04333 | `test_the_rate_is_the_mean_not_the_middle_value` |
 | S2b-RF3 | One day, 4.50 | DGS10 is in percent (FRED series page, 24 November 2026) | 0.045 | `test_percent_becomes_a_decimal` |
 | S2b-RF4 | The saved fallback in `settings.yaml` | US Treasury, Daily Treasury Par Yield Curve Rates, column `10 Yr`, 2021-11-24 to 2026-11-20: 1,247 days with a value, sum 4,900.29, average 3.92966%. To repeat: download the yearly CSV files 2021 to 2026 (`https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/<year>/all?type=daily_treasury_yield_curve&field_tdr_date_value=<year>&page&_format=csv`), keep the days in the period, average the `10 Yr` column, ÷ 100. Computed on 24 November 2026 by a separate script; the same 1,247 days and the same value on every day as FRED DGS10 (checked against FRED's download and the app's live average, 3.9297%, the same day). Taken from the Treasury because FRED's terms forbid storing FRED data (`docs/architecture.md`); saved rounded | 0.0393 | `test_the_saved_fallback_is_set_and_dated` (range and five-year period); the source label: `test_the_saved_value_names_the_treasury_as_its_source` |
+
+### Latest figures: twelve months to the latest 10-Q and the latest balance sheet (S2c, owner A; issue #71, item 1)
+
+Rule: twelve months = last fiscal year (10-K) + this year's year to date (10-Q) − last year's year to date (the
+comparison column of the same 10-Q); when the 10-K is the latest report, that fiscal year. Figures in USD million,
+read from the SEC company facts downloaded on 18 November 2026 (`app/.cache/sec/`, the same files as the demo data),
+each with its tag and accession number; the arithmetic written out by Claude Code on 26 November 2026, recalculated
+by a separate read-only script that does not use the app's code (not committed), and re-read independently from the
+raw files by the code and test reviewer agents on 27 November (every value matches). **Status: checked by Igor
+with a calculator on 27 November 2026, every row: all match (rule 14.5).** Amazon's 10-Q states its own twelve-month totals (S2c-AMZN): an
+independent source for three of its figures. Tests: `app/tests/integration/test_twelve_months_demo.py`; the rule
+itself on a hand-made company in `app/tests/unit/test_twelve_months.py` (its arithmetic written in the test).
+
+| ID | Company, period | Working (fiscal year + year to date − last year's year to date) | Expected |
+|---|---|---|---|
+| S2c-KO | Coca-Cola, 2025-09-27 to 2026-10-02. 10-K 0001628280-26-010047 (FY2025); 10-Q 0001628280-26-067844 (nine months to 2026-10-02 and to 2025-09-26) | revenue (`Revenues`) 47,941 + 39,232 − 36,119; net income (`NetIncomeLoss`) 13,107 + 12,358 − 10,836; operating cash flow (`NetCashProvidedByUsedInOperatingActivities`) 7,408 + 12,471 − 3,652; capital expenditure (`PaymentsToAcquirePropertyPlantAndEquipment`) 2,112 + 1,063 − 1,230 | 51,054; 14,629; 16,227; 1,945 (free cash flow 16,227 − 1,945 = 14,282, as in #71) |
+| S2c-AMZN | Amazon, 2025-10-01 to 2026-09-30. 10-K 0001018724-26-000004 (FY2025); 10-Q 0001018724-26-000040 (nine months to 2026-09-30 and to 2025-09-30) | revenue (`RevenueFromContractWithCustomerExcludingAssessedTax`) 716,924 + 584,069 − 503,538; net income 77,670 + 113,587 − 56,478; operating cash flow 139,514 + 113,841 − 85,055; capital expenditure (`PaymentsToAcquireProductiveAssets`) 131,819 + 175,670 − 92,297. The same 10-Q states "twelve months ended September 30, 2026": net income 134,779, operating cash flow 168,300, capital expenditure 215,192 | 797,455; 134,779; 168,300; 215,192 |
+| S2c-MCD | McDonald's, 2025-10-01 to 2026-09-30. 10-K 0000063908-26-000035 (FY2025); 10-Q 0000063908-26-000083 (nine months) | revenue (`Revenues`) 26,885 + 20,773 − 19,876; net income 8,563 + 6,831 − 6,399; operating cash flow 10,551 + 8,254 − 7,854; capital expenditure (`PaymentsToAcquirePropertyPlantAndEquipment`) 3,365 + 2,401 − 2,306 | 27,782; 8,995; 10,951; 3,460 |
+| S2c-NVDA | Nvidia, 2025-07-28 to 2026-07-26. 10-K 0001045810-26-000021 (fiscal year 2025-01-27 to 2026-01-25); 10-Q 0001045810-26-000075 (six months to 2026-07-26 and to 2025-07-27) | revenue (`Revenues`) 215,938 + 177,837 − 90,805; net income 120,067 + 118,010 − 45,197; operating cash flow 102,718 + 74,421 − 42,779; capital expenditure (`PaymentsToAcquireProductiveAssets`) 6,042 + 4,434 − 3,122 | 302,970; 192,880; 134,360; 7,354 |
+| S2c-AAPL | Apple, fiscal year 2025-09-28 to 2026-09-26: the 10-K 0000320193-26-000026 (filed 2026-11-03) is the latest report, no 10-Q after it | the fiscal year itself: revenue (`RevenueFromContractWithCustomerExcludingAssessedTax`), net income, operating cash flow, capital expenditure (`PaymentsToAcquirePropertyPlantAndEquipment`) | 478,834; 132,175; 145,097; 9,041 |
+| S2c-BS-KO | Coca-Cola, balance sheet 2026-10-02 (10-Q 0001628280-26-067844); cover page 2026-10-26 | debt: `LongTermDebtAndCapitalLeaseObligationsIncludingCurrentMaturities` 41,546 (= non-current 36,623 + current 4,923); no short-term borrowings under the tags of `tag_map.yaml` (the 10-Q tags USD 73 m of loans and notes payable as `NotesAndLoansPayable`, which the debt rules do not read; agreed by Igor, 26 November: same rules as the annual figures); minority interest `MinorityInterest` 2,161; shares 4,301,902,335 | debt 41,546; minority 2,161; shares 4,301,902,335 |
+| S2c-BS-AMZN | Amazon, 2026-09-30 (10-Q 0001018724-26-000040); cover 2026-10-21 | debt: `LongTermDebt` 180,887 (non-current 173,125 + current 6,827 = 179,952, within 1%) + `ShortTermBorrowings` 380; no minority interest tagged in any report: nil | debt 181,267; minority 0 (nil); shares 10,813,138,306 |
+| S2c-BS-MCD | McDonald's, 2026-09-30 (10-Q 0000063908-26-000083); cover dated 2026-09-30 | debt: `LongTermDebtNoncurrent` 39,820, the only debt tag in the 10-Q; McDonald's classifies short-term debt inside long-term debt (company override in `tag_map.yaml`), so nothing is added (the figure's note still says "no current portion reported"; agreed by Igor, 26 November); no minority interest: nil | debt 39,820; minority 0 (nil); shares 705,784,744 |
+| S2c-BS-NVDA | Nvidia, 2026-07-26 (10-Q 0001045810-26-000075); cover 2026-08-21 | debt: `LongTermDebt` 33,366 (= 32,366 + 1,000), no short-term borrowings; no minority interest: nil | debt 33,366; minority 0 (nil); shares 24,100,000,000 |
+| S2c-BS-AAPL | Apple, 2026-09-26 (the 10-K, as for the annual figures); cover 2026-10-23 | debt: `LongTermDebt` 78,114 (= 68,208 + 9,906) + `CommercialPaper` 1,997; no minority interest: nil | debt 80,111; minority 0 (nil); shares 14,532,182,000 |
+
+Rule cases from the review of PR #72 (27 November 2026). Each one is a unit test on the hand-made company, with its
+arithmetic, in `app/tests/unit/test_twelve_months.py`. The real cases were checked on the cached downloads of
+18 November (not committed, so not a test):
+
+| Case | Real company (USD m) | Expected |
+|---|---|---|
+| Last year's year to date restated in this 10-Q by more than 1% | S&P Global: nine months 2025 first filed 11,420 (0000064040-25-000167), 10,117 in the 2026 10-Q (0000064040-26-000058); its FY2025 10-K (15,336) did not restate 2024, so 15,336 + 11,074 − 10,117 = 16,293 would mix two bases, and no figure on one basis can be built from the filings (its 2026 nine months, 11,074, are recast too). CrowdStrike's net income (−187.9 first filed, −174.4 restated) is a careful miss: its FY2026 10-K had itself restated FY2025 (−19.3 to −15.2), so it may be on the same basis; the rule does not try to tell (second review round, 27 November) | missing, both values in the reason, which says the 10-K year *may* be on another basis |
+| A 10-Q after the 10-K, but no year to date starting the day after the fiscal year end (e.g. a fiscal year end moved) | none of the 100 cached companies | the four twelve-month figures missing; debt, minority interest and shares from that 10-Q |
+| No debt tag in the 10-Q | Caterpillar 36,210 and Western Digital 1,052 at their fiscal year ends | the fiscal-year-end debt, dated, said in the note (Igor, 27 November) |
+| Minority interest: 0 in the 10-K, nothing in the 10-Q | Dell | nil |
+| Minority interest missing at the fiscal year end (reported the year before), nothing in the 10-Q | Eli Lilly (79.5 at 2024-12-31) | missing |
+| Minority interest reported at the fiscal year end (not 0), nothing in the 10-Q | Southern Company (2,851 at 2025-12-31; 10-Q to 2026-03-31) | the fiscal-year-end figure, dated and said (Igor, 27 November, second round), as for debt and shares |
+| The 10-K is the latest report and its year runs 53 weeks | Micron (2025-08-29 to 2026-09-03), Disney (2025-09-28 to 2026-10-03): 371 days | the fiscal year, its note saying "371 days" |
+| The synthetic company of Appendix A (annual data only, built by hand, not by the resolver) | – | its FY2025 figures, written out in `tests/fixtures/synthetic.py` with a note (Flo's request on #72, #71 item 6) |
+| The SEC's filing list names a 10-Q its company facts do not hold yet | Southern Company (10-Q filed 2026-11-05), NextEra (filed 2026-10-21): figures to 2026-03-31 | figures from the latest 10-Q in the company facts, every note naming the missing 10-Q |
+| No minority interest tagged, total equity above equity by more than 1% at the quarter end | Uber (28,575 against equity) | nil, with MINORITY_UNTAGGED in the note |
+| The 10-Q uses another tag than the 10-K's fiscal-year figure | ADP revenue, Marriott capital expenditure (5 figures of 400 in the 100 companies) | missing (the definitions may differ) |
+
 ### S8 cases (synthetic company, changed one figure at a time)
 
 Hand working by Flo (C), 24 November 2026, from his Excel model (`docs/crosscheck/valuation-crosscheck.xlsx`), given
