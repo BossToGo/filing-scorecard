@@ -16,9 +16,9 @@ from datetime import date
 
 import pytest
 
-from src.contracts import CheckResult
+from src.contracts import CheckResult, Fact
 from src.data.company import load_company
-from src.overview import charts
+from src.overview import _percent, _times, charts
 from tests.fixtures import synthetic
 
 FY0 = date(2025, 12, 31)
@@ -356,3 +356,171 @@ def test_a_worked_out_gross_profit_says_so_under_the_flow():
     assert ("Revenue", "Gross profit", "USD 360.51 bn") in [(f.source, f.target, f.text) for f in amazon.flows]
     assert amazon.note.startswith("Gross profit is worked out as revenue − cost of revenue")
     assert charts(load_company("KO", demo=True)).money_flow.note == ""  # Coca-Cola files its gross profit
+
+
+# --- S18 break-it round (27 November 2026): breaks of the chart code no earlier test caught -------------------------
+# Each test failed against its deliberate break (named in the comment) in a throwaway copy of PR #70's head, and
+# passes on the unchanged code. Hand working in each comment; synthetic FY2025 figures as in the sections above.
+
+OLD = date(2020, 12, 31)
+
+
+def test_amounts_per_share_of_a_thousand_or_more_have_a_thousands_comma():
+    # CH-fixed-comma. Numbers are written with thousands commas ("1,300.0%", S10c). Price 1,250.00 against an estimate
+    # of 1,000.00: 1,250 ÷ 1,000 − 1 = 25.0% above.
+    price = charts(synthetic.company_data(), valuation(1250.0, estimate=1000.0, at_cap=1500.0)).price
+    assert [b.text for b in price.bars] == ["USD 1,250.00", "USD 1,000.00"]
+    assert price.text == "The share price you typed, USD 1,250.00, is 25.0% above the estimate of USD 1,000.00."
+
+
+def test_negative_percentages_and_ratios_use_the_minus_sign():
+    # CH-percent-minus. Every negative is written with "−", not a hyphen (Flo's finding 10, S18 part B).
+    assert (_percent(-0.123), _times(-1.5)) == ("−12.3%", "−1.50×")
+
+
+def test_short_term_assets_equal_to_short_term_liabilities_read_equal_to():
+    # CH-versus-equal. Current assets set to 360, the current liabilities: neither above nor below.
+    position = charts(changed(synthetic.company_data(), "current_assets", 360e6)).position
+    assert position.text == ("Short-term assets of USD 360 m are equal to short-term liabilities of USD 360 m and below "
+                             "long-term liabilities of USD 570 m.")
+
+
+def test_a_chart_reaching_exactly_one_billion_is_drawn_in_billions():
+    # CH-scaled. USD 1 bn or more in USD bn (S10c). Total liabilities 1,360 − current 360 = long-term 1,000.
+    position = charts(changed(synthetic.company_data(), "total_liabilities", 1_360e6)).position
+    assert position.unit == "USD bn"
+
+
+def test_revenue_of_zero_gives_no_flow_chart():
+    # CH-flow-zero-revenue. The flow chart needs revenue above zero.
+    flow = charts(changed(synthetic.company_data(), "revenue", 0.0)).money_flow
+    assert flow.status == "none" and "needs revenue above zero" in flow.text
+
+
+def test_an_operating_profit_of_zero_gives_no_flow_chart():
+    # CH-flow-zero-profit. The flow chart needs a profit; zero is none.
+    flow = charts(changed(synthetic.company_data(), "operating_income", 0.0)).money_flow
+    assert flow.status == "none" and "needs a profit" in flow.text
+
+
+def test_operating_income_above_revenue_gives_no_flow_chart():
+    # CH-flow-income-above. Operating income 1,400 above revenue 1,300 cannot flow out of revenue.
+    flow = charts(changed(synthetic.company_data(), "operating_income", 1_400e6)).money_flow
+    assert flow.status == "none"
+    assert flow.text == ("The flow chart is not available: operating income (USD 1.40 bn) is above revenue "
+                         "(USD 1.30 bn) in FY2025.")
+
+
+def test_a_gross_profit_above_revenue_is_not_drawn_as_a_step():
+    # CH-flow-gross-range. A gross profit is drawn only between operating income and revenue; 1,400 above revenue
+    # 1,300 is not, so the chart keeps one cost step: 1,300 − 208 = 1,092 operating costs.
+    data = synthetic.company_data().with_fact(Fact("gross_profit", 1_400e6, "USD", date(2025, 1, 1), FY0, "derived",
+                                                   None, None, None, None, None, "revenue − cost_of_revenue"))
+    flow = charts(data).money_flow
+    assert ("Revenue", "Operating costs", "USD 1.09 bn") in [(f.source, f.target, f.text) for f in flow.flows]
+    assert "Gross profit" not in [f.target for f in flow.flows]
+
+
+def test_net_income_equal_to_operating_income_has_no_other_step():
+    # CH-flow-net-equal, CH-flow-zero-flows. Net income set to 208, the operating income: nothing for interest, tax
+    # and other (208 − 208 = 0, not drawn) and no other income; 208 ÷ 1,300 = 0.16 → 16.0% of revenue.
+    flow = charts(changed(synthetic.company_data(), "net_income", 208e6)).money_flow
+    assert [(f.source, f.target) for f in flow.flows] == [("Revenue", "Operating costs"),
+                                                          ("Revenue", "Operating income"),
+                                                          ("Operating income", "Net income")]
+    assert flow.text.endswith("leaving operating income of USD 208 m; net income was USD 208 m, 16.0% of revenue.")
+
+
+def test_total_liabilities_below_current_liabilities_leave_long_term_open():
+    # CH-position-guard. Total liabilities 300 below current liabilities 360: no long-term figure (never −60).
+    bars = by_label(charts(changed(synthetic.company_data(), "total_liabilities", 300e6)).position.bars)
+    assert bars["Long-term liabilities"].value is None
+    assert "below current liabilities" in bars["Long-term liabilities"].note
+
+
+def test_a_negative_part_is_named_as_not_in_the_data():
+    # CH-parts-negative. Cash of −10 (a sign error) is not drawn and is named among the figures counted in other assets.
+    split = charts(changed(synthetic.company_data(), "cash", -10e6)).split
+    assert "Cash and equivalents" not in [p.label for p in split.assets]
+    assert "cash and equivalents" in split.note
+
+
+def test_total_assets_of_zero_give_no_split():
+    # CH-split-zero-assets. Shares of a total of zero cannot be worked out.
+    split = charts(changed(synthetic.company_data(), "total_assets", 0.0)).split
+    assert split.status == "none" and "at or below zero" in split.text
+
+
+def test_equity_of_exactly_zero_is_said_and_not_drawn():
+    # CH-split-equity-zero. Total liabilities set to the total assets, 1,750: equity 1,750 − 1,750 = 0.
+    split = charts(changed(synthetic.company_data(), "total_liabilities", 1_750e6)).split
+    assert "Equity" not in [p.label for p in split.claims]
+    assert split.claims_title == "Liabilities (equity is zero)"
+
+
+def test_equity_of_zero_makes_debt_to_equity_not_meaningful():
+    # CH-debt-zero-equity. A ratio to zero equity does not exist.
+    text = charts(changed(synthetic.company_data(), "equity", 0.0)).debt_text
+    assert text == "Shareholder equity was zero in FY2025 (USD 0 m), so debt to equity is not meaningful."
+
+
+def test_an_earlier_year_with_negative_equity_gives_no_earlier_ratio():
+    # CH-debt-then-guard. FY2021 equity −100: no ratio for that year; FY2025 450 ÷ 820 = 0.54878 → 54.9%.
+    text = charts(changed(synthetic.company_data(), "equity", -100e6, date(2021, 12, 31))).debt_text
+    assert text == "Financial debt was 54.9% of shareholder equity in FY2025."
+
+
+def test_the_equity_line_is_the_shareholders_equity_without_minority_interests():
+    # CH-debt-equity-series. Coca-Cola FY2025 (10-K 0001628280-26-010047): shareholders' equity 32,169, total equity
+    # with minority interests 34,275 (USD m). The line is the first, as in the debt-to-equity sentence above it.
+    lines = {line.label: line for line in charts(load_company("KO", demo=True)).debt_history.lines}
+    assert lines["Shareholder equity"].texts[-1] == "USD 32.17 bn"
+
+
+def test_no_dividend_in_four_years_and_one_year_missing_is_not_no_dividend():
+    # CH-div-all-known. Missing is never zero: with FY2025 missing, "no dividend paid in the five years" is not known.
+    data = synthetic.company_data()
+    for year in (2021, 2022, 2023, 2024):
+        data = changed(data, "dividends_paid", 0.0, date(year, 12, 31))
+    data = without(data, "dividends_paid")
+    assert charts(data).dividend_text == "Dividends against free cash flow are not available for these years."
+
+
+def test_free_cash_flow_equal_to_the_dividends_covers_them():
+    # CH-div-covered-equal. As the S10c coverage: 141 − 85 = 56, the dividends, covers them.
+    data = changed(synthetic.company_data(), "operating_cash_flow", 141e6)
+    assert charts(data).dividend_text == "Free cash flow covered the dividends paid in all 5 years."
+
+
+def test_negative_dividends_give_no_payout():
+    # CH-payout-negative. A payment filed as a negative amount is a sign error, never a negative payout.
+    payout = charts(changed(synthetic.company_data(), "dividends_paid", -56e6)).payout
+    assert payout.status == "none" and "sign error" in payout.text
+
+
+def test_net_income_of_zero_gives_no_payout():
+    # CH-payout-zero-net. A payout ratio of a zero profit is not meaningful.
+    payout = charts(changed(synthetic.company_data(), "net_income", 0.0)).payout
+    assert payout.status == "none" and "not meaningful" in payout.text
+
+
+def test_a_payout_of_exactly_100_percent_is_not_more_than_the_profit():
+    # CH-payout-more-equal. Net income set to 56, the dividends: 56 ÷ 56 = 100.0%, not more.
+    payout = charts(changed(synthetic.company_data(), "net_income", 56e6)).payout
+    assert payout.text == "Dividends paid were 100.0% of net income in FY2025."
+
+
+def test_an_estimate_of_zero_gives_no_price_chart():
+    # CH-price-zero-estimate. A price cannot be placed against an estimate of zero.
+    found = results(V1=result("V1", "fail", 30.0, 0.0, why="Fail: the estimate is zero (built by hand)"))
+    price = charts(synthetic.company_data(), found).price
+    assert (price.status, price.text) == ("none", "Fail: the estimate is zero (built by hand)")
+
+
+def test_with_six_fiscal_years_the_charts_use_the_latest_five():
+    # CH-years. The charts cover FY-4 to FY0 (SPEC §7); a sixth, older year (2020, a copy of 2021) is left out.
+    data = synthetic.company_data()
+    items = {m: {**by_year, OLD: replace(by_year[min(by_year)], period_end=OLD,
+                                         period_start=date(2020, 1, 1) if by_year[min(by_year)].period_start else None)}
+             for m, by_year in data.items.items()}
+    assert charts(replace(data, items=items)).debt_history.years == (2021, 2022, 2023, 2024, 2025)

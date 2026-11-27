@@ -292,7 +292,7 @@ zero" guard removed, a rounding or a denominator changed); so were A's tag map a
 FRED key and the SEC User-Agent secret, and the S10d chart code of PR #70. After each break the full suite ran and
 the code was restored. A break counts as caught when at least one test fails. Run on 27 November with a small script
 in throwaway clones, four at once, never in a working checkout: 255 breaks on `main` 3ed71fc (1,347 tests) and 54
-breaks of `charts()` and `_fixed` on PR #70's head 1181e53 (1,382 tests), which are not on `main` yet. The script
+breaks of `charts()` and `_fixed` on PR #70's head 1181e53 (1,382 tests), before #70 was merged. The script
 checked that every edit matched its line of code exactly once, and `git status` was clean after every restore (for
 the reruns, clean apart from the new tests). Controls: the unchanged clones passed (1,347 and 1,382). No break made
 the suite hang. A break that only other owners' tests caught is marked "(D's)"; every other caught break fails at
@@ -661,8 +661,8 @@ least one of A's own tests.
 | CH-years | charts | wrong years: the oldest five | **none at first**; now 1: `test_with_six_fiscal_years_the_charts_use_the_latest_five` |
 | CH-fy0 | charts | wrong year: FY-1 as the latest | 19: `test_every_area_has_its_charts_and_each_chart_says_what_it_shows`, `test_amazon_shows_no_payout_ring_and_says_why` and 17 more |
 
-54 breaks, 29 caught by the earlier tests. The 23 new tests named in the last column are in a throwaway copy of
-#70, not on `main` yet: they join this branch once #70 is merged.
+54 breaks, 29 caught by the earlier tests. #70 was merged (`main` 47d9c93) while this round ran, with the same
+`overview.py`; the 23 new tests are in `test_overview_charts.py` and were run again against the 25 breaks there.
 
 ### Breaks no test can see: dismissed in writing
 
@@ -703,9 +703,9 @@ least one of A's own tests.
 **Summary:** 309 deliberate breaks in A's area. On `main`, 255: 204 caught by the earlier tests, 47 by the 48 test
 cases added in A's test files (`test_resolver.py`, `test_company.py`, `test_fred.py`, `test_sec_client.py`,
 `test_overview.py`), each seen failing with its break, and 4 not observable, dismissed above. In the chart code of
-PR #70, 54: 29 caught, 24 by 23 new tests seen failing in a throwaway copy of #70, 1 dismissed; those tests join this
-branch once #70 is merged (Igor's decision of 27 November: never pushed to #70, where a push would dismiss its
-approval). No app code changed. Expected results are the rules cited in each test (SPEC §5.3, §6, §8.3,
+PR #70, 54: 29 caught, 24 by 23 new tests in `test_overview_charts.py`, each seen failing with its break, 1
+dismissed; the tests were added only after #70 was merged (Igor's decision of 27 November: never pushed to #70,
+where a push would dismiss its approval). No app code changed. Expected results are the rules cited in each test (SPEC §5.3, §6, §8.3,
 `tag_map.yaml`, `settings.yaml`, `docs/acceptance.md`), with the arithmetic in a comment, never the code's output.
 
 The independent read-only review of A's code by a member of another area (SPEC §15) is still to come.
