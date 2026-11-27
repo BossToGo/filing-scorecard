@@ -43,7 +43,7 @@ AnalytixInsight (2022, 1 March). *Morningstar research and market data for Inves
 
 Damodaran, A. (2026a, January). *Data update 1 for 2026*. https://aswathdamodaran.substack.com/p/data-update-1-for-2026-the-push-and
 
-Federal Reserve Bank of St. Louis (n.d.). *FRED terms of use*. https://fred.stlouisfed.org/legal/terms/ (cited as FRED, n.d.)
+Federal Reserve Bank of St. Louis (n.d.). *FRED terms of use*. https://fred.stlouisfed.org/legal/terms/ (accessed 24 November 2026; cited as FRED, n.d.)
 
 Filing Scorecard team (2026b). *Project specification*, version 2.4.2. https://github.com/BossToGo/filing-scorecard/blob/main/SPEC.md
 
@@ -55,4 +55,4 @@ SEC (n.d.). *Webmaster frequently asked questions* (access policy). https://www.
 
 Simply Wall St (n.d.-b). *Company analysis model*. https://github.com/SimplyWallSt/Company-Analysis-Model ; licence: https://github.com/SimplyWallSt/Company-Analysis-Model#license
 
-US Department of the Treasury (n.d.). *Daily Treasury par yield curve rates*. https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve
+US Department of the Treasury (n.d.). *Daily Treasury par yield curve rates*. https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve (accessed 24 November 2026).

@@ -123,7 +123,7 @@ The tool also has limits. It does not replace investment advice and does not ada
 <!-- from sections/A-data-and-controls.md -->
 ## Systems view and risks
 
-Filing Scorecard gives the customers of a European retail bank (France is our example market) a clearer picture of a company before they place a stock order. It uses 24 checks covering past performance, financial health, dividend and valuation. For the bank, the main question is whether customers can trust the figures and understand their limits. We address this through traceable sources, checks on the calculations and warnings when information is incomplete or outdated.
+For the bank, the main question is whether customers can trust the figures and understand their limits, which we address through traceable sources, checks on the calculations and warnings when information is incomplete or outdated.
 
 ### What the app depends on
 
@@ -133,12 +133,12 @@ The app uses four main inputs:
 |---|---|---|
 | SEC EDGAR | Five years of financial figures, share counts and filing dates | Updated when the company files its annual report. Saved copies are available, and the demonstration can run offline. |
 | Damodaran’s industry tables | Industry betas, profitability, P/E, P/B and dividend-yield comparisons, plus market benchmarks | Updated each January; we use the January 2026 edition (Damodaran, 2026b). We save the tables with their date, but they can approach a year old between updates. |
-| FRED | The ten-year US Treasury rate, averaged over five years for the discount rate | The underlying series is published daily. The app downloads the five-year average when needed and keeps it only in memory, because FRED’s terms require written consent to store its data (FRED, n.d.). If FRED cannot be reached, and in the demonstration, it uses a dated five-year average computed from the US Treasury’s own daily yield-curve rates (US Department of the Treasury, n.d.). |
+| FRED | The ten-year US Treasury rate, averaged over five years for the discount rate | The underlying series is published daily. The app downloads the daily 10-year yields and computes the five-year average itself, kept in memory only, as FRED’s terms require (see Business model). If FRED cannot be reached, and in the demonstration, it uses a dated five-year average computed from the US Treasury’s own daily yield-curve rates (US Department of the Treasury, n.d.). |
 | Share price | The price used in valuation comparisons | Customers enter it themselves in the prototype. In a bank deployment, it would come from the bank’s quote. |
 
 Saved copies help keep the app available during an outage. However, availability and freshness are different: a calculation can still run using information that no longer reflects current conditions.
 
-Beyond the customers who read the scorecard, a bank deployment involves its brokerage team, which owns the order screen and the quote feed; its IT team, which hosts the app and keeps the saved data current; its compliance team, which approves showing scores beside an order and makes sure they stay information, not advice; and the data providers above. A wrong number or an outdated table therefore reaches customers through the bank’s own channel.
+In a bank deployment, a wrong number or an outdated table reaches customers through the bank’s own teams and the data providers above (see How the bank changes).
 
 ### What can go wrong
 
@@ -246,11 +246,11 @@ Cohen, L., Malloy, C. and Nguyen, Q. (2020). "Lazy Prices". *Journal of Finance*
 
 Damodaran, A. (2026a, January). *Data update 1 for 2026*. https://aswathdamodaran.substack.com/p/data-update-1-for-2026-the-push-and
 
-Damodaran, A. (2026b, January). *Industry datasets, January 2026 edition* (betas, margins, return on equity, P/E, P/B, dividend yields). https://pages.stern.nyu.edu/~adamodar/pc/datasets/
+Damodaran, A. (2026b, January). *Industry datasets, January 2026 edition* (betas, margins, return on equity, P/E, P/B, dividend yields). https://pages.stern.nyu.edu/~adamodar/pc/datasets/ (accessed 22 November 2026).
 
 European Commission (2023, 18 July). "Eurobarometer survey reveals low levels of financial literacy across the EU", press release. https://finance.ec.europa.eu/news/eurobarometer-survey-reveals-low-levels-financial-literacy-across-eu-2023-07-18_en (accessed 21 November 2026).
 
-Federal Reserve Bank of St. Louis (n.d.). *FRED terms of use*. https://fred.stlouisfed.org/legal/terms/ (cited as FRED, n.d.)
+Federal Reserve Bank of St. Louis (n.d.). *FRED terms of use*. https://fred.stlouisfed.org/legal/terms/ (accessed 24 November 2026; cited as FRED, n.d.)
 
 Filing Scorecard team (2026a). *Project repository: specification, tests and reconciliation records*. https://github.com/BossToGo/filing-scorecard
 
@@ -278,7 +278,7 @@ Simply Wall St (n.d.-b). *Company analysis model*. https://github.com/SimplyWall
 
 United Nations General Assembly (2017, 6 July). *Work of the Statistical Commission pertaining to the 2030 Agenda for Sustainable Development*, resolution 71/313 (A/RES/71/313), annex: global indicator framework, targets 9.5 and 8.10. https://docs.un.org/en/A/RES/71/313
 
-US Department of the Treasury (n.d.). *Daily Treasury par yield curve rates*. https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve
+US Department of the Treasury (n.d.). *Daily Treasury par yield curve rates*. https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve (accessed 24 November 2026).
 
 <!-- from sections/E-problem-sources.md -->
 ## Annex: Sources for the problem and evidence section
