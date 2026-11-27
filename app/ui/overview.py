@@ -14,12 +14,12 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from src.contracts import CompanyData
-from src.overview import (NA, RADAR_ORDER, Coverage, Figure, KeyFigure, Overview, Scorecard, Series, overview,
-                          radar_shape, scorecard)
+from src.overview import (NA, RADAR_ORDER, Charts, Comparison, Coverage, Figure, KeyFigure, MoneyFlow, Overview,
+                          Payout, PriceCheck, Scorecard, Series, Split, charts, overview, radar_shape, scorecard)
 
 KIND_WORDS = {"reported": "Reported", "derived": "Derived", "assumption": "Assumption", "missing": "Not available"}
 ARROWS = {1: "▲", -1: "▼", 0: ""}
-DASHES = {"Revenue": "solid", "Net income": "solid", "Free cash flow": "dash"}
+DASHES = {"Revenue": "solid", "Net income": "solid", "Free cash flow": "dash", "Cash and equivalents": "dot"}
 
 
 def _option(key: str):
@@ -104,7 +104,7 @@ table.fs-ov-rows {{width:100%; border-collapse:collapse; margin-top:16px; font-s
 table.fs-ov-rows td {{padding:10px 0; border:0; border-top:1px solid var(--ov-line)}}
 table.fs-ov-rows td.fs-ov-kind {{font-size:14px; color:var(--ov-muted); text-align:right; padding-right:28px}}
 table.fs-ov-rows td.fs-ov-kind.fs-ov-derived {{color:var(--ov-accent)}}
-table.fs-ov-rows td.fs-ov-num {{text-align:right; font-weight:600}}
+table.fs-ov-rows td.fs-ov-num {{text-align:right; font-weight:600; white-space:nowrap}}
 table.fs-ov-rows td.fs-ov-plain {{color:var(--ov-muted)}}
 .st-key-ov_card_scorecard [data-testid="stColumn"]:not(:first-child) {{border-left:1px solid var(--ov-line); padding-left:24px}}
 .fs-ov-caption {{text-align:center; font-size:14px; color:var(--ov-muted); margin-top:-6px}}
@@ -132,6 +132,21 @@ a.fs-ov-nav.fs-ov-on {{color:var(--ov-accent) !important; background:color-mix(i
 a.fs-ov-nav svg {{width:20px; height:20px; flex:none}}
 .fs-ov-coverage {{border-top:1px solid var(--ov-line); margin-top:48px; padding-top:22px}}
 .fs-ov-coverage b {{display:block; font-size:18px; font-weight:400; margin-top:8px}}
+[class*="st-key-ov_card"] .js-plotly-plot .main-svg {{background:transparent !important}}
+[class*="st-key-ov_card"] .js-plotly-plot .bg {{fill:transparent !important}}
+.fs-ov-section {{display:flex; align-items:baseline; gap:18px; flex-wrap:wrap; border-top:1px solid var(--ov-line);
+  margin:34px 0 4px; padding-top:22px; scroll-margin-top:72px}}
+.fs-ov-section b {{font-family:Georgia, 'Times New Roman', serif; font-weight:400; font-size:36px; letter-spacing:-0.01em}}
+.fs-ov-section span {{font-size:15px; color:var(--ov-muted)}}
+.fs-ov-says {{font-size:16px; line-height:1.5; margin:4px 0 6px}}
+.fs-ov-zones {{display:flex; gap:6px 22px; flex-wrap:wrap; font-size:14px; color:var(--ov-muted); margin:2px 0 8px}}
+.fs-ov-zones span {{display:inline-flex; align-items:center; gap:8px}}
+.fs-ov-zones i {{display:inline-block; width:14px; height:14px; border-radius:3px; background:var(--ov-accent)}}
+details.fs-ov-more {{margin-top:6px; font-size:15px}}  details.fs-ov-more summary {{cursor:pointer; color:var(--ov-muted)}}
+details.fs-ov-more table.fs-ov-rows {{font-size:15px; margin-top:8px}}
+.fs-ov-legend-line i.fs-ov-square {{width:14px; height:14px; border:0; border-radius:3px; background:var(--ov-accent)}}
+.fs-ov-zones b {{font-weight:600; color:inherit}}
+.fs-ov-ring {{text-align:center; font-size:15px; color:var(--ov-muted); margin-top:-8px}}
 @media (max-width: 760px) {{.fs-ov-kpis {{grid-template-columns:repeat(2, minmax(0, 1fr)); row-gap:16px}}
   .fs-ov-kpi:nth-child(3) {{padding-left:0; border-left:0}}  .fs-ov-title {{font-size:44px}}}}
 </style>"""
@@ -195,6 +210,7 @@ def _chart(series: Series) -> go.Figure:
     fig = go.Figure()
     colours = _series_colours()
     years = list(series.years)
+    shifts = _label_shifts(series)
     for index, line in enumerate(series.lines):
         colour = colours[index % len(colours)]
         fig.add_trace(go.Scatter(
@@ -206,15 +222,37 @@ def _chart(series: Series) -> go.Figure:
             connectgaps=False, showlegend=False))
         if line.end_label and line.values[-1] is not None:
             fig.add_annotation(x=years[-1], y=line.values[-1], text=line.end_label, showarrow=False, xanchor="left",
-                               xshift=14, font={"color": colour, "size": 15})
+                               xshift=14, yshift=shifts.get(line.label, 0), font={"color": colour, "size": 15})
     grid = _option("borderColor")
     fig.add_vline(x=years[-1], line={"dash": "dot", "width": 1, "color": grid}) if years else None
-    panel = _option("secondaryBackgroundColor") or _option("backgroundColor")
-    fig.update_layout(height=330, margin={"l": 0, "r": 64, "t": 10, "b": 0}, hovermode="x unified",
-                      paper_bgcolor=panel, plot_bgcolor=panel, font={"size": 14},
+    fig.update_layout(height=330, margin={"l": 0, "r": 64, "t": 10, "b": 0}, hovermode="x unified", font={"size": 14},
                       yaxis={"rangemode": "tozero", "gridcolor": grid, "griddash": "dot", "zeroline": False},
                       xaxis={"tickmode": "array", "tickvals": years, "showgrid": False})
     return fig
+
+
+def _unit_words(series: Series) -> str:
+    """The unit of one five-year chart in words, for its own card (each chart picks its own unit)."""
+    return "USD billions" if series.unit == "USD bn" else "USD millions"
+
+
+def _label_shifts(series: Series, height: int = 330, gap: int = 18) -> dict[str, int]:
+    """Pixels to move each end label up or down so two lines ending close together do not write over each other
+    (Nvidia's cash and debt). Layout only: the values themselves are not touched."""
+    ends = sorted((line.values[-1], line.label) for line in series.lines if line.values and line.values[-1] is not None)
+    known = [v for line in series.lines for v in line.values if v is not None]
+    if len(ends) < 2 or not known:
+        return {}
+    top, bottom = max(known + [0.0]), min(known + [0.0])
+    per_pixel = (top - bottom) / (height - 60) if top > bottom else 1.0
+    placed, shifts = [], {}
+    for value, label in ends:  # from the lowest up: each label at least `gap` pixels above the one below it
+        y = value / per_pixel
+        if placed and y - placed[-1] < gap:
+            y = placed[-1] + gap
+        placed.append(y)
+        shifts[label] = round(y - value / per_pixel)
+    return shifts
 
 
 def _table(series: Series) -> str:
@@ -223,6 +261,284 @@ def _table(series: Series) -> str:
         f"<tr><td>{_e(line.label)}</td>" + "".join(f"<td class='fs-ov-num'>{_e(t)}</td>" for t in line.texts) + "</tr>"
         for line in series.lines)
     return f'<div class="fs-ov"><table class="fs-ov-rows"><tr><td></td>{head}</tr>{body}</table></div>'
+
+
+# --- the charts of S10d (Igor, 26 November): drawn from `src.overview.charts`, nothing computed here -------------
+# Colours: the theme's accent and text colour, and tints of them mixed with the panel colour (never a colour of
+# our own, tests/app/test_theme.py). The company's own bar or part is the accent; benchmarks and costs are grey.
+
+PROFIT_NODES = ("Revenue", "Gross profit", "Operating income", "Net income", "Other income, net")
+ZONE_WEIGHT = {"80% of the estimate or less": ("accent", 0.34), "80% to 100% of the estimate": ("accent", 0.16),
+               "Below the estimate": ("accent", 0.24), "Above the estimate": ("text", 0.07)}
+PART_WEIGHT = (1.0, 0.72, 0.5, 0.34, 0.22)  # tints of the accent for the balance sheet blocks, largest first
+CHART_CONFIG = {"displayModeBar": False}
+
+
+def _mix(colour: str | None, weight: float) -> str | None:
+    """`weight` of a theme colour on the theme's panel colour (1 is the colour itself), for lighter tints that
+    still follow the theme file."""
+    base = _option("secondaryBackgroundColor") or _option("backgroundColor")
+    try:
+        a = [int(colour[i:i + 2], 16) for i in (1, 3, 5)]
+        b = [int(base[i:i + 2], 16) for i in (1, 3, 5)]
+    except (TypeError, ValueError, IndexError):
+        return colour
+    return "#" + "".join(f"{round(x * weight + y * (1 - weight)):02x}" for x, y in zip(a, b))
+
+
+def _ink() -> tuple[str | None, str | None]:
+    return _pass_colour(), _option("textColor")
+
+
+def _plain(fig: go.Figure, height: int, **layout) -> go.Figure:
+    fig.update_layout(height=height, showlegend=False, font={"size": 13}, **layout)
+    return fig
+
+
+def _says(text: str, note: str = "") -> str:
+    extra = f'<div class="fs-ov-note">{_e(note)}</div>' if note else ""
+    return f'<div class="fs-ov"><p class="fs-ov-says">{_e(text)}</p>{extra}</div>'
+
+
+def _figures(rows) -> str:
+    """The chart's figures as a table, folded under it (the text alternative of every chart)."""
+    body = "".join(f"<tr><td>{_e(label)}</td><td class='fs-ov-num'>{_e(text)}</td></tr>" for label, text in rows)
+    return (f'<div class="fs-ov"><details class="fs-ov-more"><summary>Figures</summary>'
+            f'<table class="fs-ov-rows">{body}</table></details></div>')
+
+
+def _price_chart(price: PriceCheck) -> go.Figure:
+    accent, text = _ink()
+    fig = go.Figure()
+    for label, start, end in price.zones:
+        fig.add_shape(type="rect", x0=start, x1=end, y0=0, y1=1, yref="paper", layer="below", line={"width": 0},
+                      fillcolor=_zone_colour(label))
+    bars = list(reversed(price.bars))  # the share price on top
+    fig.add_trace(go.Bar(orientation="h", y=[b.label for b in bars], x=[b.value for b in bars], width=0.44,
+                         text=[b.text for b in bars], textposition="auto", cliponaxis=False,  # inside if no room
+                         textfont={"size": 15}, marker={"color": [accent if b.label == "Estimate" else text
+                                                                   for b in bars]},
+                         hovertemplate="%{y}: %{text}<extra></extra>"))
+    for mark in price.marks:
+        fig.add_vline(x=mark.value, line={"dash": "dot", "width": 2, "color": text},
+                      annotation_text=f"{mark.label}: {mark.text}", annotation_position="top",
+                      annotation_font_size=12)
+    return _plain(fig, 240, margin={"l": 0, "r": 16, "t": 30, "b": 0}, bargap=0.3,
+                  xaxis={"range": [0, price.axis_max], "tickprefix": "USD ", "showgrid": False, "zeroline": False},
+                  yaxis={"showgrid": False, "ticksuffix": "  "})
+
+
+def _zone_colour(label: str) -> str | None:
+    accent, text = _ink()
+    role, weight = ZONE_WEIGHT.get(label, ("text", 0.07))
+    return _mix(accent if role == "accent" else text, weight)
+
+
+def _zones(price: PriceCheck) -> str:
+    items = "".join(f'<span><i style="background:{_zone_colour(label)}"></i>{_e(label)}</span>'
+                    for label, _, _ in price.zones)
+    return f'<div class="fs-ov fs-ov-zones">{items}</div>'
+
+
+def _compare_chart(comparison: Comparison) -> go.Figure:
+    accent, text = _ink()
+    bars = [b for b in comparison.bars if b.value is not None]
+    first = bars[0].label if bars else ""
+    bars.reverse()  # the company (or short-term assets) on top
+    top = max([abs(b.value) for b in bars] or [1.0])
+    fig = go.Figure(go.Bar(orientation="h", y=[b.label for b in bars], x=[b.value for b in bars], width=0.56,
+                           text=[b.text for b in bars], textposition="outside", cliponaxis=False,
+                           textfont={"size": 14},
+                           marker={"color": [accent if b.label == first else _mix(text, 0.32) for b in bars]},
+                           hovertemplate="%{y}: %{text}<extra></extra>"))
+    return _plain(fig, 70 + 48 * len(bars), margin={"l": 0, "r": 16, "t": 6, "b": 0}, bargap=0.25,
+                  xaxis={"range": [min(0, min(b.value for b in bars)) * 1.7, top * 1.7], "visible": False},
+                  yaxis={"showgrid": False, "ticksuffix": "  "})
+
+
+def _flow_chart(flow: MoneyFlow) -> go.Figure:
+    accent, text = _ink()
+    labels = [label for label, _ in flow.nodes]
+    index = {label: i for i, label in enumerate(labels)}
+    grey = _mix(text, 0.42)
+    depth = {"Revenue": 0}
+    for _ in flow.flows:  # a step's column is one more than the column of the step it comes from
+        for f in flow.flows:
+            if f.source in depth:
+                depth[f.target] = max(depth.get(f.target, 0), depth[f.source] + 1)
+    for f in flow.flows:  # "Other income, net" comes from outside: one column before net income
+        depth.setdefault(f.source, depth.get(f.target, 1) - 1)
+    last = max(depth.values()) or 1
+    x = [min(max(depth[label] / last, 0.001), 0.999) for label in labels]
+    main = [label for label in PROFIT_NODES if label != "Other income, net"]
+    y = [0.45 if label == "Revenue" else 0.3 if label in main else 0.88 for label in labels]  # costs branch off below
+    fig = go.Figure(go.Sankey(
+        arrangement="snap",
+        node={"label": [f"{label}<br>{amount}" for label, amount in flow.nodes], "pad": 26, "thickness": 14,
+              "x": x, "y": y,
+              "color": [accent if label in PROFIT_NODES else grey for label in labels], "line": {"width": 0},
+              "hovertemplate": "%{label}<extra></extra>"},
+        link={"source": [index[f.source] for f in flow.flows], "target": [index[f.target] for f in flow.flows],
+              "value": [f.value for f in flow.flows], "customdata": [f.text for f in flow.flows],
+              "color": [_mix(accent, 0.22) if f.target in PROFIT_NODES else _mix(text, 0.12) for f in flow.flows],
+              "hovertemplate": "%{customdata}<extra></extra>"},
+        textfont={"size": 13}))
+    return _plain(fig, 360, margin={"l": 4, "r": 4, "t": 8, "b": 8})
+
+
+def _split_chart(split: Split) -> go.Figure:
+    """The balance sheet as two block charts side by side: what the company owns (assets) and what it owes plus the
+    shareholders' part (liabilities and equity). Each block's area is its amount, largest first, labelled with its
+    name, amount and share of total assets. Owned parts in tints of the accent, owed parts in greys (never red or
+    green); negative equity is not a block, the sentence under the chart says it."""
+    fig = go.Figure()
+    panel = _mix(_option("textColor"), 0)
+    sides = (("assets", "Assets", split.total, split.assets, [0.0, 0.485]),
+             ("claims", split.claims_title, split.claims_total, split.claims, [0.515, 1.0]))
+    for side, title, total, parts, x in sides:
+        if not parts:
+            continue
+        colours = _block_colours(parts, owed=side == "claims")
+        fig.add_trace(go.Treemap(
+            ids=[side] + [f"{side}/{p.label}" for p in parts], parents=[""] + [side] * len(parts),
+            labels=[f"{title} · {total}"] + [p.label for p in parts],  # the header shows the column's total
+            values=[sum(p.value for p in parts)] + [p.value for p in parts],
+            branchvalues="total", sort=True, domain={"x": x, "y": [0, 1]},
+            text=[f"<b>{_e(title)}</b>  {_e(total)}"] + [f"<b>{_wrap(p.label)}</b><br>{_e(p.text)} · {_e(p.share)}"
+                                                           for p in parts],
+            texttemplate="%{text}", textposition="top left", textfont={"size": 13},
+            customdata=[f"{title}: {total}"] + [f"{p.label}: {p.text} ({p.share} of total assets)" for p in parts],
+            hovertemplate="%{customdata}<extra></extra>",
+            marker={"colors": [panel] + colours, "line": {"width": 3, "color": panel},
+                    "pad": {"t": 30, "l": 0, "r": 0, "b": 0}},
+            tiling={"pad": 3}, pathbar={"visible": False}))
+    return _plain(fig, 380, margin={"l": 0, "r": 0, "t": 4, "b": 0}, uniformtext={"minsize": 10, "mode": "hide"})
+
+
+def _wrap(label: str, width: int = 16) -> str:
+    """A block's name on short lines ("Property, plant<br>and equipment"), so it fits a narrow block."""
+    lines, line = [], ""
+    for word in label.split():
+        if line and len(line) + 1 + len(word) > width:
+            lines.append(line)
+            line = word
+        else:
+            line = f"{line} {word}".strip()
+    return "<br>".join(_e(part) for part in lines + [line])
+
+
+def _split_legend(split: Split) -> str:
+    """Every block's colour, name, amount and share under the chart, for the blocks too small to carry them."""
+    rows = []
+    for title, parts, owed in (("Assets", split.assets, False), (split.claims_title, split.claims, True)):
+        items = "".join(f'<span><i style="background:{colour}"></i>{_e(part.label)} {_e(part.text)} · '
+                        f"{_e(part.share)}</span>" for part, colour in zip(parts, _block_colours(parts, owed)))
+        rows.append(f'<div class="fs-ov-zones"><b>{_e(title)}</b>{items}</div>')
+    return '<div class="fs-ov">' + "".join(rows) + "</div>"
+
+
+def _block_colours(parts, owed: bool) -> list[str | None]:
+    """Largest first: owned parts (assets, equity) in tints of the accent, owed parts (liabilities) in greys."""
+    accent, text = _ink()
+    order = {p.label: rank for rank, p in enumerate(sorted(parts, key=lambda p: -p.value))}
+    colours = []
+    for part in parts:
+        rank = min(order[part.label], len(PART_WEIGHT) - 1)
+        if owed and not part.label.startswith("Equity"):
+            colours.append(_mix(text, (0.55, 0.4, 0.28, 0.2, 0.14)[rank]))
+        else:
+            colours.append(_mix(accent, 0.62 if owed else PART_WEIGHT[rank]))
+    return colours
+
+
+def _dividend_chart(series: Series) -> go.Figure:
+    accent, text = _ink()
+    lines = {line.label: line for line in series.lines}
+    years = list(series.years)
+    fig = go.Figure()
+    paid, fcf = lines.get("Dividends paid"), lines.get("Free cash flow")
+    if paid is not None:
+        fig.add_trace(go.Bar(x=years, y=list(paid.values), name=paid.label, marker={"color": accent}, width=0.5,
+                             customdata=list(paid.texts), hovertemplate="%{x}: %{customdata}<extra>Dividends paid</extra>"))
+    if fcf is not None:
+        fig.add_trace(go.Scatter(x=years, y=list(fcf.values), name=fcf.label, mode="lines+markers",
+                                 line={"color": text, "width": 3, "dash": "dash"}, marker={"size": 9},
+                                 customdata=list(fcf.texts), connectgaps=False,
+                                 hovertemplate="%{x}: %{customdata}<extra>Free cash flow</extra>"))
+    grid = _option("borderColor")
+    return _plain(fig, 300, margin={"l": 0, "r": 10, "t": 10, "b": 0}, hovermode="x unified",
+                  yaxis={"rangemode": "tozero", "gridcolor": grid, "griddash": "dot", "zeroline": False},
+                  xaxis={"tickmode": "array", "tickvals": years, "showgrid": False})
+
+
+def _ring(payout: Payout) -> go.Figure:
+    accent, text = _ink()
+    share = payout.share or 0.0
+    fig = go.Figure(go.Pie(values=[share, 1 - share], hole=0.74, sort=False, direction="clockwise", rotation=0,
+                           marker={"colors": [accent, _mix(text, 0.12)]}, textinfo="none", hoverinfo="skip"))
+    fig.add_annotation(text=f"<b>{payout.percent}</b>", showarrow=False, font={"size": 30, "color": text})
+    return _plain(fig, 230, margin={"l": 0, "r": 0, "t": 6, "b": 6})
+
+
+LINE_STYLES = {"dash": "border-top-style:dashed;", "dot": "border-top-style:dotted;"}
+
+
+def _legend(series: Series) -> str:
+    """The line legend above a five-year chart: each line's colour and dash, as `_chart` draws it."""
+    colours = _series_colours()
+    items = "".join(f'<span><i style="border-color:{colours[i % len(colours)] or "currentColor"};'
+                    f'{LINE_STYLES.get(DASHES.get(line.label, ""), "")}"></i>{_e(line.label)}</span>'
+                    for i, line in enumerate(series.lines))
+    return f'<div class="fs-ov fs-ov-legend-line">{items}</div>'
+
+
+def _section(title: str, anchor: str, sub: str = "") -> None:
+    st.markdown(f'<div class="fs-ov fs-ov-section" id="{anchor}"><b>{_e(title)}</b><span>{_e(sub)}</span></div>',
+                unsafe_allow_html=True)
+
+
+def _card(key: str, title: str, sub: str = "", stretch: bool = True):
+    """A bordered card with its heading; `stretch` makes it as tall as its neighbour in a row."""
+    box = st.container(border=True, height="stretch" if stretch else "content", key=f"ov_card_{key}")
+    box.markdown(_heading(title, sub, sans=True), unsafe_allow_html=True)
+    return box
+
+
+def _comparison_card(key: str, comparison: Comparison | None, sub: str, stretch: bool = True) -> None:
+    if comparison is None:
+        return
+    with _card(key, comparison.title, sub, stretch):
+        if comparison.status == "ok":
+            st.plotly_chart(_compare_chart(comparison), theme="streamlit", config=CHART_CONFIG, key=f"chart_{key}")
+        st.markdown(_says(comparison.text), unsafe_allow_html=True)
+        if comparison.bars:
+            st.markdown(_figures((b.label, b.text if not b.note else f"{b.text} ({b.note})") for b in comparison.bars),
+                        unsafe_allow_html=True)
+
+
+def render_valuation(ch: Charts) -> None:
+    """The share price against the estimate and the price ratios, at the top of the page (Igor, 26 November: "this
+    is what our whole pitch is to the bank"). The numbers are V1 to V6's own, so the chart and the checks agree."""
+    if ch.price is None:
+        return
+    _section("Valuation", "ov-valuation", "The estimate per share from the company's cash flows, and its price ratios")
+    with _card("price", "Share price against the estimate", "USD per share"):
+        if ch.price.status == "ok":
+            st.markdown(_zones(ch.price), unsafe_allow_html=True)
+            st.plotly_chart(_price_chart(ch.price), theme="streamlit", config=CHART_CONFIG, key="chart_price")
+        st.markdown(_says(ch.price.text), unsafe_allow_html=True)
+        if ch.price.bars:
+            rows = [(b.label, b.text) for b in ch.price.bars + ch.price.marks]
+            st.markdown(_figures(rows), unsafe_allow_html=True)
+    for column, key, comparison in zip(st.columns(2, gap="medium"), ("ratio_pe", "ratio_pb"), ch.ratios):
+        with column:
+            _comparison_card(key, comparison, "Against the industry and the US market" if key == "ratio_pe"
+                             else "Against the industry")
+
+
+def _folded_table(series: Series) -> str:
+    """A five-year chart's figures as a table, folded under it."""
+    return f'<div class="fs-ov"><details class="fs-ov-more"><summary>Figures</summary>{_table(series)}</details></div>'
 
 
 NOT_A_RATING = "Not a rating of the share and not advice."  # SPEC §3, under the radar
@@ -245,6 +561,7 @@ def _radar(card: Scorecard) -> go.Figure:
         return areas[k].label.replace(" ", "<br>", 1) if side else areas[k].label
 
     labels = {k: (f"<b>{name(k, i % 2)}</b><br><span style='color:{colour}'>{areas[k].share_text}</span>"
+                  f"<br><span style='font-size:11px'>{areas[k].short_text}</span>"  # "2 passed of 6 assessed"
                   if areas[k].share is not None else f"<b>{name(k, i % 2)}</b><br>{areas[k].share_text}")
               for i, k in enumerate(RADAR_ORDER)}
     r = dict(shape.points)
@@ -266,11 +583,9 @@ def _radar(card: Scorecard) -> go.Figure:
                                           mode="markers", marker={"size": 9, "color": colour}, hoverinfo="skip",
                                           showlegend=False))
     grid = _option("borderColor")  # None: Plotly's own grey
-    panel = _option("secondaryBackgroundColor") or _option("backgroundColor")
     fig.update_layout(
-        height=390, margin={"l": 114, "r": 114, "t": 50, "b": 50}, showlegend=False, font={"size": 13},
-        paper_bgcolor=panel, plot_bgcolor=panel,
-        polar={"bgcolor": panel, "gridshape": "linear",
+        height=430, margin={"l": 118, "r": 118, "t": 74, "b": 74}, showlegend=False, font={"size": 13},
+        polar={"gridshape": "linear",
                "angularaxis": {"rotation": 90, "direction": "clockwise", "categoryorder": "array",
                                "categoryarray": [labels[k] for k in RADAR_ORDER], "gridcolor": grid, "linecolor": grid},
                "radialaxis": {"range": [0, 100], "tickvals": [25, 50, 75, 100], "showticklabels": False,
@@ -296,10 +611,11 @@ def render_scorecard_panel(card: Scorecard, fiscal_year: int | None) -> None:
 
 NAV = (("Overview", "ov-overview", '<rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" '
         'height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/>'),
-       ("Performance", "ov-performance", '<path d="M3 16h14M4 13l4-4 3 3 5-6"/>'),
+       ("Valuation", "ov-valuation", '<path d="M3 10l7-7h7v7l-7 7z"/><circle cx="13.5" cy="6.5" r="1.2"/>'),
+       ("Past performance", "ov-performance", '<path d="M3 16h14M4 13l4-4 3 3 5-6"/>'),
+       ("Financial health", "ov-health", '<path d="M3 8h14M4 8v8M8 8v8M12 8v8M16 8v8M3 16h14M10 3l7 4H3z"/>'),
        ("Dividend", "ov-dividend", '<circle cx="10" cy="10" r="7"/><path d="M12.5 7.5c-.5-.8-1.4-1.2-2.5-1.2-1.4 0-2.4.8'
         '-2.4 1.8 0 2.4 5 1.2 5 3.7 0 1-1 1.8-2.6 1.8-1.2 0-2.2-.5-2.7-1.3M10 5v1.3M10 13.7V15"/>'),
-       ("Balance sheet", "ov-balance", '<path d="M3 8h14M4 8v8M8 8v8M12 8v8M16 8v8M3 16h14M10 3l7 4H3z"/>'),
        ("Sources", "ov-source", '<path d="M6 3h6l3 3v11H6z"/><path d="M12 3v3h3M8 10h5M8 13h5"/>'))
 
 
@@ -338,45 +654,90 @@ def render_page_shell(data: CompanyData, ov: Overview, active: str = "Overview")
 
 def render_overview(data: CompanyData, results=None) -> Overview:
     """Draw the overview for one company and return what was drawn (for tests). With the check results (as
-    `ui.results.check_results` returns them), the scorecard panel comes first."""
+    `ui.results.check_results` returns them), the valuation comes first, then the radar of the four areas; then one
+    section per area of the main screen, each with its charts (S10d, Igor, 26 November)."""
     ov = overview(data)
+    ch = charts(data, results)
     st.markdown(_style(), unsafe_allow_html=True)
     if results is not None:
+        render_valuation(ch)
         render_scorecard_panel(scorecard(results), ov.fiscal_year)
     if ov.key_figures:
         strip = "".join(_key_figure(f) for f in ov.key_figures)
         st.markdown(f'<div class="fs-ov"><div class="fs-ov-kpis">{strip}</div></div>', unsafe_allow_html=True)
+    unit = _unit_words(ov.series)
+    year = f"FY{ov.fiscal_year}" if ov.fiscal_year else ""
 
-    left, right = st.columns([1.62, 1], gap="medium")
-    with left, st.container(border=True, height="stretch", key="ov_card_performance"):
-        top, switch = st.columns([3, 1], vertical_alignment="top")
-        unit = "USD billions" if ov.series.unit == "USD bn" else "USD millions"
-        top.markdown('<span id="ov-performance"></span>' + _heading("Financial performance", f"Annual results / {unit}"),
-                     unsafe_allow_html=True)
+    _section("Past performance", "ov-performance", "Five years of results, and where the latest revenue went")
+    with st.container(border=True, key="ov_card_performance"):
+        top, switch = st.columns([5, 1], vertical_alignment="top")
+        top.markdown(_heading("Financial performance", f"Annual results / {unit}", sans=True), unsafe_allow_html=True)
         view = switch.segmented_control("View", ["Chart", "Table"], default="Chart", key="overview_view",
                                         label_visibility="collapsed")
-        colours = _series_colours()
-        legend = "".join(f'<span><i style="border-color:{colours[i % len(colours)] or "currentColor"};'
-                         f'{"border-top-style:dashed;" if DASHES.get(line.label) == "dash" else ""}"></i>'
-                         f"{_e(line.label)}</span>" for i, line in enumerate(ov.series.lines))
         if view == "Table":
             st.markdown(_table(ov.series), unsafe_allow_html=True)
         else:
-            st.markdown(f'<div class="fs-ov fs-ov-legend-line">{legend}</div>', unsafe_allow_html=True)
-            st.plotly_chart(_chart(ov.series), theme="streamlit", config={"displayModeBar": False},
-                            key="overview_chart")
-    with right, st.container(border=True, height="stretch", key="ov_card_coverage"):
-        st.markdown('<span id="ov-dividend"></span>' + _heading("Dividend coverage",
-                    "Free cash flow as a share of dividends paid"), unsafe_allow_html=True)
-        st.markdown(_coverage(ov.coverage), unsafe_allow_html=True)
+            st.markdown(_legend(ov.series), unsafe_allow_html=True)
+            st.plotly_chart(_chart(ov.series), theme="streamlit", config=CHART_CONFIG, key="overview_chart")
+    with _card("flow", "Where the revenue goes", f"{year} / from revenue to net income", stretch=False):
+        flow = ch.money_flow
+        if flow.status == "ok":
+            st.plotly_chart(_flow_chart(flow), theme="streamlit", config=CHART_CONFIG, key="chart_flow")
+        st.markdown(_says(flow.text, flow.note), unsafe_allow_html=True)
+        if flow.flows:
+            st.markdown(_figures(flow.nodes), unsafe_allow_html=True)
 
+    _section("Financial health", "ov-health", "What the company owns and owes")
     left, right = st.columns([1.62, 1], gap="medium")
-    with left, st.container(border=True, height="stretch", key="ov_card_balance"):
-        st.markdown('<span id="ov-balance"></span>' + _heading("Balance sheet"), unsafe_allow_html=True)
-        st.markdown(f'<div class="fs-ov">{_rows(ov.balance)}</div>', unsafe_allow_html=True)
-    with right, st.container(border=True, height="stretch", key="ov_card_filing"):
+    with left:
+        with _card("split", "Balance sheet", f"On {ov.fiscal_year_end} / what it owns against what it owes",
+                   stretch=False):
+            split = ch.split
+            if split.status == "ok":
+                st.plotly_chart(_split_chart(split), theme="streamlit", config=CHART_CONFIG, key="chart_split")
+                st.markdown(_split_legend(split), unsafe_allow_html=True)
+            st.markdown(_says(split.text, split.note), unsafe_allow_html=True)
+            if split.assets or split.claims:
+                st.markdown(_figures([("Total assets", split.total)] +
+                                     [(p.label, f"{p.text} · {p.share}") for p in split.assets + split.claims]),
+                            unsafe_allow_html=True)
+        with _card("debt", "Debt, equity and cash", f"Five years / {_unit_words(ch.debt_history)}", stretch=False):
+            st.markdown(_legend(ch.debt_history), unsafe_allow_html=True)
+            st.plotly_chart(_chart(ch.debt_history), theme="streamlit", config=CHART_CONFIG, key="chart_debt")
+            st.markdown(_says(ch.debt_text), unsafe_allow_html=True)
+            st.markdown(_folded_table(ch.debt_history), unsafe_allow_html=True)
+    with right:
+        _comparison_card("position", ch.position, "Short-term assets against liabilities", stretch=False)
+        with st.container(border=True, key="ov_card_balance"):
+            st.markdown(_heading("Key balance sheet figures", sans=True), unsafe_allow_html=True)
+            st.markdown(f'<div class="fs-ov">{_rows(ov.balance)}</div>', unsafe_allow_html=True)
+
+    _section("Dividend", "ov-dividend", "What the company paid out, and whether its cash covered it")
+    left, right = st.columns([1.62, 1], gap="medium")
+    with left:
+        with _card("dividends", "Dividends and free cash flow", f"Five years / {_unit_words(ch.dividend_history)}",
+                   stretch=False):
+            st.markdown('<div class="fs-ov fs-ov-legend-line"><span><i class="fs-ov-square"></i>Dividends paid</span>'
+                        '<span><i style="border-top-style:dashed"></i>Free cash flow</span></div>',
+                        unsafe_allow_html=True)
+            st.plotly_chart(_dividend_chart(ch.dividend_history), theme="streamlit", config=CHART_CONFIG,
+                            key="chart_dividends")
+            st.markdown(_says(ch.dividend_text), unsafe_allow_html=True)
+            st.markdown(_folded_table(ch.dividend_history), unsafe_allow_html=True)
+        _comparison_card("yield", ch.dividend_yield, "Against the US market", stretch=False)
+    with right:
+        with st.container(border=True, key="ov_card_coverage"):
+            st.markdown(_heading("Dividend coverage", "Free cash flow as a share of dividends paid", sans=True),
+                        unsafe_allow_html=True)
+            st.markdown(_coverage(ov.coverage), unsafe_allow_html=True)
+        with _card("payout", "Earnings payout", "Dividends paid as a share of net income", stretch=False):
+            if ch.payout.status == "ok":
+                st.plotly_chart(_ring(ch.payout), theme="streamlit", config=CHART_CONFIG, key="chart_payout")
+            st.markdown(_says(ch.payout.text), unsafe_allow_html=True)
+
+    with st.container(border=True, key="ov_card_filing"):
         f = ov.filing
-        st.markdown('<span id="ov-source"></span>' + _heading("Filing details"), unsafe_allow_html=True)
+        st.markdown('<span id="ov-source"></span>' + _heading("Filing details", sans=True), unsafe_allow_html=True)
         rows = (("Source", f"SEC Form {f.form}" if f.form != NA else NA), ("Filed", f.filed),
                 ("Accession", f.accession), ("Data retrieved", f.retrieved))
         table = "".join(f"<tr><td class='fs-ov-plain'>{_e(k)}</td><td class='fs-ov-num' style='font-weight:400'>"

@@ -22,6 +22,9 @@ Each criterion is checkable: a starting state, an action, an expected result. St
 | AC17 | F2 | Demo mode, Amazon (AMZN) | The scorecard opens | Dividend coverage reads "No dividend paid", never 0% | passing on `main` (#58, 25 November) (`tests/unit/test_overview.py`, `tests/app/test_overview_screen.py`); hand working checked by Igor, 25 November |
 | AC18 | F2 | Any company with a figure missing | The scorecard opens | Each overview figure that needs it shows "n/a" with the reason, never 0; the five-year chart leaves a gap and its table shows "n/a" | passing on `main` (#58, 25 November) (`tests/unit/test_overview.py`, `tests/app/test_overview_screen.py`); hand working checked by Igor, 25 November |
 | AC19 | F2 | Tier 1, synthetic company (SPEC Appendix A statuses) | The scorecard opens | The overview's panel "Checks by area" shows a radar with past performance 100% (4 ÷ 4), financial health 67% (4 ÷ 6), dividend 100% (5 ÷ 5) and valuation "Not part of this version" off the shape: the line joins only neighbouring scored areas (financial health with past performance, and with dividend), never past performance with dividend across the centre, and the shape is not filled; with all four scored it is closed and filled. Next to it, a short text on how to read it; no rows of marks (those are in the score chart). "Not a rating of the share and not advice." under the radar; Amazon's dividend axis reads "No dividend paid"; no total and no area to read first (agreed by the whole group on #60, 26 November; panel without its own rows, Igor, 26 November) | passing on `main` (#60, 26 November) (`tests/unit/test_scorecard_summary.py`, `tests/app/test_overview_screen.py`) |
+| AC20 | F7 | Demo mode, Coca-Cola (KO), share price USD 97.59 | The scorecard opens | The valuation comes first on the page: the share price and the estimate (V1's own figures) on one scale with the zones "80% of the estimate or less" (V2's mark), "80% to 100% of the estimate" and "Above the estimate", the estimate at the growth cap (V6) marked, and the sentence "The share price you typed, USD 97.59, is 206.9% above the estimate of USD 31.80."; price to earnings 32.02× against 37.11× for the industry and 60.26× for the US market (V3, V4), price to book 13.05× against 6.87× for the industry (V5). Without a price, the checks' reason instead of the chart; no advice words | passing on branch `a/S10d-overview-charts` (`tests/unit/test_overview_charts.py`, `tests/app/test_overview_screen.py`) |
+| AC21 | F2 | Demo mode, Coca-Cola (KO) | The scorecard opens | Under the radar, one section per area of the main screen, each chart with one sentence and its figures as a table ("Figures"): where the revenue goes (revenue USD 47.94 bn to cost of revenue 18.40 and gross profit 29.54, to operating expenses 15.78 and operating income 13.76, to interest, tax and other 0.655 and net income 13.11, 27.3% of revenue); the balance sheet split (cash 9.8%, financial debt 43.4%, equity 32.7% of total assets USD 104.82 bn); short-term assets against short- and long-term liabilities; debt, equity and cash over five years (debt 141.4% of equity in FY2025, 185.9% in FY2021); dividends against free cash flow (covered in 3 of 5 years, not in FY2024 and FY2025); earnings payout 67.0%; dividend yield 2.09% against 1.10% for the US market. Hand working: "Overview charts (S10d)" below | passing on branch `a/S10d-overview-charts` (`tests/unit/test_overview_charts.py`, `tests/app/test_overview_screen.py`) |
+| AC22 | F2 | McDonald's (negative equity), Amazon (no dividend), a loss or a missing figure | The scorecard opens | Negative equity is said in words and never drawn as a part ("...liabilities are larger than assets, so equity is negative (USD −1.79 bn)."; debt to equity "not meaningful"); no dividend gives no payout ring and "No dividend paid in FY2025."; a loss gives no flow chart and says why; parts larger than their total leave no negative "other" part; a missing figure is "n/a" with its reason, never 0; the charts take no background colour of their own, so a theme switch leaves no dark box | passing on branch `a/S10d-overview-charts` (`tests/unit/test_overview_charts.py`, `tests/app/test_overview_screen.py`) |
 | AC12 | F9 | Tier 3 build, synthetic company, share price USD 30.00 | The scorecard opens | Strengths G1, G2, G3, G5, G6; points to watch W3, W4, W8, all minor; each opens its check (SPEC v2.3 §9 and Appendix A; B's recalculation pending) | open |
 
 ## Screens (how each was checked)
@@ -162,7 +165,9 @@ dividend coverage = free cash flow ÷ dividends paid; current ratio = current as
 USD 1 bn or more in USD bn with two decimals, smaller ones in USD m with none. Edge rules (Igor, 25 November):
 FY-1 at or below zero gives "not meaningful" instead of a change; negative free cash flow shows both amounts and
 "free cash flow was negative", never a negative coverage; revenue or current liabilities missing or at or below zero
-give "n/a" with the reason; a dividend treated as nil reads "No dividend paid".
+give "n/a" with the reason; a dividend treated as nil reads "No dividend paid". A change that rounds to 0.0% or
+0.0 pp is unchanged and shown without an up or down arrow (Igor, 27 November, S18): revenue 1,000 → 1,000.4 is
+1,000.4 ÷ 1,000 − 1 = 0.04%, shown "+0.0%" with no arrow (`test_a_change_that_rounds_to_zero_is_shown_without_an_arrow`).
 
 **Synthetic company** (USD m, SPEC Appendix A line items):
 
@@ -188,6 +193,53 @@ give "n/a" with the reason; a dividend treated as nil reads "No dividend paid".
 | Current ratio | 31,044 ÷ 21,281 = 1.4588 | 1.46× |
 
 Checked by hand: Igor (A), 25 November 2026, every value above with a calculator from the listed figures; all match (rule 14.5).
+
+### Overview charts (S10d, owner A)
+
+Formulas (Igor, 26 November: the usual chart for each question, our own design and words, rule 14.16): where the
+revenue goes = revenue → cost of revenue (revenue − gross profit) and gross profit → operating expenses (gross profit
+− operating income) and operating income → interest, tax and other (operating income − net income) and net income;
+without a gross profit, one step "operating costs" (revenue − operating income); net income above operating income
+comes in as "other income, net". Long-term liabilities = total liabilities − current liabilities. Balance sheet
+split: each part ÷ total assets; parts not reported separately stay in "other assets" or "other liabilities" (named
+in a note: "not in the data as a separate figure"), equity = total assets − total liabilities, never drawn when at
+or below zero; the balance sheet is drawn as two block charts (assets; liabilities and equity), each block's area its
+amount. A gross profit that the data layer works out (Amazon files none) is said under the flow. Debt to equity = financial
+debt ÷ shareholder equity. Earnings payout = dividends paid ÷ net income. The valuation and ratio charts show the
+checks' own figures (V1, V2, V3, V4, V5, V6, D2). Percentages to one decimal; a half is rounded away from zero, as by
+hand (34.275 gives 34.28; Python's own format gave 34.27, fixed in `src/overview.py`).
+
+**Synthetic company** (USD m, SPEC Appendix A line items, FY2025 and FY2021):
+
+| Figure | Hand working | Expected |
+|---|---|---|
+| Where the revenue goes | 1,300 − 208 = 1,092; 208 − 140 = 68; 140 ÷ 1,300 = 0.10769 | operating costs USD 1.09 bn, operating income USD 208 m, interest, tax and other USD 68 m, net income USD 140 m, 10.8% of revenue |
+| Financial position | 540; 360; 930 − 360 = 570 | above short-term liabilities, below long-term liabilities |
+| Balance sheet split | 120 ÷ 1,750 = 6.857%; 1,750 − 120 = 1,630 → 93.143%; 450 ÷ 1,750 = 25.714%; 930 − 450 = 480 → 27.429%; 1,750 − 930 = 820 → 46.857% | 6.9%, 93.1%; 25.7%, 27.4%, 46.9% |
+| Debt to equity | 450 ÷ 820 = 0.54878; 400 ÷ 600 = 0.66667 | 54.9% in FY2025, 66.7% in FY2021 |
+| Dividends against free cash flow | free cash flow 100, 105, 75, 115, 130 against dividends 40, 44, 48, 45, 56 | covered in all 5 years |
+| Earnings payout | 56 ÷ 140 = 0.40 | 40.0% |
+| Share price against the estimate (results built by hand) | 30 ÷ 20.13 − 1 = 0.49031; 0.8 × 20.13 = 16.104; 15 ÷ 20.13 − 1 = −0.25484 | 49.0% above; 80% mark USD 16.10; 25.5% below |
+
+**Coca-Cola** (USD m, FY2025 10-K, accession 0001628280-26-010047; FY2021 to FY2024 columns of the earlier 10-Ks):
+
+| Figure | Hand working | Expected |
+|---|---|---|
+| Where the revenue goes | 47,941 − 29,544 = 18,397; 29,544 − 13,762 = 15,782; 13,762 − 13,107 = 655; 13,107 ÷ 47,941 = 0.27340 | 18.40 bn, 29.54 bn, 15.78 bn, 13.76 bn, 655 m, 13.11 bn, 27.3% |
+| Financial position | 31,044; 21,281; 70,541 − 21,281 = 49,260 | USD 31.04 bn, 21.28 bn, 49.26 bn |
+| Balance sheet split | of 104,816: cash 10,270 (9.798%), receivables 3,038 (2.898%), inventory 4,425 (4.222%), PP&E 9,613 (9.171%), investments 20,235 (19.305%), other 104,816 − 47,581 = 57,235 (54.605%); debt 45,492 (43.402%), other liabilities 70,541 − 45,492 = 25,049 (23.898%), equity 104,816 − 70,541 = 34,275 (32.700%) | 9.8%, 2.9%, 4.2%, 9.2%, 19.3%, 54.6% (USD 57.24 bn); 43.4%, 23.9%, 32.7% (USD 34.28 bn) |
+| Debt to equity | 45,492 ÷ 32,169 = 1.41416; 42,761 ÷ 22,999 = 1.85926 | 141.4% in FY2025, 185.9% in FY2021 |
+| Dividends against free cash flow | 11,258, 9,534, 9,747, 4,741, 5,296 against 7,252, 7,616, 7,952, 8,359, 8,779 | covered in 3 of 5 years; not in FY2024 and FY2025 |
+| Earnings payout | 8,779 ÷ 13,107 = 0.66979 | 67.0% |
+
+**McDonald's** (USD m, FY2025 10-K filed 24 February 2026): total assets 59,515, total liabilities 61,306, so equity
+59,515 − 61,306 = −1,791 (negative, not drawn); financial debt 39,973 ÷ 59,515 = 0.67165 → 67.2%; cash 774 ÷ 59,515 =
+0.01300 → 1.3%.
+
+Worked by Claude Code from the listed figures. Checked by hand: Igor (A), 27 November 2026, every value above with a
+calculator from the listed figures, and the McDonald's right-hand column (39,973 + 1,149 + 20,184 = 61,306) and
+Amazon's equity (411.065 → USD 411.07 bn); all match (rule 14.5). The synthetic dividend yield 56 ÷ 3,000 was checked
+to one decimal (1.9%); the screen shows two, 1.87%, as D2 does.
 
 ### S9 edge cases (test cases and real companies)
 
@@ -235,6 +287,7 @@ planted bug that ignored the share count passed every other test).
 | E6 | Two fallback tags give different values for the same period | Figure flagged on the sources page, not chosen silently (§5.3.7) | passing (test: test_two_tags_with_different_values_are_flagged_and_the_first_in_the_list_is_used) |
 | E7 | Restated figure differs from the original by more than 1% | Latest filed value used; both shown with a warning (§5.3.4) | passing (test: test_planted_a_restated_figure_uses_the_latest_filing_and_keeps_the_original; KO 2018: test_coca_cola_2018_revenue_restatement_as_shown_in_session_5) |
 | E8 | 53-week fiscal year | Kept: flow periods of 350 to 380 days are accepted (§5.3.1) | passing (test: test_a_flow_must_cover_350_to_380_days; Apple: test_apple_has_a_53_week_fiscal_year) |
+| E8a | A fiscal year end moved by about two weeks: a last year of 380 days (16 December 2024 to 31 December 2025) after a year ending 15 December 2024 | No gap: the earlier years are kept and no `FY_GAP` is raised, because a gap is counted as §5.3.1 counts a year (§5.3.9, clarified on 27 November); a next year end 382 days after the last (16 days not covered) is a gap | passing (test: test_a_gap_is_counted_the_way_a_year_is) |
 | E9 | Negative equity | H3, H4, P4, V5 fail with the note "negative equity"; recorded on the sources page, no header warning (§7, §10). H4 decided by Greg on 23 November (plan Q3): known equity ≤ 0 in FY0 or FY-4 fails first | passing for H3, H4, P4 on McDonald's saved data (`test_mcdonalds_known_negative_equity_fails_leverage_checks`, `test_mcdonalds_negative_equity_fails_roe_without_an_industry_benchmark`); V5: check side passing on branch `c/S9-valuation-checks` (test: test_mcdonalds_negative_equity_fails_v5_even_without_the_benchmark) |
 | E10 | Net income zero or below | V3, V4 and D5 fail; P2 fails | partly passing (D5, test: test_9_d5_fails_at_exactly_90_percent_and_when_net_income_is_zero_or_negative); V3, V4: check side passing on branch `c/S9-valuation-checks` (tests: test_s9_e6_no_earnings_fails_v3_and_v4_without_a_ratio, test_igor_4_zero_earnings_fail_even_without_benchmarks); P2: S5 |
 | E11 | No dividend | D1 fails; D2 to D6 `not applicable`; area shows "no dividend paid", score 0 | passing for the checks (tests: test_1_a_labelled_nil_means_no_dividend_paid, test_2_a_reported_zero_in_fy0_means_no_dividend_paid; Amazon on real data: test_amazon_shows_no_dividend_paid); the area display passes on branch `d/S10-design` (PR #54): `tests/app/test_scorecard.py` `test_amazon_dividend_row_reads_no_dividend_paid_0_passed_of_1_assessed` ("No dividend paid", "0 passed of 1 assessed", five does-not-apply marks; Simon's hand check of 25 November 2026) |
