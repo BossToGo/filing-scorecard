@@ -22,8 +22,9 @@ number, so the rule is enforced by the code, not only written down. A check that
 with the reason, and the overview shows "n/a" with the reason. Amazon reads "No dividend paid" only because none of
 nine dividend tags has a value in any of its five years; with any trace of a dividend, the years stay missing.
 Companies also file the same line under different tags, so each line item has a short list of tags tried in order
-(Apple stopped using `Revenues` in 2018). If two tags give different values for the same year, the Sources tab flags
-it; nothing is chosen silently. A restated figure uses the latest filing and keeps the original. On 21 November four
+(Apple stopped using `Revenues` in 2018). If two tags give different values for the same year, the other value is
+noted next to the figure on the Sources tab, and a difference above 1% is flagged when the two tags should agree;
+nothing is chosen silently. A restated figure uses the latest filing and keeps the original. On 21 November four
 reviewer agents audited the project: 1 blocker and 19 major findings (nine of them on screens not built yet). The
 blocker was ours: debt counted twice when a company also files its current maturities as short-term borrowings (AMD,
 IBM, T-Mobile). We reproduced each data finding on 100 saved companies, wrote a failing test, then fixed it; the five
@@ -39,7 +40,7 @@ company, 4.0% gives USD 20.13 a share and 5.07% gives USD 17.26, about 14% less.
 FRED's terms forbid storing its data without written consent (Flo pointed this out), so the live average stays only in
 the running app's memory for the day. For the offline demo, without a key or when FRED cannot be reached, the app uses
 a saved, dated value from the US Treasury's own daily yields, which are public domain: 3.93% for 24 November 2021 to
-20 November 2026, the same 1,247 days with the same value on every day. The Valuation tab shows the rate with its
+20 November 2026, the same 1,247 days, and each day's value equals FRED's. The Valuation tab shows the rate with its
 source and period. The limit: a bank is commercial use, which needs FRED's written consent or another source (business
 plan, section A).
 
@@ -52,28 +53,34 @@ expected values were worked by hand for the test company and Coca-Cola, and I ch
 revenue USD 47.94 bn (+1.9% on 2024), free cash flow USD 5.30 bn (+11.7%), and free cash flow covering 60.3% of the
 dividends paid. The edge rules are mine: a change from a year at or below zero is "not meaningful", negative free cash
 flow shows both amounts and no percentage, and a missing figure is "n/a" with its reason and a gap in the chart. The
-new charts, one section per area with the valuation first (pull request #70), are in review, not merged yet. Their
-values were worked by hand for the test company, Coca-Cola and McDonald's, and I checked them with a calculator on 27
-November: all match. A separate AI agent also recomputed every chart value for the five companies and the test company
-from the raw 10-K entries. It found three small faults (two labels 0.01 off, a wrong unit in two subtitles, a note
-that was not true for McDonald's), all fixed with tests.
+new charts, one section per area with the valuation first, were merged on 27 November (pull request #70), so they are
+part of the version we present. Their values were worked by hand for the test company, Coca-Cola and McDonald's, and I
+checked them with a calculator on 27 November: all match. A separate AI agent also recomputed every chart value for
+the five companies and the test company from the raw 10-K entries. It found three small faults (two labels 0.01 off, a
+wrong unit in two subtitles, a note that was not true for McDonald's), all fixed with tests.
 
-**5. Why does the app read only annual reports, and what changes with the quarterly reports?**
-*(Status on 27 November, before the group's answer on issue #71 at 18:00; to be updated after it.)*
+**5. Why does the app read annual reports, and what do the quarterly reports change?**
+*(Status on 27 November, after the group's decision on #71; Flo's new figures are due on Sunday 29 November.)*
 The checks compare five full fiscal years, so the data layer takes figures only from the 10-K annual reports, and a
 yearly figure must cover 350 to 380 days; a nine-month figure is never read as a year. A report filed more than 15
 months before the data was read shows "Latest annual report is old" in the header. The cost is that an annual report
-can be almost a year old. Coca-Cola's free cash flow was USD 4.7 bn in 2024 and USD 5.3 bn in 2025, two years with
-one-off payments that its 10-Ks explain, and at the 25 November price of USD 97.59 our estimate was USD 31.80.
-**Built, in review (pull request #72, not merged):** the data layer also reads the quarterly reports (10-Q) and gives
-the last twelve months: the last annual figure + this year's year to date − last year's year to date, both from the
-same 10-Q. Coca-Cola, twelve months to 2 October 2026: operating cash flow USD 16,227 m − capital expenditure USD
-1,945 m = free cash flow USD 14,282 m. Amazon's 10-Q prints its own twelve-month totals, and they match the formula to
-the million; I checked the hand working with a calculator. These figures are kept apart, so no existing figure, check
-or warning changes, and a part that cannot be trusted (for example last year's figure restated) makes the figure
-missing, never zero. **Still a proposal:** starting the valuation from these twelve months, long-run growth equal to
-the risk-free rate, and Damodaran's published market risk premium (4.41%) instead of the course's 5%. That is C's
-model and the group's decision; without agreement, v0.2 keeps today's method and the business plan explains the gap.
+can be almost a year old, and one unusual year weighs heavily. Coca-Cola's free cash flow was USD 4.7 bn in 2024 and
+USD 5.3 bn in 2025. 2024 was lowered by the USD 6.0 bn IRS tax litigation deposit (2024 10-K, MD&A, p. 54), and 2025
+by the final fairlife milestone payment of USD 6.2 bn, paid in March 2025, of which USD 6.1 bn went through operating
+cash flow (2025 10-K, MD&A, pp. 47, 53 and 55). Today's method starts from a three-year average and gives Coca-Cola an
+estimate of USD 31.80 at the 25 November price of USD 97.59. So the data layer now also reads the quarterly reports
+(10-Q) and gives the last twelve months: the last annual figure + this year's year to date − last year's year to date,
+both from the same 10-Q (pull request #72, not merged yet). Coca-Cola, twelve months to 2 October 2026: operating cash
+flow USD 16,227 m − capital expenditure USD 1,945 m = free cash flow USD 14,282 m. Amazon's 10-Q prints its own
+twelve-month totals, and they match the formula to the million; I checked the hand working with a calculator. These
+figures are kept apart, so no existing figure, check or warning changes, and a part that cannot be trusted (for
+example last year's figure restated) makes the figure missing, never zero. **Decided on 27 November (issue #71):**
+v0.2 starts the valuation from the last twelve months' free cash flow, sets long-run growth equal to the risk-free
+rate, and uses Damodaran's implied equity risk premium (4.41% on 1 November 2026) instead of the fixed 5%. Flo builds
+it and recalculates the expected values, with his own Excel model as an independent check, by Sunday 29 November at
+12:00, so we quote no new estimate before then. Amazon will get no estimate: over the last twelve months it spent USD
+215 bn on equipment against USD 168 bn of operating cash flow, so the app says the model does not fit. Why the group
+chose this method is Emma's answer in this bank.
 
 ## B: benchmarks, past performance (P1–P6) and financial health (H1–H6) (Greg)
 
