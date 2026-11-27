@@ -225,8 +225,9 @@ class CompanyData:
       company with no annual figures, so use `data.recent.get(...)`;
     - a twelve-month flow is `derived` (from a 10-Q) or `reported` (the 10-K's own year); `filed` is the date of
       the report it is as of; its period need not be 365 days (Coca-Cola: 371) and the note then says so;
-    - a balance or share count may be the fiscal-year-end figure when the 10-Q has none: its `period_end` and note
-      say so; shares may be a diluted average, as in `items`;
+    - a balance (debt, minority interest) or the share count may be the fiscal-year-end figure when the 10-Q has
+      none: its `period_end` and note say so; shares may be a diluted average, as in `items`;
+    - when the SEC's filing list names a later 10-Q than its company facts hold, every note says so;
     - warnings about these figures (DEBT_CHECK, SIGN, MINORITY_UNTAGGED, a restatement) are in each fact's `note`,
       never in `warnings`, which the gates read."""
 

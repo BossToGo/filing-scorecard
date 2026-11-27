@@ -248,9 +248,13 @@ def test_an_older_10q_cover_page_does_not_stand_in_for_the_latest_report():
     assert shares.value == 1_010_000_000 and shares.accession == K25
 
 
-def test_minority_interest_reported_in_the_10k_but_not_in_the_10q_is_missing_not_nil():
+def test_minority_interest_reported_in_the_10k_but_not_in_the_10q_falls_back_to_the_fiscal_year_end():
+    # Changed in the second review round of #72 (Igor's decision, 27 November): like debt and shares, the figure at
+    # the fiscal year end is used, dated and said (Southern Company: 2,851 m in its 10-K, none in its 10-Q). Was:
+    # missing. Never nil: it cannot be assumed to have vanished (SPEC §8.3).
     fact = run(us_gaap={"MinorityInterest": [e(25, "2025-12-31")]}).recent["minority_interest"]
-    assert fact.kind == "missing" and fact.value is None
+    assert (fact.value, fact.period_end) == (25 * M, date(2025, 12, 31))
+    assert "latest quarterly report" in fact.note
 
 
 def test_no_minority_interest_anywhere_is_nil_as_for_the_annual_figures():
@@ -316,6 +320,7 @@ def test_a_restated_comparison_column_makes_the_twelve_months_missing():
     fact = run(us_gaap={"Revenues": revenue}).recent["revenue"]
     assert fact.kind == "missing" and fact.value is None
     assert "restated" in fact.note and "760,000,000" in fact.note and "700,000,000" in fact.note
+    assert "may be on another basis" in fact.note  # not "is on the earlier basis": CrowdStrike's 10-K was restated
 
 
 def test_a_comparison_column_equal_to_its_first_filing_is_used():
@@ -344,6 +349,7 @@ def test_a_10q_after_the_10k_without_a_matching_year_to_date_is_not_hidden_behin
     for metric in FLOWS_TESTED:
         assert recent[metric].kind == "missing" and "2026-01-01" in recent[metric].note, metric
     assert (recent["financial_debt"].value, recent["financial_debt"].period_end) == (520 * M, date(2026, 9, 30))
+    assert (recent["minority_interest"].value, recent["minority_interest"].period_end) == (30 * M, date(2026, 9, 30))
     assert recent["shares"].value == 1_000_000_000
 
 
@@ -374,18 +380,21 @@ def test_shares_come_from_the_original_10q_when_a_later_amendment_has_no_cover_p
     assert (shares.value, shares.period_end) == (1_000_000_000, date(2026, 10, 20))
 
 
-@pytest.mark.parametrize("prior_end, used", [("2025-09-16", True), ("2025-09-15", False)])
-def test_the_comparison_column_may_be_at_most_14_days_shorter(prior_end, used):
+@pytest.mark.parametrize("prior_end, used", [("2025-09-16", True), ("2025-09-15", False),
+                                             ("2025-10-14", True), ("2025-10-15", False)])
+def test_the_comparison_column_may_be_at_most_14_days_shorter_or_longer(prior_end, used):
     # This year's nine months: 272 days. Last year's to 2025-09-16: 258 days (14 fewer, used); to 2025-09-15: 257
-    # days (15 fewer, not the same quarters). 1,040 + 820 − 760 = 1,100.
+    # (15 fewer, not the same quarters); to 2025-10-14: 286 (14 more, used); to 2025-10-15: 287 (15 more, not used).
+    # 1,040 + 820 − 760 = 1,100.
     revenue = years(1000) + ytd(820, 760, prior_end=prior_end)
     fact = run(us_gaap={"Revenues": revenue}).recent["revenue"]
     assert (fact.value == 1_100 * M) if used else (fact.kind == "missing" and "days" in fact.note)
 
 
 def test_the_comparison_column_closest_in_length_is_chosen():
-    # The same 10-Q has two columns starting 2025-01-01: six months (500) and nine months (760). Nine months match.
-    revenue = FLOWS["Revenues"] + [e(500, "2025-06-30", "2025-01-01", "10-Q")]
+    # The same 10-Q has two columns starting 2025-01-01: nine months (760, 272 days) and a decoy to 2025-10-31 (850,
+    # 303 days) that comes first and ends later, so "the first" or "the latest-ending" column would pick it.
+    revenue = [e(850, "2025-10-31", "2025-01-01", "10-Q")] + FLOWS["Revenues"]
     assert run(us_gaap={"Revenues": revenue}).recent["revenue"].value == 1_100 * M
 
 
@@ -459,3 +468,98 @@ def test_resolve_adds_only_the_recent_figures_to_what_the_annual_resolver_gives(
     annual = _Resolver("TST", company(), SUBMISSIONS, RETRIEVED, load_settings()["data"], load_tag_map(), None).run()
     data = run()
     assert data.recent and dataclasses.replace(data, recent={}) == annual
+
+
+# --- second review round of PR #72 (27 November 2026) ------------------------------------------------------------
+
+
+@pytest.mark.parametrize("first, expected", [(800, 1_068), (801, None)])
+def test_the_restatement_limit_is_one_percent_of_the_larger_value(first, expected):
+    # The comparison column is 792. First filed 800: 8 ÷ 800 = 1.0%, not above the 1% limit, so used:
+    # 1,040 + 820 − 792 = 1,068. First filed 801: 9 ÷ 801 = 1.12%, above it, so missing.
+    revenue = years(1000) + ytd(820, 792) + [first_filed(first)]
+    fact = run(us_gaap={"Revenues": revenue}).recent["revenue"]
+    assert (fact.value == expected * M) if expected else (fact.kind == "missing" and fact.value is None)
+
+
+def test_a_negative_minority_interest_at_the_fiscal_year_end_falls_back_too():
+    fact = run(us_gaap={"MinorityInterest": [e(-25, "2025-12-31")]}).recent["minority_interest"]
+    assert (fact.value, fact.period_end) == (-25 * M, date(2025, 12, 31))
+
+
+@pytest.mark.parametrize("prior_end, days", [("2025-10-01", None), ("2025-09-28", 367)])
+def test_the_period_length_is_said_only_outside_364_to_366_days(prior_end, days):
+    # Twelve months from 2025-10-02 to 2026-09-30: 364 days (counted inclusively), a normal 52-week year, nothing
+    # said. From 2025-09-29: 367 days, said. Both comparison columns are within 14 days of this year's 272.
+    fact = run(us_gaap={"Revenues": years(1000) + ytd(820, 760, prior_end=prior_end)}).recent["revenue"]
+    assert fact.value == 1_100 * M
+    assert (f"{days} days" in fact.note) if days else ("days" not in fact.note.split("same 10-Q)")[-1])
+
+
+def test_a_53_week_fiscal_year_says_its_length_when_the_10k_is_the_latest_report():
+    # Micron and Disney: the 10-K year runs 371 days and no 10-Q follows it. Here revenue's FY2025 runs from
+    # 2024-12-28 to 2026-01-02 (371 days counted inclusively).
+    revenue = years(1000)[:-1] + [e(1_040, "2026-01-02", "2024-12-28")]
+    data = run(us_gaap={**ANNUAL_ONLY, "Revenues": revenue}, cover=annual_only(COVER))
+    assert "371 days" in data.recent["revenue"].note
+
+
+def test_the_sign_note_appears_only_for_a_negative_payment():
+    assert "SIGN" not in run().recent["capital_expenditure"].note  # 140: positive
+    # Net income may be negative over twelve months (190 + 10 − 260 = −60): a loss, not a sign error.
+    loss = run(us_gaap={"NetIncomeLoss": years(150) + ytd(10, 260)}).recent["net_income"]
+    assert loss.value == -60 * M and "SIGN" not in loss.note
+
+
+def test_no_untagged_minority_note_when_total_equity_equals_equity():
+    equity = {"StockholdersEquity": [e(1_000, "2026-09-30", form="10-Q")],
+              "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest":
+                  [e(1_000, "2026-09-30", form="10-Q")]}
+    fact = run(us_gaap=equity, drop=("MinorityInterest",)).recent["minority_interest"]
+    assert fact.value == 0 and "MINORITY_UNTAGGED" not in fact.note
+
+
+def test_a_same_day_10q_amendment_wins_for_the_year_to_date():
+    # 10-Q/A filed the same day as the 10-Q, with a lower accession number: 1,040 + 830 − 760 = 1,110.
+    amended = ytd(830, 760, accn="0000000000-26-000080", form="10-Q/A")
+    assert run(us_gaap={"Revenues": FLOWS["Revenues"] + amended}).recent["revenue"].value == 1_110 * M
+
+
+def test_the_cover_page_of_a_later_10q_amendment_for_the_quarter_wins():
+    # A full 10-Q/A for the same quarter, filed 2026-11-15, with its own cover page (2026-11-10): its count is used.
+    amended = ytd(820, 760, accn="0000000000-26-000099", form="10-Q/A", filed="2026-11-15")
+    cover = COVER + [{**count(998_000_000, "2026-11-10", "10-Q/A", "0000000000-26-000099"), "filed": "2026-11-15"}]
+    shares = run(us_gaap={"Revenues": FLOWS["Revenues"] + amended}, cover=cover).recent["shares"]
+    assert (shares.value, shares.accession) == (998_000_000, "0000000000-26-000099")
+
+
+def with_filings(forms, dates, accessions):
+    return {**SUBMISSIONS, "filings": {"recent": {"form": forms, "filingDate": dates, "accessionNumber": accessions}}}
+
+
+def test_a_10q_listed_by_the_sec_but_not_yet_in_its_company_facts_is_said():
+    # Southern Company and NextEra: the SEC's filing list has a 10-Q (filed 2026-11-25) that its company facts do not
+    # hold yet, so the figures stop at an earlier report. Every latest figure says so.
+    filings = with_filings(["10-Q", "10-Q", "10-K"], ["2026-11-25", "2026-10-28", "2026-02-20"],
+                           ["0000000000-26-000150", Q3, K25])
+    recent = resolve("TST", company(), filings, RETRIEVED).recent
+    for metric, fact in recent.items():
+        assert "0000000000-26-000150" in fact.note and "not yet in the SEC's company facts" in fact.note, metric
+    assert recent["revenue"].value == 1_100 * M  # the figure itself is unchanged
+
+
+def test_no_note_when_every_listed_10q_is_in_the_company_facts():
+    # A 10-Q/A for the six months to 2026-06-30, filed 2026-11-20 (after the Q3 10-Q used), is listed and is in the
+    # company facts: it is no sign of a lag, so nothing is said.
+    late = ytd(520, 500, accn="0000000000-26-000120", end="2026-06-30", prior_end="2025-06-30", form="10-Q/A",
+               filed="2026-11-20")
+    filings = with_filings(["10-Q/A", "10-Q", "10-K"], ["2026-11-20", "2026-10-28", "2026-02-20"],
+                           ["0000000000-26-000120", Q3, K25])
+    recent = resolve("TST", company(us_gaap={"Revenues": FLOWS["Revenues"] + late}), filings, RETRIEVED).recent
+    assert not any("company facts" in fact.note for fact in recent.values())
+
+
+def test_a_listed_10q_after_the_10k_is_said_when_the_10k_seems_the_latest_report():
+    filings = with_filings(["10-Q", "10-K"], ["2026-05-05", "2026-02-20"], ["0000000000-26-000030", K25])
+    data = resolve("TST", company(us_gaap=ANNUAL_ONLY, cover=annual_only(COVER)), filings, RETRIEVED)
+    assert "not yet in the SEC's company facts" in data.recent["revenue"].note

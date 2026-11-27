@@ -3,9 +3,10 @@ blocked. Owner: A.
 
 Expected values: the hand working "S2c" in docs/acceptance.md (each figure read from the SEC company facts of
 18 November 2026 with its accession number, the arithmetic written out; re-read independently by the code and test
-reviewer agents on 27 November; **Igor's calculator check pending, rule 14.5**). Coca-Cola is also in the issue (#71). Amazon files its own twelve-month totals in its 10-Q (accession 0001018724-26-000040):
-capital expenditure 215,192, operating cash flow 168,300 and net income 134,779 (USD m), a source independent of
-this code. Amounts in USD million unless said otherwise.
+reviewer agents on 27 November; **Igor's calculator check pending, rule 14.5**). Coca-Cola is also in the issue
+(#71). Amazon files its own twelve-month totals in its 10-Q (accession 0001018724-26-000040): capital expenditure
+215,192, operating cash flow 168,300 and net income 134,779 (USD m), a source independent of this code. Amounts in
+USD million unless said otherwise.
 """
 
 import json

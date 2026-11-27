@@ -13,15 +13,17 @@ Slice S2c (issue #71, item 1). Called by `src.data.resolver.resolve`, which stor
    - last year's is the comparison column of the same 10-Q: it starts on the fiscal year's first day and covers the
      same quarters (its length within `ytd_length_tolerance_days` of this year's);
    - if that comparison column was restated (it differs from its first filing by more than `restatement_warning`),
-     the 10-K year is on the earlier basis and the sum would mix two bases: missing (S&P Global, 2026);
-   - a period that is not 364 to 366 days long says so; the fiscal-year figure's own note is kept; a negative
-     payment is flagged (SIGN) in the note.
+     the 10-K year may be on another basis and the sum could mix two: missing (S&P Global, 2026). This is careful
+     on purpose: CrowdStrike's 10-K was itself restated, so its figure could have been worked out;
+   - a period that is not 364 to 366 days long says so (on both paths); the fiscal-year figure's own note is kept;
+     a negative payment is flagged (SIGN) in the note.
    Fiscal years still come from the 10-K alone, so the "twelve months ended" totals of Amazon's 10-Qs are never a
    year, and a 10-Q twelve-month total is never a year to date.
-3. The latest balance sheet, at the 10-Q's period end: financial debt by the annual rules (none in the 10-Q: the
-   debt at the fiscal year end, said in the note); minority interest reported in the 10-Q, else nil only if the
-   fiscal year end has none (or 0), else missing, and an untagged one is noted (MINORITY_UNTAGGED); shares from the
-   cover page of a 10-Q for that quarter, else the latest annual figure, said in the note.
+3. The latest balance sheet, at the 10-Q's period end: financial debt by the annual rules; minority interest
+   reported in the 10-Q, else nil only if the fiscal year end has none (or 0), and an untagged one is noted
+   (MINORITY_UNTAGGED); shares from the cover page of a 10-Q for that quarter. When the 10-Q has none of these, the
+   figure at the fiscal year end is used, dated and said in the note (never nil, never a guess).
+4. When the SEC's filing list (submissions) names a later 10-Q than its company facts hold, every figure says so.
 
 Any part missing makes the figure `missing` with its reason, never zero. Warnings about these figures go into their
 notes, never into `CompanyData.warnings`, which the gates read.
@@ -51,6 +53,17 @@ def _with_note(fact: Fact, extra: str) -> Fact:
     return dataclasses.replace(fact, note="; ".join(part for part in (fact.note, extra) if part))
 
 
+def _length_note(start: date | None, end: date) -> str:
+    """"" for a period of 364 to 366 days (counted inclusively), else a sentence saying how long it is."""
+    if start is None:
+        return ""
+    length = (end - start).days + 1
+    if 364 <= length <= 366:
+        return ""
+    return f"the period covers {length} days, not a calendar year: the company's quarters do not end on the same day " \
+           "each year"
+
+
 class _Latest:
     def __init__(self, annual: CompanyData, reader: _Resolver, settings: dict):
         # `reader` is a resolver of the same company facts that also reads the 10-Qs (balance-sheet rules only).
@@ -66,16 +79,35 @@ class _Latest:
         return [e for e in self.reader.us_gaap.get(tag, {}).get("units", {}).get("USD", [])
                 if e.get("form") in self.quarterly and "start" in e]
 
-    def latest_10q(self) -> tuple[date, set[str]] | None:
-        """The period end of the latest 10-Q after the latest fiscal year, and the accession numbers of the 10-Qs
-        (and 10-Q/As) for that quarter. Any period counts, not only a year to date starting the next day, so a later
-        10-Q is never hidden behind the 10-K (review of PR #72)."""
+    def latest_10q(self) -> tuple[date, set[str], date] | None:
+        """The period end of the latest 10-Q after the latest fiscal year, the accession numbers of the 10-Qs (and
+        10-Q/As) for that quarter, and the latest of their filing dates. Any period counts, not only a year to date
+        starting the next day, so a later 10-Q is never hidden behind the 10-K (review of PR #72)."""
         later = [e for metric in FISCAL_YEAR_ITEMS for tag in self.reader.spec(metric)["tags"]
                  for e in self.quarterly_entries(tag) if date.fromisoformat(e["end"]) > self.fy0]
         if not later:
             return None
         q_end = max(date.fromisoformat(e["end"]) for e in later)
-        return q_end, {e["accn"] for e in later if date.fromisoformat(e["end"]) == q_end}
+        quarter = [e for e in later if date.fromisoformat(e["end"]) == q_end]
+        return q_end, {e["accn"] for e in quarter}, max(date.fromisoformat(e["filed"]) for e in quarter)
+
+    def unseen_10q(self, used_filed: date | None) -> str:
+        """A note when the SEC's filing list names a 10-Q filed after the report used that its company facts do not
+        hold yet (Southern Company, NextEra in November 2026). The demo's saved filing lists hold 10-Ks only."""
+        recent = self.reader.submissions.get("filings", {}).get("recent", {})
+        listed = [(day, accn) for form, day, accn in zip(recent.get("form", []), recent.get("filingDate", []),
+                                                         recent.get("accessionNumber", []))
+                  if form in self.quarterly and (used_filed is None or date.fromisoformat(day) > used_filed)]
+        if not listed:
+            return ""
+        known = {e["accn"] for concept in self.reader.us_gaap.values()
+                 for entries in concept.get("units", {}).values() for e in entries}
+        unseen = sorted((day, accn) for day, accn in listed if accn not in known)
+        if not unseen:
+            return ""
+        day, accn = unseen[-1]
+        return (f"the 10-Q filed {day} ({accn}) is not yet in the SEC's company facts: this figure is from an "
+                "earlier report")
 
     # --- the twelve months ----------------------------------------------------------------------------------------
 
@@ -88,66 +120,90 @@ class _Latest:
         if year.kind != "reported" or year.period_start is None:
             return self.missing(metric, q_end, f"the fiscal-year figure for {self.fy0} is {year.kind}, not reported "
                                                "under one tag, so no 10-Q year to date can be matched to it")
+        entries = self.quarterly_entries(year.tag)
+        ytd, prior, notes = self.year_to_date(year, entries, q_end)
+        if prior is None:
+            return self.missing(metric, q_end, notes)  # `notes` holds the reason
+        value, period_start = year.value + ytd["val"] - prior["val"], date.fromisoformat(prior["end"]) + timedelta(1)
+        notes += [_length_note(period_start, q_end), self.sign_note(metric, value),
+                  f"fiscal-year figure: {year.note}" if year.note else ""]
+        formula = (f"last twelve months = fiscal year to {self.fy0} ({year.tag} {money(year.value)}, {year.form} "
+                   f"{year.accession}) + year to date to {q_end} ({year.tag} {money(ytd['val'])}, {ytd['form']} "
+                   f"{ytd['accn']}) − year to date to {prior['end']} ({year.tag} {money(prior['val'])}, same "
+                   f"{ytd['form']})")
+        # `filed` is the 10-Q's filing date: the figure is as of that report (tag, form and accession stay empty, as
+        # for every derived figure; the three sources are in the note).
+        note = "; ".join(n for n in [formula, *notes] if n)
+        return Fact(metric, value, "USD", period_start, q_end, "derived", None, None, None,
+                    date.fromisoformat(ytd["filed"]), self.annual.retrieved, note)
+
+    def year_to_date(self, year: Fact, entries: list[dict], q_end: date) -> tuple[dict | None, dict | None, list | str]:
+        """(this year's year to date, last year's, a list of notes), or (…, None, the reason as a str)."""
         tag, start = year.tag, self.fy0 + timedelta(days=1)
-        entries = self.quarterly_entries(tag)
         current = [e for e in entries if e["start"] == start.isoformat() and e["end"] == q_end.isoformat()]
         if not current:
-            return self.missing(metric, q_end, f"no year to date to {q_end} under {tag} starting {start} (the day "
-                                               f"after the fiscal year end {self.fy0}) in a 10-Q; the fiscal year "
-                                               f"uses {tag}, so the twelve months cannot be worked out")
+            return None, None, (f"no year to date to {q_end} under {tag} starting {start} (the day after the fiscal "
+                                f"year end {self.fy0}) in a 10-Q; the fiscal year uses {tag}, so the twelve months "
+                                "cannot be worked out")
         ytd = max(current, key=filing_order)
+        prior, reason = self.comparison_column(year, entries, ytd)
+        if prior is None:
+            return ytd, None, reason
+        usable, note = self.restatement(year, entries, ytd, prior)
+        if not usable:
+            return ytd, None, note
+        return ytd, prior, [note]
+
+    def comparison_column(self, year: Fact, entries: list[dict], ytd: dict) -> tuple[dict | None, str]:
+        """Last year's year to date in the same 10-Q, covering the same quarters, or (None, why not)."""
         days = _days(ytd)
         columns = [e for e in entries if e["accn"] == ytd["accn"] and e["start"] == year.period_start.isoformat()
                    and date.fromisoformat(e["end"]) < self.fy0]
         if not columns:
-            return self.missing(metric, q_end, f"the 10-Q {ytd['accn']} has no comparison column for last year's "
-                                               f"year to date under {tag}, so the twelve months cannot be worked out")
+            return None, (f"the 10-Q {ytd['accn']} has no comparison column for last year's year to date under "
+                          f"{year.tag}, so the twelve months cannot be worked out")
         prior = min(columns, key=lambda e: abs(_days(e) - days))
         if abs(_days(prior) - days) > self.settings["ytd_length_tolerance_days"]:
-            return self.missing(metric, q_end, f"last year's year to date in the 10-Q {ytd['accn']} covers "
-                                               f"{_days(prior)} days and this year's {days} days: not the same "
-                                               "quarters, so the twelve months cannot be worked out")
-        prior_end = date.fromisoformat(prior["end"])
-        notes = []
+            return None, (f"last year's year to date in the 10-Q {ytd['accn']} covers {_days(prior)} days and this "
+                          f"year's {days} days: not the same quarters, so the twelve months cannot be worked out")
+        return prior, ""
+
+    def restatement(self, year: Fact, entries: list[dict], ytd: dict, prior: dict) -> tuple[bool, str]:
+        """(True, "" or a note) when the comparison column equals its first filing or is within 1% of it; else
+        (False, the reason the twelve months cannot be worked out)."""
         first = min((e for e in entries if e["start"] == prior["start"] and e["end"] == prior["end"]),
                     key=filing_order)
-        if first["val"] != prior["val"]:
-            if relative_difference(first["val"], prior["val"]) > self.settings["restatement_warning"]:
-                return self.missing(metric, q_end, (
-                    f"last year's year to date to {prior_end} under {tag} was first filed as {money(first['val'])} "
-                    f"({first['accn']}, {first['filed']}) and is restated to {money(prior['val'])} in the 10-Q "
-                    f"{ytd['accn']}; the fiscal year from the 10-K ({money(year.value)}) is on the earlier basis, so "
-                    "the sum would mix two bases: the twelve months cannot be worked out"))
-            notes.append(f"last year's year to date first filed {money(first['val'])} ({first['accn']}), "
-                         f"{money(prior['val'])} in this 10-Q: within {self.settings['restatement_warning']:.0%}, used")
-        value, period_start = year.value + ytd["val"] - prior["val"], prior_end + timedelta(days=1)
-        length = (q_end - period_start).days + 1
-        if not 364 <= length <= 366:
-            notes.append(f"the period covers {length} days, not a calendar year: the company's quarters do not end on "
-                         "the same day each year")
+        if first["val"] == prior["val"]:
+            return True, ""
+        limit = self.settings["restatement_warning"]
+        if relative_difference(first["val"], prior["val"]) > limit:
+            return False, (f"last year's year to date to {prior['end']} under {year.tag} was first filed as "
+                    f"{money(first['val'])} ({first['accn']}, {first['filed']}) and is restated to "
+                    f"{money(prior['val'])} in the 10-Q {ytd['accn']}; the fiscal year from the 10-K "
+                    f"({money(year.value)}) may be on another basis, so the sum could mix two bases: the twelve months "
+                    "cannot be worked out")
+        return True, (f"last year's year to date first filed {money(first['val'])} ({first['accn']}), "
+                      f"{money(prior['val'])} in this 10-Q: within {limit:.0%}, used")
+
+    def sign_note(self, metric: str, value: float) -> str:
         if self.reader.spec(metric).get("outflow") and value < 0:
-            notes.append(f"SIGN: the twelve months are negative ({money(value)}); a payment is filed as a positive "
-                         "amount, check the filings")
-        if year.note:
-            notes.append(f"fiscal-year figure: {year.note}")
-        formula = (f"last twelve months = fiscal year to {self.fy0} ({tag} {money(year.value)}, {year.form} "
-                   f"{year.accession}) + year to date to {q_end} ({tag} {money(ytd['val'])}, {ytd['form']} "
-                   f"{ytd['accn']}) − year to date to {prior_end} ({tag} {money(prior['val'])}, same {ytd['form']})")
-        # `filed` is the 10-Q's filing date: the figure is as of that report (tag, form and accession stay empty, as
-        # for every derived figure; the three sources are in the note).
-        return Fact(metric, value, "USD", period_start, q_end, "derived", None, None, None,
-                    date.fromisoformat(ytd["filed"]), self.annual.retrieved, "; ".join([formula, *notes]))
+            return f"SIGN: the twelve months are negative ({money(value)}); a payment is filed as a positive amount, " \
+                   "check the filings"
+        return ""
 
     # --- the latest balance sheet ---------------------------------------------------------------------------------
+
+    def fall_back(self, year: Fact, what: str, q_end: date) -> Fact:
+        """The fiscal-year-end figure when the 10-Q has none, dated and said (Igor, 27 November, review of #72)."""
+        return _with_note(year, f"the latest quarterly report (to {q_end}) gives no {what}: the figure at the fiscal "
+                                f"year end {self.fy0} is used")
 
     def debt(self, q_end: date) -> Fact:
         (debt, _), raised = self.reader.collect_warnings(self.reader.debt, q_end)
         debt = _with_note(debt, "; ".join(raised))
         year = self.annual.fact("financial_debt", self.fy0)
         if debt.kind == "missing" and year is not None and year.kind != "missing":
-            # Like the share count: the latest figure there is, dated and said (Igor, 27 November, review of #72).
-            return _with_note(year, f"the latest quarterly report (to {q_end}) gives no debt ({debt.note}): the "
-                                    f"debt at the fiscal year end {self.fy0} is used")
+            return self.fall_back(year, f"debt ({debt.note})", q_end)
         return debt
 
     def minority(self, q_end: date) -> Fact:
@@ -162,10 +218,7 @@ class _Latest:
                                                             f"and the figure at the fiscal year end {self.fy0} is "
                                                             f"missing too ({why}): not treated as nil (SPEC §8.3)")
         if year.kind == "reported" and year.value != 0:
-            return self.missing("minority_interest", q_end, f"{year.tag} {money(year.value)} ({year.accession}) is "
-                                                            f"reported at the fiscal year end {self.fy0} but not in "
-                                                            f"the latest quarterly report (to {q_end}): not treated "
-                                                            "as nil (SPEC §8.3)")
+            return self.fall_back(year, f"minority interest ({tags})", q_end)
         at_year_end = "the 10-K reports 0" if year.kind == "reported" else "none is reported"
         nil = Fact("minority_interest", 0, "USD", None, q_end, "assumption", None, None, None, None,
                    self.annual.retrieved, f"not reported under {tags} in the latest quarterly report (to {q_end}), "
@@ -194,10 +247,11 @@ class _Latest:
                         e["form"], e["accn"], date.fromisoformat(e["filed"]), self.annual.retrieved,
                         "cover page of the latest quarterly report")
         annual = self.annual.latest("shares")
-        why = f"the latest quarterly report (to {q_end}) has no cover-page share count"
         if annual is None:
-            return self.missing("shares", q_end, f"{why}, nor has the annual data", unit="shares")
-        return _with_note(annual, f"{why}: the latest annual figure is used")
+            return self.missing("shares", q_end, f"the latest quarterly report (to {q_end}) has no cover-page share "
+                                                 "count, nor has the annual data", unit="shares")
+        return _with_note(annual, f"the latest quarterly report (to {q_end}) has no cover-page share count: the "
+                                  "latest annual figure is used")
 
     # --- all of them ------------------------------------------------------------------------------------------------
 
@@ -206,19 +260,23 @@ class _Latest:
             return {}  # no annual figures at all (NO_ANNUAL_DATA or NON_USD): nothing to start from
         latest = self.latest_10q()
         if latest is None:
-            return self.from_the_10k()
-        q_end, accessions = latest
-        recent = {metric: self.twelve_months(metric, q_end) for metric in FLOWS}
-        recent["financial_debt"] = self.debt(q_end)
-        recent["minority_interest"] = self.minority(q_end)
-        recent["shares"] = self.shares(q_end, accessions)
-        return recent
+            recent, used_filed = self.from_the_10k(), self.annual.latest_10k_filed
+        else:
+            q_end, accessions, used_filed = latest
+            recent = {metric: self.twelve_months(metric, q_end) for metric in FLOWS}
+            recent["financial_debt"] = self.debt(q_end)
+            recent["minority_interest"] = self.minority(q_end)
+            recent["shares"] = self.shares(q_end, accessions)
+        unseen = self.unseen_10q(used_filed)
+        return {metric: _with_note(fact, unseen) for metric, fact in recent.items()}
 
     def from_the_10k(self) -> dict[str, Fact]:
         recent = {}
         for metric in FLOWS:
             fact = self.annual.fact(metric, self.fy0)
-            recent[metric] = (_with_note(fact, LATEST_IS_10K) if fact is not None else
+            recent[metric] = (_with_note(fact, "; ".join(n for n in (LATEST_IS_10K, _length_note(fact.period_start,
+                                                                                              fact.period_end)) if n))
+                              if fact is not None else
                               self.missing(metric, self.fy0, f"no figure for the fiscal year ending {self.fy0}"))
         for metric in ("financial_debt", "minority_interest"):
             fact = self.annual.fact(metric, self.fy0)

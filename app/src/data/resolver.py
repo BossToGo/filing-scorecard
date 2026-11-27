@@ -587,7 +587,8 @@ class _Resolver:
 def resolve(ticker: str, companyfacts: dict | None, submissions: dict, retrieved: datetime | None = None, *,
             settings: dict | None = None, tag_map: dict | None = None, years: int | None = None) -> CompanyData:
     """CompanyData for one company from its SEC companyfacts and submissions JSON (SPEC §5, §6), with its latest
-    figures in `recent` (slice S2c: twelve months to the latest 10-Q, latest balance sheet; src/data/twelve_months.py)."""
+    figures in `recent` (slice S2c: twelve months to the latest 10-Q, latest balance sheet; see
+    src/data/twelve_months.py)."""
     symbol = ticker.strip().upper()
     settings = settings or load_settings()["data"]
     tag_map = tag_map or load_tag_map()
