@@ -18,6 +18,7 @@ earlier"). Add one case at each threshold (exactly 40%, 20%, 5 times, −10%, 90
 
 from __future__ import annotations
 
+import dataclasses
 from datetime import date
 from functools import lru_cache
 from pathlib import Path
@@ -39,6 +40,12 @@ FLOWS = {
     "dividends_paid",
 }
 NOTE = "SYNTHETIC DATA: SPEC Appendix A"
+# The latest figures (`CompanyData.recent`, slice S2c): the company has annual data only, so they are its FY2025
+# figures, written out so that the valuation never falls back to annual figures by itself (issue #71 item 6; Flo on
+# PR #72, 27 November).
+RECENT = ("revenue", "net_income", "operating_cash_flow", "capital_expenditure", "financial_debt", "minority_interest",
+          "shares")
+RECENT_NOTE = "annual data only, so the last twelve months are FY2025 and the latest balances those of 31 December 2025"
 
 
 class NotSignedOff(LookupError):
@@ -87,6 +94,8 @@ def company_data() -> CompanyData:
     items["shares"] = {date(latest, 12, 31): _fact("shares", other["shares_millions"], latest, flow=False, unit="shares")}
     for metric in ("minority_interest", "preferred_stock", "equity_method_investments"):
         items[metric] = {date(latest, 12, 31): _fact(metric, other[metric], latest, flow=False)}
+    recent = {metric: dataclasses.replace(items[metric][date(latest, 12, 31)], note=f"{NOTE}; {RECENT_NOTE}")
+              for metric in RECENT}
     return CompanyData(
         ticker="SYN",
         cik="0000000000",
@@ -98,6 +107,7 @@ def company_data() -> CompanyData:
         retrieved=None,
         items=items,
         warnings=("SYNTHETIC DATA: invented company from SPEC Appendix A",),
+        recent=recent,
     )
 
 

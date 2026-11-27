@@ -221,8 +221,8 @@ class CompanyData:
     expenditure over the twelve months to the latest quarterly report (or the latest fiscal year when the 10-K is
     the latest report); financial debt and minority interest at the latest balance-sheet date; shares from the cover
     page of the latest report (src/data/twelve_months.py has the rules). Good to know before reading it:
-    - it is empty for a `CompanyData` not made by the resolver (the synthetic company, test fixtures) and for a
-      company with no annual figures, so use `data.recent.get(...)`;
+    - it is empty for a `CompanyData` not made by the resolver (test fixtures) and for a company with no annual
+      figures, so use `data.recent.get(...)`; the synthetic company of Appendix A has its FY2025 figures there;
     - a twelve-month flow is `derived` (from a 10-Q) or `reported` (the 10-K's own year); `filed` is the date of
       the report it is as of; its period need not be 365 days (Coca-Cola: 371) and the note then says so;
     - a balance (debt, minority interest) or the share count may be the fiscal-year-end figure when the 10-Q has
