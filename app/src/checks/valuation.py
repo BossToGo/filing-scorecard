@@ -20,7 +20,10 @@ The checks (SPEC §7). On screen the engine's result is "the estimate", never "f
 - V6 "Price does not demand heroic growth": share price ≤ the estimate with starting growth at `growth_cap`.
 
 Rules, in order (Flo's decisions, 25 November 2026):
-1. No usable share price or no usable share count: the whole area is "insufficient data" (SPEC §7, §8.6).
+1. No usable share price or no usable share count: the whole area is "insufficient data" (SPEC §7, §8.6). One
+   exception (slice S8b): the estimate uses the latest share count (`CompanyData.recent`), V3 to V5 the annual one.
+   When only the annual count is unusable and there is an estimate, V1, V2 and V6 are assessed, so that the checks and
+   the estimate on screen never disagree.
 2. V1, V2 and V6: when the engine has no estimate ("insufficient_data" or "not_applicable", SPEC §8.6), they take
    its status and its reason, word for word. V3 to V5 are still assessed.
 3. V3 to V5: a missing net income or equity is "insufficient data"; net income ≤ 0 (V3, V4) or equity ≤ 0 (V5) is a
@@ -92,7 +95,12 @@ def valuation_checks(data: CompanyData, settings: Mapping[str, Mapping], valuati
     if gaps:
         reason = f"Insufficient data: {'; '.join(gaps)}."
         inputs = (shares,) if shares is not None else ()
-        return tuple(CheckResult(f"V{n}", "insufficient_data", None, None, inputs, reason) for n in range(1, 7))
+        blocked = tuple(CheckResult(f"V{n}", "insufficient_data", None, None, inputs, reason) for n in range(1, 7))
+        only_the_count = len(gaps) == 1 and gaps[0].startswith("the share count")
+        if only_the_count and valuation.status == "ok":  # the estimate has its own, latest, share count
+            v1, v2, v6 = _price_checks(valuation, share_price, s)
+            return (v1, v2, *blocked[2:5], v6)
+        return blocked
 
     fy0 = years[-1]
     market_value = share_price * shares.value

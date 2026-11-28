@@ -2,7 +2,7 @@
 
 **Course:** Programming and AI for Corporate Finance (FIN_8546), EDHEC, final group project
 **Deadline:** Tuesday 1 December 2026, 23:59, state of `main`. Presentation Wednesday 2 December 2026 (8 minutes + 4 minutes of questions).
-**Status of this file:** version 2.4.2 of 23 November 2026 (version 2, risk-reduced: release tiers, risk register, industry lookup, no browser dependency; 2.1: folder layout under `app/`, §11 and §12; 2.2: names and final roles, §12, §13.2, §17; 2.3: for retail bank customers, fully automatic, share price the only input, equity valuation method with growth decaying over ten years, V4 against the whole market, five forces replaced by 15 strengths and points to watch, growth limit and decay, when the valuation model does not fit, sensitivity table, growth the price implies and user inputs cut, §1 to §3, §5.2, §6, §8 to §16, Appendix A; 2.4: the MVP is the five demo companies and one workflow end to end, a benchmark table for their industries only, plan Q1 and Q13 decided, new release dates, §2, §4, §7, §9.1, §13.2, §13.3; 2.4.1: "not fully checked" is for every ticker other than the five demo companies, the five are offered to pick from and another ticker can be typed, the company name is shown as the SEC lists it, the area scores are computed in `src/scores.py`, §2, §3, §7, §10 to §12, §13.4; 2.4.2: the screen design of `docs/design/`: a light and a dark theme, the labels "N passed of M assessed", "not assessed" and "does not apply", the failed checks next to the score chart until tier 3, one tab per area, a sentence on each closed check, §3; on screen the valuation's result is "the estimate", never "fair value", and V1 and V2 are renamed (§3, §7, decided on 24 November, #32); the product name "Filing Scorecard" (§16, item 7); at the growth cap V6 uses the same estimate as V1, and a price exactly equal to it fails V1 and passes V6 (§7, §15, decided on 25 November, #52); the check names in §7 are the names shown on screen, from E's `app/ui/texts.yaml` (§7, decided on 25 November, #32, #55); rule 5.3.9 counts a gap the way rule 5.3.1 counts a year, so a 380-day year after a normal one is no gap (§5.3, decided on 27 November, S18)). To be agreed by the whole group in one meeting, then changed only by pull request.
+**Status of this file:** version 2.5 of 28 November 2026 (version 2, risk-reduced: release tiers, risk register, industry lookup, no browser dependency; 2.1: folder layout under `app/`, §11 and §12; 2.2: names and final roles, §12, §13.2, §17; 2.3: for retail bank customers, fully automatic, share price the only input, equity valuation method with growth decaying over ten years, V4 against the whole market, five forces replaced by 15 strengths and points to watch, growth limit and decay, when the valuation model does not fit, sensitivity table, growth the price implies and user inputs cut, §1 to §3, §5.2, §6, §8 to §16, Appendix A; 2.4: the MVP is the five demo companies and one workflow end to end, a benchmark table for their industries only, plan Q1 and Q13 decided, new release dates, §2, §4, §7, §9.1, §13.2, §13.3; 2.4.1: "not fully checked" is for every ticker other than the five demo companies, the five are offered to pick from and another ticker can be typed, the company name is shown as the SEC lists it, the area scores are computed in `src/scores.py`, §2, §3, §7, §10 to §12, §13.4; 2.4.2: the screen design of `docs/design/`: a light and a dark theme, the labels "N passed of M assessed", "not assessed" and "does not apply", the failed checks next to the score chart until tier 3, one tab per area, a sentence on each closed check, §3; on screen the valuation's result is "the estimate", never "fair value", and V1 and V2 are renamed (§3, §7, decided on 24 November, #32); the product name "Filing Scorecard" (§16, item 7); at the growth cap V6 uses the same estimate as V1, and a price exactly equal to it fails V1 and passes V6 (§7, §15, decided on 25 November, #52); the check names in §7 are the names shown on screen, from E's `app/ui/texts.yaml` (§7, decided on 25 November, #32, #55); rule 5.3.9 counts a gap the way rule 5.3.1 counts a year, so a 380-day year after a normal one is no gap (§5.3, decided on 27 November, S18); 2.5: the valuation starts from the last twelve months' free cash flow, read with the latest balance sheet from the 10-Qs, long-run growth equals the risk-free rate and the equity risk premium is Damodaran's implied premium (4.41% on 1 November 2026), so Appendix A's estimate is USD 33.02 (§5.3.1, §8, §15, Appendix A; decided by the group on 27 November, #71; built in #72 and #82, recalculated by C)). To be agreed by the whole group in one meeting, then changed only by pull request.
 
 **The one principle of this version:** `main` always holds a working, demo-ready app. We build in three tiers. Each tier ends with a tagged release that runs offline and passes all tests. If time runs out, we present the last release and cut the rest; nothing half-finished is ever merged.
 
@@ -139,7 +139,7 @@ Each figure is stored with: company, metric, value, unit, period start and end, 
 
 ### 5.3 Rules for reading company facts
 
-1. Only figures from Form 10-K and 10-K/A. Flow figures (income statement, cash flow statement) must cover 350 to 380 days. A strict 365-day filter would drop 53-week fiscal years.
+1. Only figures from Form 10-K and 10-K/A. Flow figures (income statement, cash flow statement) must cover 350 to 380 days. A strict 365-day filter would drop 53-week fiscal years. One exception (issue #71): the latest figures (twelve months to the latest 10-Q and the latest balance sheet) also read Form 10-Q and 10-Q/A. Fiscal years still come from the 10-K alone.
 2. The fiscal year of a figure is decided from its period end date, never from the `fy` field. That field describes the filing, so prior-year comparatives carry the wrong label (session 5: Coca-Cola's 2022 cash flow is labelled fiscal year 2024).
 3. Balance sheet figures are taken at the same date as the end of the matching flow period.
 4. When the same period appears in several filings, use the most recently filed value (as restated) and keep the original. If they differ by more than 1%, show both on the sources page with a warning.
@@ -249,34 +249,34 @@ The benchmark files contain several versions of some ratios. The owner of the be
 
 ## 8. Valuation engine
 
-**Equity method** (version 2.3, agreed by the group on 20 November): the free cash flow that belongs to the shareholders, discounted at the cost of equity, as in the Simply Wall St model. It replaces the firm method of session 5 (free cash flow to the firm at the weighted cost of capital, then an equity bridge) because it needs fewer inputs, all of them well-covered reported figures, and leaves fewer ways to go wrong in an automatic product. Conventions follow session 5 where they still apply (risk-free rate, equity risk premium, beta). Taken from the Simply Wall St model (`https://github.com/SimplyWallSt/Company-Analysis-Model`, `MODEL.markdown`, two-stage free cash flow model and discount rate): levered free cash flow discounted at the cost of equity, ten forecast years with growth decaying towards the long-run rate, a bottom-up beta limited to 0.8–2, and no fair value without positive free cash flow. The team's own choices: the three-year margin instead of analyst forecasts, the 30% cap and −10% floor, the 2-year half-life, and the 2.5% limit on terminal growth.
+**Equity method** (version 2.3, agreed by the group on 20 November): the free cash flow that belongs to the shareholders, discounted at the cost of equity, as in the Simply Wall St model. It replaces the firm method of session 5 (free cash flow to the firm at the weighted cost of capital, then an equity bridge) because it needs fewer inputs, all of them well-covered reported figures, and leaves fewer ways to go wrong in an automatic product. Conventions follow session 5 where they still apply (risk-free rate, equity risk premium, beta). Taken from the Simply Wall St model (`https://github.com/SimplyWallSt/Company-Analysis-Model`, `MODEL.markdown`, two-stage free cash flow model and discount rate): levered free cash flow discounted at the cost of equity, ten forecast years with growth decaying towards the long-run rate, a bottom-up beta limited to 0.8–2, and no fair value without positive free cash flow. The team's own choices: the last twelve months' free cash flow instead of analyst forecasts, the 30% cap and −10% floor, the 2-year half-life, and long-run growth equal to the risk-free rate (issue #71, 27 November 2026).
 
 ### 8.1 Cost of equity
 
-- **Risk-free rate:** the average 10-year US Treasury yield of the last five years (FRED `DGS10`, setting `risk_free_average_years`), shown with its period; in demo mode or without FRED, the value in `settings.yaml` with its period (section 4). The same rate sets the limit on terminal growth (section 8.3).
-- **Equity risk premium:** 5.0% (session 5 convention), a setting.
-- **Beta:** industry unlevered beta from the benchmark file, re-levered with the company's own leverage: levered beta = unlevered beta × (1 + (1 − tax rate) × financial debt FY0 (section 6) ÷ market value of equity), then limited to the range 0.8 to 2.0 (settings `beta_min`, `beta_max`, as in the Simply Wall St model). A limited beta is labelled `assumption` and the note gives the value before the limit. The owner of the benchmark loader picks the unlevered-beta column (for example plain or corrected for cash) and writes the choice and the reason into `settings.yaml`, as for the other benchmarks (section 7).
+- **Risk-free rate:** the average 10-year US Treasury yield of the last five years (FRED `DGS10`, setting `risk_free_average_years`), shown with its period; in demo mode or without FRED, the value in `settings.yaml` with its period (section 4). The same rate is the long-run growth (section 8.3).
+- **Equity risk premium:** Damodaran's implied premium, 4.41% on 1 November 2026, a setting recorded with its date and link and refreshed before each release.
+- **Beta:** industry unlevered beta from the benchmark file, re-levered with the company's own leverage: levered beta = unlevered beta × (1 + (1 − tax rate) × latest financial debt (section 6) ÷ market value of equity), then limited to the range 0.8 to 2.0 (settings `beta_min`, `beta_max`, as in the Simply Wall St model). A limited beta is labelled `assumption` and the note gives the value before the limit. The owner of the benchmark loader picks the unlevered-beta column (for example plain or corrected for cash) and writes the choice and the reason into `settings.yaml`, as for the other benchmarks (section 7).
 - **Tax rate:** 21% (US federal statutory rate), used only in the re-levering above; a setting.
-- **Market value of equity** = share price × shares.
+- **Market value of equity** = share price × latest shares.
 - **Cost of equity** = risk-free rate + levered beta × equity risk premium.
 
 ### 8.2 Forecast of free cash flow (ten years, growth that decays towards terminal growth)
 
 - **Free cash flow** of a fiscal year = operating cash flow − capital expenditure.
-- **Starting free cash flow** FCF0 = the free cash flow margin of the last three fiscal years (sum of free cash flow FY-2 to FY0 ÷ sum of revenue FY-2 to FY0; setting `fcf_base_years`) × revenue FY0. The average smooths the swings of working capital and of capital expenditure: a single year can be far off (Appendix A: USD 23.02 per share from FY0 alone, against 20.13).
+- **Starting free cash flow** FCF0 = operating cash flow − capital expenditure of the last twelve months (to the latest 10-Q; the latest fiscal year when the 10-K is the latest report). A missing figure means `insufficient_data`; the annual figure is never used instead. When FCF0 is more than 25% (setting `fcf_difference_warning`) above or below the plain average of the free cash flow of the last three fiscal years (`fcf_base_years`), or that average is zero or less, one sentence on screen says so. If the average cannot be worked out, the estimate stays and the sentence says so.
 - **Starting growth.** g1 is the company's compound annual revenue growth FY-4 to FY0, limited to the range from `growth_floor` (−10%) to `growth_cap` (+30%), both settings with a reason, labelled `assumption`. When the limit applies, the note says so and gives the growth before the limit (Nvidia's revenue went from USD 26,914 million in FY2022 to USD 215,938 million in FY2026, 68.3% a year, 10-Ks 0001045810-24-000029 and 0001045810-26-000021; that is not projected forward). Without forecasts the model knows only the past, so the cap keeps one boom period (or one acquisition) from being projected for years.
-- **Growth decays towards terminal growth** (an exponential decay with gT as its horizontal asymptote): the gap between the growth and gT halves every H = `growth_half_life_years` years: g(t) = gT + (g1 − gT) × 0.5^((t − 1) ÷ H), for t = 1 to N = `forecast_years`. Every company loses the same share of its gap each year, so a high start falls by more percentage points early on. H = 2 and N = 10 are the team's choices: ten years with growth decaying towards the long-run rate follow the Simply Wall St model; a half-life of 2 years with the 30% cap gives the same ten-year total as the earlier 20%-cap linear fade, but front-loaded. A start at the 30% cap gives 30%, 21.9%, 16.25%, 12.2%, 9.4%, 7.4%, 5.9%, 4.9%, 4.2% and 3.7%: free cash flow in year 10 is about 2.9 times FCF0. In year N the growth is still slightly away from gT; the terminal value then uses gT.
-- **For t = 1 to N:** FCF(t) = FCF(t − 1) × (1 + g(t)). The free cash flow margin stays at its three-year average.
+- **Growth decays towards terminal growth** (an exponential decay with gT as its horizontal asymptote): the gap between the growth and gT halves every H = `growth_half_life_years` years: g(t) = gT + (g1 − gT) × 0.5^((t − 1) ÷ H), for t = 1 to N = `forecast_years`. Every company loses the same share of its gap each year, so a high start falls by more percentage points early on. H = 2 and N = 10 are the team's choices: ten years with growth decaying towards the long-run rate follow the Simply Wall St model; a half-life of 2 years with the 30% cap gives the same ten-year total as the earlier 20%-cap linear fade, but front-loaded. With gT = 2.5%, as an illustration, a start at the 30% cap gives 30%, 21.9%, 16.25%, 12.2%, 9.4%, 7.4%, 5.9%, 4.9%, 4.2% and 3.7%: free cash flow in year 10 is about 2.9 times FCF0. In year N the growth is still slightly away from gT; the terminal value then uses gT.
+- **For t = 1 to N:** FCF(t) = FCF(t − 1) × (1 + g(t)).
 
 ### 8.3 Terminal value and equity value
 
-- Terminal growth gT = the lower of the risk-free rate and 2.5% (a setting).
-- Terminal value = FCF(N) × (1 + gT) ÷ (cost of equity − gT). The cost of equity is always above gT (with a beta of at least 0.8 and a 5% premium it is at least the risk-free rate + 4 points; the settings loader checks that `beta_min` × premium > 0), so the terminal value always exists.
-- Discounting: end of year, by (1 + cost of equity)^t for t = 1 to N; the terminal value is discounted with t = N; the valuation date is the end of FY0.
-- Equity value = sum of the discounted free cash flows + discounted terminal value − minority interests (`MinorityInterest`, book value FY0: the cash flows are consolidated and include the minority owners' share; if the tag is absent, "not reported, treated as nil", labelled and listed on the sources page; a negative balance is used as reported and recorded; a tag reported for FY-1 but not for FY0 makes the fair value `insufficient_data`, as for any missing input; when total equity including non-controlling interests exceeds equity by more than 1% and no tag is reported, a record is added on the sources page). No other bridge item, as in the Simply Wall St model, where value per share is the present value divided by the shares.
-- Fair value per share = equity value ÷ shares.
+- Terminal growth gT = the risk-free rate.
+- Terminal value = FCF(N) × (1 + gT) ÷ (cost of equity − gT). The cost of equity is always above gT (beta is at least 0.8 and the premium above zero; the settings loader checks that `beta_min` × premium > 0), so the terminal value always exists.
+- Discounting: end of year, by (1 + cost of equity)^t for t = 1 to N; the terminal value is discounted with t = N; the valuation date is the end of the twelve months.
+- Equity value = sum of the discounted free cash flows + discounted terminal value − minority interests (`MinorityInterest`, book value on the latest balance sheet: the cash flows are consolidated and include the minority owners' share; if the tag is absent, "not reported, treated as nil", labelled and listed on the sources page; a negative balance is used as reported and recorded; when the latest balance sheet has none, the data layer's rules for the latest figures apply; when total equity including non-controlling interests exceeds equity by more than 1% and no tag is reported, a record is added on the sources page). No other bridge item, as in the Simply Wall St model, where value per share is the present value divided by the shares.
+- Fair value per share = equity value ÷ latest shares.
 - Not modelled, and stated as limitations in the README: changes in debt (net borrowing), cash beyond the interest it earns, stock-based pay (added back in operating cash flow), preferred dividends, minority interests that are not tagged as such.
-- **Growth note.** When the growth limit applies, the valuation detail adds one factual line, with the values taken from the settings: above the cap, "Revenue grew x% a year over the last four years; the model starts at 30% and lets growth slow towards 2.5%"; below the floor, "Revenue fell x% a year over the last four years; the model starts at −10% and lets growth recover towards 2.5%". No judgement about the price (sections 1 and 3).
+- **Growth note.** When the growth limit applies, the valuation detail adds one factual line, with the values taken from the settings: above the cap, "Revenue grew x% a year over the last four years; the model starts at 30% and lets growth slow towards x%" (x = the risk-free rate); below the floor, "Revenue fell x% a year over the last four years; the model starts at −10% and lets growth recover towards x%". No judgement about the price (sections 1 and 3).
 
 ### 8.4 Growth the price implies
 
@@ -290,14 +290,14 @@ Not built (cut in version 2.3): a grid of discount rates against terminal growth
 
 Two tests, in this order.
 
-**First: missing inputs.** If any input of sections 8.1 to 8.3 is missing (revenue FY-4 to FY0, operating cash flow and capital expenditure of the last `fcf_base_years` fiscal years, three by default, financial debt FY0, shares, the industry beta), if revenue FY0 or FY-4 ≤ 0, or if fewer than five fiscal years resolve, there is no fair value, and V1, V2 and V6 are `insufficient_data`, naming what is missing. Without a share price or shares the whole valuation area is "insufficient data" (sections 7, 10). A company with no debt tag at all has missing debt until plan Q1 decides whether that means "no debt".
+**First: missing inputs.** If any input of sections 8.1 to 8.3 is missing (revenue FY-4 to FY0, operating cash flow and capital expenditure of the last twelve months, latest financial debt, minority interest and shares, the industry beta), if revenue FY0 or FY-4 ≤ 0, or if fewer than five fiscal years resolve, there is no fair value, and V1, V2 and V6 are `insufficient_data`, naming what is missing. Without a share price or shares the whole valuation area is "insufficient data" (sections 7, 10). A company with no debt tag at all has missing debt until plan Q1 decides whether that means "no debt".
 
 **Then: the model does not fit.** A cash flow model says nothing useful about a company that does not produce cash; the Simply Wall St model likewise treats it as not applicable without positive free cash flow. The app shows no fair value, and V1, V2 and V6 are `not_applicable` with the reason in plain words, when:
 
-1. the starting free cash flow FCF0 ≤ 0 (the last three years produced no free cash flow in total);
+1. the starting free cash flow FCF0 ≤ 0 (no free cash flow in the last twelve months);
 2. equity value ≤ 0 (minority interests larger than the estimated value).
 
-V3 to V5 are still assessed; their own rules handle losses and negative equity (section 7). When FCF0 > 0 but FY0's own free cash flow is negative, the fair value is shown with a line saying so in the valuation detail and a record on the sources page. V6 is assessed whenever V1 is: FCF0 does not depend on g1, the value rises with g1, and the automatic g1 is never above the cap. Banks, insurers and real estate trusts need other models (excess returns, funds from operations); they stay out of scope (section 2).
+V3 to V5 are still assessed; their own rules handle losses and negative equity (section 7). V6 is assessed whenever V1 is: FCF0 does not depend on g1, the value rises with g1, and the automatic g1 is never above the cap. Banks, insurers and real estate trusts need other models (excess returns, funds from operations); they stay out of scope (section 2).
 
 ### 8.7 The user's own assumptions
 
@@ -631,7 +631,7 @@ Reviewed at every group meeting. "Trigger" is the signal that the fallback start
 |---|---|---|
 | Unit (many) | Each of the 24 checks; each valuation formula; each resolver rule | The synthetic company of Appendix A, recalculated by the owner by hand or in Excel; textbook formulas |
 | Property (Hypothesis) | With no debt the levered beta equals the unlevered beta (within the limits); fair value rises with the starting growth and falls with the cost of equity whenever FCF0 > 0; |g(t + 1) − gT| ≤ |g(t) − gT| and g(t) − gT never changes sign; the beta stays within its limits | The rule itself |
-| Edge cases | Zero debt; negative equity; net income of zero or below; no dividend; a missing figure; a 53-week year; a restated figure; an unmapped industry; past growth above the cap and below the floor; revenue FY-2 missing or FY-4 ≤ 0; three-year free cash flow zero or negative, and equity value ≤ 0 (section 8.6); a missing valuation input; starting growth exactly at the cap (V6 uses the same estimate as V1; a price equal to it fails V1 and passes V6) or equal to gT; a negative minority interest | Sections 7 to 10 |
+| Edge cases | Zero debt; negative equity; net income of zero or below; no dividend; a missing figure; a 53-week year; a restated figure; an unmapped industry; past growth above the cap and below the floor; revenue FY-2 missing or FY-4 ≤ 0; twelve months' free cash flow zero or negative, and equity value ≤ 0 (section 8.6); a missing valuation input; starting growth exactly at the cap (V6 uses the same estimate as V1; a price equal to it fails V1 and passes V6) or equal to gT; a negative minority interest | Sections 7 to 10 |
 | Planted errors | Nine months read as a year; thousands read as millions; wrong fiscal-year label; sign flipped | Section 5.4 |
 | Reconciliation | 30 figures read by the members from the 10-K documents | The filing itself (`tests/reconciliation/`) |
 | Cross-check | The valuation engine against C's separate Excel model for the synthetic company and one real company | `docs/crosscheck/` |
@@ -690,7 +690,7 @@ Every bug found becomes a test that stays (the ratchet). The test workflow runs 
 | Equity | 600 | 650 | 690 | 750 | 820 |
 | Total liabilities | 800 | 830 | 870 | 890 | 930 |
 
-Other inputs: current financial debt FY2025 = 50 (not used since version 2.3); shares = 100 million; share price = USD 30.00; no non-controlling interests, preferred shares or equity-method investments. Settings: risk-free rate 4.0%, equity risk premium 5.0%, tax rate 21% (for the beta only), terminal growth 2.5%, free cash flow margin over the last three fiscal years, starting growth limited to −10% to +30%, decaying with a half-life of 2 years over 10 years, beta limited to 0.8 to 2.0 (neither limit applies to this company). Synthetic benchmarks: industry unlevered beta 0.90, return on equity 15%, operating margin 18%, price to earnings 20.0 (industry) and 24.0 (whole US market), price to book 4.0, market dividend yield 1.5%.
+Other inputs: current financial debt FY2025 = 50 (not used since version 2.3); shares = 100 million; share price = USD 30.00; no non-controlling interests, preferred shares or equity-method investments. Settings: risk-free rate 4.0%, equity risk premium 4.41%, tax rate 21% (for the beta only), terminal growth 4.0% (the risk-free rate), starting free cash flow of the last twelve months (FY2025, as is the latest balance sheet), compared with the average of the last three fiscal years (threshold 25%), starting growth limited to −10% to +30%, decaying with a half-life of 2 years over 10 years, beta limited to 0.8 to 2.0 (neither limit applies to this company). Synthetic benchmarks: industry unlevered beta 0.90, return on equity 15%, operating margin 18%, price to earnings 20.0 (industry) and 24.0 (whole US market), price to book 4.0, market dividend yield 1.5%.
 
 **Expected results.** These were calculated outside the application. Under rule 14.5, each owner recalculates their rows by hand or in Excel before using them; if the recalculation disagrees, the recalculation wins and this table is corrected by pull request.
 
@@ -714,40 +714,39 @@ Other inputs: current financial debt FY2025 = 50 (not used since version 2.3); s
 | D4 | 56 against 40 | pass |
 | D5 | 56 ÷ 140 = 40% | pass |
 | D6 | 56 against 215 − 85 = 130 | pass |
-| V1 | USD 30.00 against fair value USD 20.13 | fail |
-| V2 | 30.00 against 80% × 20.13 = 16.10 | fail |
+| V1 | USD 30.00 against fair value USD 33.02 | pass |
+| V2 | 30.00 against 80% × 33.02 = 26.41 | fail |
 | V3 | 3,000 ÷ 140 = 21.43 against 20.0 | fail |
 | V4 | 3,000 ÷ 140 = 21.43 against the US market's 24.0 | pass |
 | V5 | 3,000 ÷ 820 = 3.66 against 4.0 | pass |
-| V6 | USD 30.00 against fair value with g1 at the 30% cap, USD 37.37 | pass |
+| V6 | USD 30.00 against fair value with g1 at the 30% cap, USD 62.32 | pass |
 
 Scores: past performance 5 of 6, financial health 4 of 6, dividend 6 of 6, valuation 3 of 6.
 
-**Valuation working (version 2.3, equity method with exponential decay; recalculated by the AI assistant from the rules of section 8, to be recalculated by C before use, rule 14.5).** The same script first reproduced the firm-method values of version 2.2 (fair value USD 21.68, implied growth 14.10%) and the earlier five-year equity values (19.65, and 26.07 at a 20% cap).
+**Valuation working (equity method with exponential decay, method of issue #71; recalculated by C in his Excel model on 28 November 2026).**
 
 - Debt ÷ market value of equity = 450 ÷ 3,000 = 0.15. Levered beta = 0.90 × (1 + 0.79 × 0.15) = 1.00665 (inside 0.8 to 2.0).
-- Cost of equity = 4.0% + 1.00665 × 5.0% = 9.0333% (9.03325%).
-- Free cash flow FY2023 to FY2025: 150 − 75 = 75; 195 − 80 = 115; 215 − 85 = 130. Three-year margin = (75 + 115 + 130) ÷ (1,150 + 1,210 + 1,300) = 320 ÷ 3,660 = 8.7432%. FCF0 = 8.7432% × 1,300 = 113.66.
-- g1 = (1,300 ÷ 1,000)^(1/4) − 1 = 6.7790% (inside −10% to +30%). gT = 2.5%. g(t) = 2.5% + 4.2790% × 0.5^((t − 1) ÷ 2).
+- Cost of equity = 4.0% + 1.00665 × 4.41% = 8.4393% (8.43933%).
+- Free cash flow FY2023 to FY2025: 150 − 75 = 75; 195 − 80 = 115; 215 − 85 = 130 (their average is only compared with the twelve months). FCF0 = the last twelve months = 215 − 85 = 130.00.
+- g1 = (1,300 ÷ 1,000)^(1/4) − 1 = 6.7790% (inside −10% to +30%). gT = 4.0%. g(t) = 4.0% + (g1 − 4.0%) × 0.5^((t − 1) ÷ 2).
 
 | Year | Growth g(t) | Free cash flow | Discounted |
 |---|---|---|---|
-| 1 | 6.7790% | 121.37 | 111.31 |
-| 2 | 5.5257% | 128.07 | 107.73 |
-| 3 | 4.6395% | 134.01 | 103.39 |
-| 4 | 4.0129% | 139.39 | 98.63 |
-| 5 | 3.5697% | 144.37 | 93.69 |
-| 6 | 3.2564% | 149.07 | 88.72 |
-| 7 | 3.0349% | 153.59 | 83.84 |
-| 8 | 2.8782% | 158.01 | 79.11 |
-| 9 | 2.7674% | 162.39 | 74.56 |
-| 10 | 2.6891% | 166.75 | 70.22 |
+| 1 | 6.7790% | 138.81 | 128.01 |
+| 2 | 5.9650% | 147.09 | 125.09 |
+| 3 | 5.3895% | 155.02 | 121.57 |
+| 4 | 4.9825% | 162.74 | 117.70 |
+| 5 | 4.6947% | 170.38 | 113.63 |
+| 6 | 4.4913% | 178.04 | 109.49 |
+| 7 | 4.3474% | 185.78 | 105.36 |
+| 8 | 4.2456% | 193.66 | 101.29 |
+| 9 | 4.1737% | 201.75 | 97.30 |
+| 10 | 4.1228% | 210.07 | 93.43 |
 
-- Sum of discounted free cash flows 911.21. Terminal value 166.75 × 1.025 ÷ (0.0903325 − 0.025) = 2,616.20, discounted 1,101.75 (54.7% of the total).
-- Equity value 911.21 + 1,101.75 − minority interests 0 = 2,012.95. Fair value per share USD 20.13.
-- V6: the same valuation with g1 = 30% (growth 30%, 21.9%, 16.25%, 12.2%, 9.4%, 7.4%, 5.9%, 4.9%, 4.2%, 3.7%) gives USD 37.37 per share, above the price of USD 30.00, so V6 passes.
-- The model fits (section 8.6): FCF0 = 113.66 > 0, equity value > 0.
-- With FY0's free cash flow alone (130) instead of the three-year margin, the fair value would be USD 23.02: the reason for the average.
+- Sum of discounted free cash flows 1,112.87. Terminal value 210.07 × 1.04 ÷ (0.0843933 − 0.04) = 4,921.20, discounted 2,188.78 (66.3% of the total).
+- Equity value 1,112.87 + 2,188.78 − minority interests 0 = 3,301.65. Fair value per share USD 33.02.
+- V6: the same valuation with g1 = 30% (growth 30%, 22.38%, 17.00%, 13.19%, 10.50%, 8.60%, 7.25%, 6.30%, 5.62%, 5.15%) gives USD 62.32 per share, above the price of USD 30.00, so V6 passes.
+- The model fits (section 8.6): FCF0 = 130 > 0, equity value > 0.
 
 **Strengths and points to watch (section 9; to be recalculated by B before use, rule 14.5).**
 

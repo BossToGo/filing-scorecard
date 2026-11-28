@@ -130,8 +130,11 @@ valuation:  # owner C (SPEC §7, §8)
     value: 0.0393
     reason: "Fallback for demo mode, a missing FRED key or no network: the average of the 1,247 daily 10-year yields ('10 Yr') in the US Treasury's Daily Treasury Par Yield Curve Rates from 2021-11-24 to 2026-11-20 (3.92966%, rounded), computed 24 November 2026 by a separate script. Taken from the Treasury (public domain), not from FRED, because FRED's terms forbid storing FRED data (item (p)); the values are the same as FRED DGS10, day by day. Period in data.risk_free_fallback_period. Otherwise the app computes the average live from FRED (SPEC §4, §8.1). A refreshes it before each release"
   equity_risk_premium:
-    value: 0.05
-    reason: "Session 5 convention (SPEC §8.1)"
+    value: 0.0441
+    reason: "Damodaran's implied equity risk premium of 4.41% on 1 November 2026 (trailing 12 months, adjusted payout), from https://pages.stern.nyu.edu/~adamodar/New_Home_Page/home.htm with its calculation at https://pages.stern.nyu.edu/~adamodar/pc/implprem/ERPNov26.xlsx: a published, dated market figure from the same source as our betas, in place of the course's 5% convention (issue #71, item 4; SPEC §8.1). Refreshed with its date before each release"
+  equity_risk_premium_date:
+    value: 2026-11-01
+    reason: "Date of the equity risk premium above, shown with it on screen"
   tax_rate:
     value: 0.21
     reason: "US federal statutory rate, used only to re-lever the industry beta; state taxes ignored, stated as a limitation (SPEC §8.1)"
@@ -140,10 +143,10 @@ valuation:  # owner C (SPEC §7, §8)
     reason: "Ten years give starting growth time to approach the long-run rate before the terminal value begins (SPEC v2.3 §8.2)"
   fcf_base_years:
     value: 3
-    reason: "Three years smooth temporary working-capital and capital-expenditure swings while keeping the starting cash-flow margin reasonably current (SPEC v2.3 §8.2)"
-  terminal_growth_cap:
-    value: 0.025
-    reason: "Terminal growth is the lower of the risk-free rate and 2.5% (SPEC §8.3)"
+    reason: "The last twelve months are compared with the plain average free cash flow of three fiscal years: enough to smooth one unusual year and still recent; the average does not enter the estimate (SPEC §8.2)"
+  fcf_difference_warning:
+    value: 0.25
+    reason: "One sentence on screen when the last twelve months' free cash flow is more than 25% above or below that average: a gap of a quarter is large enough to matter to the estimate; a judgement, not fitted to any company (Flo, 27 November 2026, issue #71)"
   well_below_fair_value:
     value: 0.80
     reason: "Price at or below 80% of the estimate: share price at most 80% of the cash-flow estimate (V2; the name of the setting is unchanged)"

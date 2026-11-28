@@ -81,7 +81,7 @@ def test_the_other_inputs_settings_and_benchmarks_match_appendix_a():
     assert settings["equity_risk_premium"] == pytest.approx(found(r"equity risk premium ([\d.]+)%") / 100)
     assert settings["tax_rate"] == pytest.approx(found(r"tax rate ([\d.]+)%") / 100)
     assert settings["terminal_growth"] == pytest.approx(found(r"terminal growth ([\d.]+)%") / 100)
-    assert settings["fcf_base_years"] == 3 and "free cash flow margin over the last three fiscal years" in text
+    assert settings["fcf_base_years"] == 3 and "the average of the last three fiscal years" in text
     limits = r"starting growth limited to (-?[\d.]+)% to \+([\d.]+)%"
     assert settings["growth_floor"] == pytest.approx(found(limits) / 100)
     assert settings["growth_cap"] == pytest.approx(found(limits, 2) / 100)
@@ -168,7 +168,7 @@ def test_the_valuation_rows_agree_with_each_other():
     checks, valuation = FIXTURE["expected_checks"], FIXTURE["expected_valuation"]
     fair_value = valuation["fair_value_per_share"]["value"]
     assert checks["V1"]["compared_with"] == fair_value
-    assert checks["V2"]["compared_with"] == pytest.approx(0.8 * fair_value, abs=0.005)
+    assert checks["V2"]["compared_with"] == pytest.approx(0.8 * fair_value, abs=0.01)  # both shown rounded
     assert checks["V6"]["compared_with"] == valuation["fair_value_at_growth_cap"]["value"]
     assert checks["V3"]["value"] == checks["V4"]["value"]  # the same price to earnings, two benchmarks
     shares = FIXTURE["other_inputs"]["shares_millions"]

@@ -10,6 +10,12 @@ Where the expected values come from (SPEC rule 14.5, AGENTS.md rule 5):
   come from Flo's hand working, recorded in docs/acceptance.md.
 - Nvidia's past revenue growth of 68.3% a year: SPEC §8.2, from the 10-Ks it cites.
 Never from running `src/valuation/equity_method.py`.
+
+Slice S8b (27 November 2026, issue #71, agreed by the group; the written reason for every test changed, rule 14.6):
+the method changed. The starting free cash flow is the last twelve months, debt, minority interest and shares come
+from the latest balance sheet (`CompanyData.recent`), long-run growth is the risk-free rate and the premium is 4.41%.
+So tests that planted an annual FY0 balance or cash flow now plant the latest figure, the three-year margin and the
+"negative FY0" line are gone, and "towards 2.5%" reads the risk-free rate. The new rules: test_valuation_latest.py.
 """
 
 from __future__ import annotations
@@ -23,6 +29,7 @@ from src.contracts import CompanyData, Fact
 from src.settings import load_settings
 from src.valuation.equity_method import forecast, growth_path, starting_growth, value_company
 from tests.fixtures import synthetic
+from tests.unit.valuation_data import latest, synthetic_company, without_latest
 
 MILLION = 1_000_000.0
 FY0 = date(2025, 12, 31)
@@ -46,13 +53,13 @@ BETA = rate(synthetic.inputs()["benchmarks"]["unlevered_beta"], "unlevered_beta"
 
 
 def value(data: CompanyData | None = None, *, price=PRICE, risk_free=RISK_FREE, beta=BETA, settings=SETTINGS):
-    return value_company(synthetic.company_data() if data is None else data, settings,
+    return value_company(synthetic_company() if data is None else data, settings,
                          share_price=price, risk_free_rate=risk_free, unlevered_beta=beta)
 
 
 def changed(metric: str, year: int, millions: float | None, data: CompanyData | None = None) -> CompanyData:
-    """The synthetic company with one figure replaced; None makes it `missing` with a reason (never zero)."""
-    data = synthetic.company_data() if data is None else data
+    """The synthetic company with one annual figure replaced; None makes it `missing` with a reason (never zero)."""
+    data = synthetic_company() if data is None else data
     old = data.fact(metric, date(year, 12, 31))
     if millions is None:
         new = dataclasses.replace(old, value=None, kind="missing", tag=None, form=None, accession=None,
@@ -94,7 +101,6 @@ def test_the_fixture_settings_are_the_settings_of_the_app():
     for name in ("equity_risk_premium", "tax_rate", "fcf_base_years", "growth_floor", "growth_cap",
                  "growth_half_life_years", "forecast_years", "beta_min", "beta_max"):
         assert valuation[name] == fixture[name], name
-    assert valuation["terminal_growth_cap"] == fixture["terminal_growth"]
 
 
 def test_the_settings_keep_the_cost_of_equity_above_terminal_growth():
@@ -116,14 +122,12 @@ def test_w2_cost_of_equity():
     assert value().cost_of_equity.value == pytest.approx(pct(e), abs=tol(e, 0.01))
 
 
-def test_f1_base_free_cash_flows_margin_and_starting_free_cash_flow():
+def test_f1_base_free_cash_flows_and_starting_free_cash_flow():
     v = value()
     e = synthetic.expected_valuation("base_free_cash_flows")
     assert [f.period_end.year for f in v.base_free_cash_flows] == [2023, 2024, 2025]
     assert [f.value for f in v.base_free_cash_flows] == pytest.approx([x * MILLION for x in e["values"]],
                                                                        abs=tol(e, MILLION))
-    e = synthetic.expected_valuation("free_cash_flow_margin")
-    assert v.free_cash_flow_margin.value == pytest.approx(pct(e), abs=tol(e, 0.01))
     e = synthetic.expected_valuation("starting_free_cash_flow")
     assert v.starting_free_cash_flow.value == pytest.approx(usd_m(e), abs=tol(e, MILLION))
     assert v.starting_free_cash_flow.unit == "USD"
@@ -181,7 +185,7 @@ def test_the_model_fits_the_synthetic_company():
     assert synthetic.expected_valuation("model_fits")["value"] is True
     v = value()
     assert v.status == "ok"
-    assert v.notes == ()  # no growth limit, FY0's own free cash flow is positive
+    assert v.notes == ()  # no growth limit, the twelve months are close to the three years
 
 
 def test_the_result_lists_every_figure_it_used():
@@ -200,36 +204,35 @@ def test_the_result_lists_every_figure_it_used():
 MISSING_INPUTS = [
     ("revenue FY-2", lambda: changed("revenue", 2023, None), {}, ["revenue", "31 December 2023"]),
     ("revenue FY-4", lambda: changed("revenue", 2021, None), {}, ["revenue", "31 December 2021"]),
-    ("operating cash flow FY-1", lambda: changed("operating_cash_flow", 2024, None), {},
-     ["operating cash flow", "31 December 2024"]),
-    ("capital expenditure FY0, year absent", lambda: without(synthetic.company_data(), "capital_expenditure", 2025),
-     {}, ["capital expenditure", "31 December 2025"]),
-    ("financial debt FY0", lambda: changed("financial_debt", 2025, None), {}, ["financial debt"]),
-    ("shares", lambda: without(synthetic.company_data(), "shares"), {}, ["shares"]),
-    ("minority interest reported for FY-1 but not FY0", lambda: changed("minority_interest", 2025, None), {},
-     ["minority interest"]),
+    ("operating cash flow, twelve months", lambda: latest("operating_cash_flow", None), {},
+     ["operating cash flow", "last twelve months"]),
+    ("capital expenditure, no entry", lambda: without_latest("capital_expenditure"), {},
+     ["capital expenditure", "last twelve months"]),
+    ("latest financial debt", lambda: latest("financial_debt", None), {}, ["financial debt"]),
+    ("shares", lambda: without_latest("shares"), {}, ["shares"]),
+    ("latest minority interest", lambda: latest("minority_interest", None), {}, ["minority interest"]),
     ("industry beta", lambda: None, {"beta": None}, ["industry beta"]),
     ("risk-free rate", lambda: None, {"risk_free": None}, ["risk-free rate"]),
     ("share price", lambda: None, {"price": None}, ["share price"]),
     ("revenue FY0 zero", lambda: changed("revenue", 2025, 0), {}, ["revenue", "31 December 2025", "zero or negative"]),
     ("revenue FY-4 negative", lambda: changed("revenue", 2021, -5), {},
      ["revenue", "31 December 2021", "zero or negative"]),
-    ("only four fiscal years", lambda: without(synthetic.company_data(), "revenue", 2021), {}, ["five fiscal years"]),
-    ("negative capital expenditure (sign error)", lambda: changed("capital_expenditure", 2024, -80), {},
+    ("only four fiscal years", lambda: without(synthetic_company(), "revenue", 2021), {}, ["five fiscal years"]),
+    ("negative capital expenditure (sign error)", lambda: latest("capital_expenditure", -80), {},
      ["capital expenditure", "negative", "sign warning"]),
     # Added after the review of 24 November (Flo's decisions: any revenue year ≤ 0 and a negative debt are refused).
-    ("revenue FY-1 zero (base years would divide by it)", lambda: changed("revenue", 2024, 0), {},
+    ("revenue FY-1 zero", lambda: changed("revenue", 2024, 0), {},
      ["revenue", "31 December 2024", "zero or negative"]),
     ("revenue FY-3 negative", lambda: changed("revenue", 2022, -500), {},
      ["revenue", "31 December 2022", "zero or negative"]),
-    ("negative financial debt (sign error)", lambda: changed("financial_debt", 2025, -400), {},
+    ("negative financial debt (sign error)", lambda: latest("financial_debt", -400), {},
      ["financial debt", "negative"]),
-    ("shares zero", lambda: changed("shares", 2025, 0), {}, ["shares", "zero or negative"]),
+    ("shares zero", lambda: latest("shares", 0), {}, ["shares", "zero or negative"]),
     ("share price zero", lambda: None, {"price": 0.0}, ["share price", "zero or negative"]),
     ("industry beta zero", lambda: None, {"beta": rate(0.0, "unlevered_beta")}, ["industry beta", "zero or negative"]),
     # S18 (breaks GE-negative-share-count, GE-price-negative, GE-beta-negative): only zero was tested,
     # not a negative number.
-    ("shares negative", lambda: changed("shares", 2025, -100), {}, ["shares", "zero or negative"]),
+    ("shares negative", lambda: latest("shares", -100), {}, ["shares", "zero or negative"]),
     ("share price negative", lambda: None, {"price": -5.0}, ["share price", "zero or negative"]),
     ("industry beta negative", lambda: None, {"beta": rate(-0.5, "unlevered_beta")},
      ["industry beta", "zero or negative"]),
@@ -255,14 +258,14 @@ def test_e22_a_missing_risk_free_fact_counts_like_no_risk_free_rate():
 
 
 def test_e22_every_missing_input_is_named_not_only_the_first():
-    data = changed("financial_debt", 2025, None, changed("operating_cash_flow", 2023, None))
+    data = latest("financial_debt", None, latest("operating_cash_flow", None))
     v = value(data, beta=None)
     for word in ("financial debt", "operating cash flow", "industry beta"):
         assert word in v.reason
 
 
 def test_e22_with_four_fiscal_years_the_missing_market_inputs_are_named_too():
-    v = value(without(synthetic.company_data(), "revenue", 2021), price=None, beta=None)
+    v = value(without(synthetic_company(), "revenue", 2021), price=None, beta=None)
     assert v.status == "insufficient_data"
     for word in ("five fiscal years", "share price", "industry beta"):
         assert word in v.reason
@@ -280,7 +283,7 @@ def test_e22_a_share_price_that_is_not_a_finite_number_means_no_fair_value(price
 def test_e22_with_four_fiscal_years_the_result_still_lists_the_figures_that_exist():
     # Review of 24 November (Igor, point 3): V1, V2 and V6 and the sources page link to these. The four revenue years
     # that exist are 2022 to 2025 (2021 removed); the two market inputs come with them.
-    v = value(without(synthetic.company_data(), "revenue", 2021))
+    v = value(without(synthetic_company(), "revenue", 2021))
     assert v.status == "insufficient_data"
     used = {(f.metric, f.period_end.year) for f in v.inputs}
     assert used == {("revenue", y) for y in range(2022, 2026)} | {("risk_free_rate", 2025), ("unlevered_beta", 2025)}
@@ -288,10 +291,11 @@ def test_e22_with_four_fiscal_years_the_result_still_lists_the_figures_that_exis
 
 def test_a_negative_capex_not_read_from_a_filing_does_not_point_to_a_sign_warning():
     # As in the dividend checks (S7-R2): only a figure read from a filing has the data layer's SIGN warning.
-    old = synthetic.company_data().fact("capital_expenditure", date(2024, 12, 31))
+    data = synthetic_company()
+    old = data.recent["capital_expenditure"]
     typed = dataclasses.replace(old, value=-80 * MILLION, kind="assumption", tag=None, form=None, accession=None,
                                 note="test override")
-    v = value(synthetic.company_data().with_fact(typed))
+    v = value(dataclasses.replace(data, recent={**data.recent, "capital_expenditure": typed}))
     assert v.status == "insufficient_data"
     assert "negative" in v.reason and "sign warning" not in v.reason
 
@@ -299,52 +303,25 @@ def test_a_negative_capex_not_read_from_a_filing_does_not_point_to_a_sign_warnin
 # --- §8.6 second test: the model does not fit, so "not applicable" (E19) ---------------------------------------------
 
 
-def with_operating_cash_flow(values_2023_to_2025, data=None) -> CompanyData:
-    for year, millions in zip((2023, 2024, 2025), values_2023_to_2025):
-        data = changed("operating_cash_flow", year, millions, data)
-    return data
-
-
-@pytest.mark.parametrize("cash_flows", [(75, 80, 85), (50, 50, 50)], ids=["three-year FCF exactly zero", "negative"])
-def test_e19_no_free_cash_flow_over_three_years_means_not_applicable(cash_flows):
-    # Capital expenditure FY2023–FY2025 is 75, 80, 85: equal cash flows give a total of exactly zero.
-    v = value(with_operating_cash_flow(cash_flows))
-    assert v.status == "not_applicable"
-    assert "free cash flow" in v.reason
-    assert v.fair_value is None and v.fair_value_at_growth_cap is None
-    assert v.starting_free_cash_flow.value <= 0  # shown, so the reader sees why
-    # Review of 24 November, M1: no line may claim the three-year margin is positive when the model does not fit.
-    assert not any("positive" in line for line in v.notes + v.records)
-
-
 def test_e19_equity_value_zero_or_below_after_minority_interests_means_not_applicable():
-    v = value(changed("minority_interest", 2025, 5000))  # far above the synthetic company's value
+    v = value(latest("minority_interest", 5000))  # far above the synthetic company's value
     assert v.status == "not_applicable"
     assert "minority interests" in v.reason
     assert v.fair_value is None and v.fair_value_at_growth_cap is None
 
 
 def test_e19_minority_case_carries_no_line_about_a_valuation_that_never_ran():
-    # Review of 24 November (Igor, point 1): operating cash flow FY0 of 80 against capital expenditure of 85 makes
-    # FY0's free cash flow negative (−5) while the three-year total stays positive; with minority interests of 5,000
-    # the result is "not applicable", so the line "the valuation uses the average ... which is positive" must not appear.
-    data = changed("operating_cash_flow", 2025, 80, changed("minority_interest", 2025, 5000))
+    # Review of 24 November (Igor, point 1): a result that is "not applicable" carries no line about a valuation that
+    # never ran. Here the twelve months (300 − 85) differ a lot from the three years, and minority interests are 50,000.
+    data = latest("operating_cash_flow", 300, latest("minority_interest", 50_000))
     v = value(data)
     assert v.status == "not_applicable" and "minority interests" in v.reason
     assert v.fair_value is None
     assert v.notes == ()
-    assert not any("valuation uses the average" in line for line in v.notes + v.records)
-
-
-def test_a_negative_free_cash_flow_in_fy0_still_gets_its_line_when_the_valuation_works():
-    v = value(changed("operating_cash_flow", 2025, 80))  # FCF FY0 = 80 − 85 = −5; the three-year total is positive
-    assert v.status == "ok"
-    assert any("valuation uses the average" in line for line in v.notes)
-    assert any("valuation uses the average" in line for line in v.records)
 
 
 def test_e22_before_e19_a_missing_input_wins_over_no_free_cash_flow():
-    data = changed("financial_debt", 2025, None, with_operating_cash_flow((50, 50, 50)))
+    data = latest("financial_debt", None, latest("operating_cash_flow", 50))
     v = value(data)
     assert v.status == "insufficient_data" and "financial debt" in v.reason
 
@@ -353,7 +330,7 @@ def test_e22_before_e19_a_missing_input_wins_over_no_free_cash_flow():
 
 
 def test_e12_with_zero_debt_the_levered_beta_is_the_unlevered_beta():
-    beta = value(changed("financial_debt", 2025, 0)).levered_beta
+    beta = value(latest("financial_debt", 0)).levered_beta
     assert beta.value == pytest.approx(0.90)
     assert beta.kind == "derived"
 
@@ -388,7 +365,7 @@ def test_e20_a_beta_just_past_the_limit_is_not_printed_as_the_limit(unlevered, s
 
 
 def test_e12_with_zero_debt_a_low_unlevered_beta_is_still_limited():
-    v = value(changed("financial_debt", 2025, 0), beta=rate(0.5, "unlevered_beta"))
+    v = value(latest("financial_debt", 0), beta=rate(0.5, "unlevered_beta"))
     assert v.levered_beta.value == SETTINGS["valuation"]["beta_min"]
     assert v.levered_beta.kind == "assumption"
 
@@ -403,7 +380,7 @@ def test_e18_past_growth_above_the_cap_starts_at_the_cap_with_the_growth_note():
     assert "past revenue growth 44.3% a year before the limit" in v.starting_growth.note
     assert "set to the upper limit (30%)" in v.starting_growth.note
     assert v.notes == ("Revenue grew 44.3% a year over the last four years; the model starts at 30% and lets growth "
-                       "slow towards 2.5%.",)
+                       "slow towards 4%.",)
     # SPEC §10: a record on the sources page, in plain words (Flo, 24 November).
     assert ("GROWTH_LIMIT: revenue changed by 44.3% a year, from USD 300 million in the fiscal year ended 31 December "
             "2021 to USD 1,300 million in the fiscal year ended 31 December 2025; this is beyond the 30% limit, so the "
@@ -441,7 +418,7 @@ def test_e18_past_growth_below_the_floor_starts_at_the_floor_with_the_growth_not
     assert "past revenue growth −18.9% a year before the limit" in v.starting_growth.note
     assert "set to the lower limit (−10%)" in v.starting_growth.note
     assert v.notes == ("Revenue fell 18.9% a year over the last four years; the model starts at −10% and lets growth "
-                       "recover towards 2.5%.",)
+                       "recover towards 4%.",)
 
 
 # --- the two figures Simon's screen shows (SPEC §3 item 6; his review of #43, 24 November) ----------------------------
@@ -468,18 +445,18 @@ def test_the_actual_revenue_growth_is_not_limited_when_the_starting_growth_is(re
 
 
 def test_the_actual_revenue_growth_is_there_when_the_model_does_not_fit_and_absent_without_five_years():
-    not_fitting = value(with_operating_cash_flow((50, 50, 50)))
+    not_fitting = value(latest("operating_cash_flow", 50))
     assert not_fitting.status == "not_applicable" and not_fitting.past_revenue_growth is not None
-    too_short = value(without(synthetic.company_data(), "revenue", 2021))
+    too_short = value(without(synthetic_company(), "revenue", 2021))
     assert too_short.status == "insufficient_data" and too_short.past_revenue_growth is None
 
 
 def test_the_equity_risk_premium_is_an_assumption_with_its_source_in_plain_words():
     premium = value().equity_risk_premium
-    assert premium.value == synthetic.inputs()["settings"]["equity_risk_premium"]  # 5.0%, Appendix A
+    assert premium.value == synthetic.inputs()["settings"]["equity_risk_premium"]  # 4.41%, Appendix A
     assert (premium.metric, premium.unit, premium.kind, premium.period_end) == ("equity_risk_premium", "pure",
                                                                                  "assumption", FY0)
-    assert "5%" in premium.note and "not read from a filing" in premium.note
+    assert "4.41%" in premium.note and "not read from a filing" in premium.note
     assert not any(word in premium.note for word in ("SPEC", "setting", "yaml"))
     v = value()  # the relation between two figures of the same run: cost of equity = risk-free + beta × premium
     assert v.cost_of_equity.value == pytest.approx(RISK_FREE.value + v.levered_beta.value * premium.value)
@@ -510,44 +487,46 @@ def test_e18_nvidia_past_growth_is_capped_and_the_note_gives_68_3_percent():
 
 
 def test_starting_growth_equal_to_terminal_growth_stays_flat():
-    # Revenue FY-4 set so that the past growth is exactly 2.5% a year (the terminal growth).
-    v = value(changed("revenue", 2021, 1300 / 1.025 ** 4))
-    assert [r.growth for r in v.forecast.years] == pytest.approx([0.025] * 10, abs=1e-12)
+    # Revenue FY-4 set so that the past growth is exactly 4% a year (the terminal growth: the risk-free rate).
+    v = value(changed("revenue", 2021, 1300 / 1.04 ** 4))
+    assert [r.growth for r in v.forecast.years] == pytest.approx([0.04] * 10, abs=1e-12)
 
 
 # --- terminal growth, minority interests, a negative FY0 free cash flow ----------------------------------------------
 
 
-def test_terminal_growth_is_the_risk_free_rate_when_that_is_below_2_5_percent():
-    # Flo's Excel model, case f (risk-free rate 2.0%), USD millions to 8 decimals.
+def test_s8_f_a_risk_free_rate_of_2_percent():
+    # Flo's Excel model, case f (risk-free rate 2.0%), USD millions to 8 decimals; recalculated by Flo for the
+    # method of issue #71 (28 November 2026, docs/acceptance.md S8-f).
     v = value(risk_free=rate(0.02))
     assert v.terminal_growth.value == pytest.approx(0.02)
-    assert v.cost_of_equity.value == pytest.approx(0.0703325, abs=1e-12)
-    assert v.starting_free_cash_flow.value == pytest.approx(113.66120219 * MILLION, abs=0.01)
-    assert v.forecast.sum_of_discounted == pytest.approx(989.58369563 * MILLION, abs=0.01)
-    assert v.forecast.terminal_value == pytest.approx(3271.42402094 * MILLION, abs=0.01)
-    assert v.forecast.discounted_terminal_value == pytest.approx(1657.86709202 * MILLION, abs=0.01)
-    assert v.equity_value.value == pytest.approx(2647.45078766 * MILLION, abs=0.01)
-    assert v.fair_value.value == pytest.approx(26.47450788, abs=1e-8)
-    assert value().terminal_growth.value == pytest.approx(0.025)  # 4.0% risk-free: the 2.5% limit
+    assert v.cost_of_equity.value == pytest.approx(0.064393265, abs=1e-12)
+    assert v.starting_free_cash_flow.value == pytest.approx(130 * MILLION, abs=0.01)
+    assert v.forecast.sum_of_discounted == pytest.approx(1165.18457915 * MILLION, abs=0.01)
+    assert v.forecast.terminal_value == pytest.approx(4242.28029927 * MILLION, abs=0.01)
+    assert v.forecast.discounted_terminal_value == pytest.approx(2272.88876280 * MILLION, abs=0.01)
+    assert v.equity_value.value == pytest.approx(3438.07334195 * MILLION, abs=0.01)
+    assert v.fair_value.value == pytest.approx(34.38073342, abs=1e-8)
+    assert value().terminal_growth.value == pytest.approx(0.04)  # long-run growth = the risk-free rate
 
 
 def test_a_minority_interest_is_subtracted_from_the_present_value():
-    # Flo, case e: 2,012.95283165 − 100 = 1,912.95283165 (USD millions); ÷ 100 million shares = USD 19.12952832.
-    v = value(changed("minority_interest", 2025, 100))
+    # Flo, case e (28 November 2026, his Excel model with minority interest 100): equity value USD 3,201.65417623
+    # million; ÷ 100 million shares = USD 32.01654176.
+    v = value(latest("minority_interest", 100))
     assert v.status == "ok"
-    assert v.equity_value.value == pytest.approx(1912.95283165 * MILLION, abs=0.01)
-    assert v.fair_value.value == pytest.approx(19.12952832, abs=1e-8)
+    assert v.equity_value.value == pytest.approx(3201.65417623 * MILLION, abs=0.01)
+    assert v.fair_value.value == pytest.approx(32.01654176, abs=1e-8)
     assert v.equity_value.value == pytest.approx(v.forecast.present_value - 100 * MILLION)
     # Review of 24 November, M3: the V6 value subtracts the minority interest too: USD 100 million ÷ 100 million
-    # shares = USD 1.00 per share below the Appendix A value at the cap (37.37, Flo's sign-off).
+    # shares = USD 1.00 per share below the Appendix A value at the cap (62.32, Flo's recalculation of 28 November).
     e = synthetic.expected_valuation("fair_value_at_growth_cap")
     assert v.fair_value_at_growth_cap.value == pytest.approx(value().fair_value_at_growth_cap.value - 1.0)
     assert v.fair_value_at_growth_cap.value == pytest.approx(e["value"] - 1.0, abs=tol(e))
 
 
 def test_a_negative_minority_interest_is_used_as_reported_and_recorded():
-    v = value(changed("minority_interest", 2025, -50))
+    v = value(latest("minority_interest", -50))
     assert v.equity_value.value == pytest.approx(v.forecast.present_value + 50 * MILLION)
     assert any("negative" in r and "minority interest" in r for r in v.records)
 
@@ -555,7 +534,8 @@ def test_a_negative_minority_interest_is_used_as_reported_and_recorded():
 def test_a_minority_interest_treated_as_nil_subtracts_nothing():
     nil = Fact("minority_interest", 0, "USD", None, FY0, "assumption", None, None, None, None, None,
                "not reported under MinorityInterest, treated as nil (SPEC §8.3)")
-    v = value(synthetic.company_data().with_fact(nil))
+    data = synthetic_company()
+    v = value(dataclasses.replace(data, recent={**data.recent, "minority_interest": nil}))
     e = synthetic.expected_valuation("fair_value_per_share")
     assert v.fair_value.value == pytest.approx(e["value"], abs=tol(e))
     assert nil in v.inputs
@@ -563,16 +543,18 @@ def test_a_minority_interest_treated_as_nil_subtracts_nothing():
 
 def test_customer_texts_name_no_spec_section_setting_or_tool():
     # Flo, 24 November: what a bank customer reads (reasons, detail lines, sources-page records) is in plain words.
-    cases = [value(changed("revenue", 2021, 300)), value(changed("revenue", 2021, 3000)),
-             value(beta=rate(1.9, "unlevered_beta")), value(changed("minority_interest", 2025, -50)),
-             value(changed("operating_cash_flow", 2025, 80)), value(price=None, risk_free=None, beta=None),
-             value(with_operating_cash_flow((50, 50, 50))), value(changed("minority_interest", 2025, 5000))]
+    cases = [value(changed("operating_cash_flow", 2023, None)),  # no comparison possible
+             value(changed("operating_cash_flow", 2023, -500)),  # an average below zero
+             value(changed("revenue", 2021, 300)), value(changed("revenue", 2021, 3000)),
+             value(beta=rate(1.9, "unlevered_beta")), value(latest("minority_interest", -50)),
+             value(latest("operating_cash_flow", 300)), value(price=None, risk_free=None, beta=None),
+             value(latest("operating_cash_flow", 50)), value(latest("minority_interest", 5000))]
     for v in cases:
         for text in (v.reason,) + v.notes + v.records:
             for jargon in ("SPEC", "§", "settings.yaml", "FRED", "growth_cap", "growth_floor", "beta_min", "beta_max",
                            "re-levered"):
                 assert jargon not in text, f"{jargon!r} in {text!r}"
-    assert "risk-free rate: not available at the moment" in cases[5].reason
+    assert "risk-free rate: not available at the moment" in cases[7].reason
 
 
 def test_every_figure_note_the_screen_shows_is_in_plain_words():
@@ -580,9 +562,9 @@ def test_every_figure_note_the_screen_shows_is_in_plain_words():
     # figures the engine builds, not the inputs: those come from the data layer (A) and the benchmarks (B).
     cases = [value(), value(changed("revenue", 2021, 300)), value(changed("revenue", 2021, 3000)),
              value(beta=rate(1.9, "unlevered_beta")), value(beta=rate(0.5, "unlevered_beta")),
-             value(changed("revenue", 2021, 1300 / 1.3 ** 4)), value(changed("minority_interest", 2025, -50)),
-             value(with_operating_cash_flow((50, 50, 50))), value(changed("minority_interest", 2025, 5000))]
-    own = ("levered_beta", "cost_of_equity", "terminal_growth", "equity_risk_premium", "free_cash_flow_margin",
+             value(changed("revenue", 2021, 1300 / 1.3 ** 4)), value(latest("minority_interest", -50)),
+             value(latest("operating_cash_flow", 50)), value(latest("minority_interest", 5000))]
+    own = ("levered_beta", "cost_of_equity", "terminal_growth", "equity_risk_premium", "average_free_cash_flow",
            "starting_free_cash_flow", "starting_growth", "past_revenue_growth", "equity_value", "fair_value",
            "fair_value_at_growth_cap")
     seen = 0
@@ -596,20 +578,13 @@ def test_every_figure_note_the_screen_shows_is_in_plain_words():
     assert seen > 40  # the loop did look at the figures
 
 
-def test_a_negative_free_cash_flow_in_fy0_is_shown_with_a_line_and_a_record():
-    v = value(changed("operating_cash_flow", 2025, 80))  # 80 − 85 = −5 in FY0; 75 + 115 − 5 > 0 over three years
-    assert v.status == "ok"
-    assert any("negative" in n and "31 December 2025" in n for n in v.notes)
-    assert any("negative" in r and "31 December 2025" in r for r in v.records)
-
-
 # --- S18, break-it round (26 November): breaks that no test caught ---------------------------------------------------
 # Every expected result is the rule itself (SPEC §7, §8.3, §8.6) or a relation between two runs: no worked numbers.
 
 
 def test_with_six_fiscal_years_the_valuation_uses_the_latest_five():
     # Break E-FY0. SPEC §7: FY0 is the latest fiscal year, FY-4 four years earlier, so a revenue of 2020 changes nothing.
-    data = synthetic.company_data()
+    data = synthetic_company()
     old = data.fact("revenue", date(2021, 12, 31))
     older = dataclasses.replace(old, value=500 * MILLION, period_start=date(2020, 1, 1), period_end=date(2020, 12, 31))
     v = value(data.with_fact(older))
@@ -619,18 +594,9 @@ def test_with_six_fiscal_years_the_valuation_uses_the_latest_five():
 
 def test_e19_an_equity_value_of_exactly_zero_means_not_applicable():
     # Break FIT-c. SPEC §8.6: equity value ≤ 0. Minority interests set to the present value of the same company.
-    data = synthetic.company_data()
-    nil = data.fact("minority_interest", FY0)
-    v = value(data.with_fact(dataclasses.replace(nil, value=value().forecast.present_value)))
+    v = value(latest("minority_interest", value().forecast.present_value / MILLION))
     assert v.status == "not_applicable" and "minority interests" in v.reason
     assert v.fair_value is None
-
-
-def test_a_free_cash_flow_of_exactly_zero_in_fy0_is_not_called_negative():
-    # Break GE-fy0-note. SPEC §8.6: the line is for a negative FY0. Capital expenditure FY2025 is 85, so 85 − 85 = 0.
-    v = value(changed("operating_cash_flow", 2025, 85))
-    assert v.status == "ok"
-    assert not any("valuation uses the average" in line for line in v.notes + v.records)
 
 
 @pytest.mark.parametrize("cost_of_equity", [0.025, 0.02], ids=["equal to terminal growth", "below it"])
@@ -644,7 +610,7 @@ def test_a_cost_of_equity_not_above_terminal_growth_is_refused(cost_of_equity):
 def test_starting_growth_refuses_a_company_with_only_four_fiscal_years():
     # Break GE-g1-years. SPEC §8.6: fewer than five fiscal years.
     with pytest.raises(ValueError, match="five fiscal years"):
-        starting_growth(without(synthetic.company_data(), "revenue", 2021), SETTINGS)
+        starting_growth(without(synthetic_company(), "revenue", 2021), SETTINGS)
 
 
 @pytest.mark.parametrize("year, millions", [(2021, None), (2021, 0), (2025, 0)],

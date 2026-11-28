@@ -24,6 +24,7 @@ from src.scores import area_score
 from src.settings import load_settings
 from src.valuation.equity_method import Valuation, value_company
 from tests.fixtures import synthetic
+from tests.unit.valuation_data import latest, synthetic_company
 
 FY0 = date(2025, 12, 31)
 SETTINGS = load_settings()
@@ -52,7 +53,7 @@ INDUSTRY_PB = market(BENCHMARKS["price_to_book"], "pb")  # 4.0
 def results(data: CompanyData | None = None, *, price=PRICE, industry_pe=INDUSTRY_PE, market_pe=MARKET_PE,
             industry_pb=INDUSTRY_PB) -> dict:
     """V1–V6 of a company, on the valuation the engine gives at the same share price."""
-    data = synthetic.company_data() if data is None else data
+    data = synthetic_company() if data is None else data
     valuation = value_company(data, SETTINGS, share_price=price, risk_free_rate=RISK_FREE, unlevered_beta=BETA)
     checks = valuation_checks(data, SETTINGS, valuation, share_price=price, industry_pe=industry_pe,
                               market_pe=market_pe, industry_pb=industry_pb)
@@ -85,13 +86,12 @@ def test_appendix_a_valuation_area_score():
 
 
 def test_appendix_a_gap_to_the_estimate_for_g7_and_w8():
-    # Flo's value (25 November 2026), his hand working in docs/acceptance.md row S9-W8 (the unrounded estimate from his
-    # Excel model, Valuation!G17): (30.00 − unrounded estimate) ÷ unrounded estimate = 49.0% above (one
-    # decimal, as SPEC Appendix A shows it for W8). docs/acceptance.md, S9 edge cases, row S9-W8.
-    data = synthetic.company_data()
+    # Flo's value (28 November 2026, method of issue #71): cell I17 of his Excel model, (30 − G17) ÷ G17 on the
+    # unrounded estimate = 9.1% below (one decimal). docs/acceptance.md, S9 edge cases, row S9-W8.
+    data = synthetic_company()
     v = value_company(data, SETTINGS, share_price=PRICE, risk_free_rate=RISK_FREE, unlevered_beta=BETA)
-    assert estimate_gap(PRICE, v.fair_value.value) * 100 == pytest.approx(49.0, abs=0.05)
-    assert "49.0% above the estimate" in results()["V1"].explanation
+    assert estimate_gap(PRICE, v.fair_value.value) * 100 == pytest.approx(-9.1, abs=0.05)
+    assert "9.1% below the estimate" in results()["V1"].explanation
 
 
 # --- S9 edge cases: Flo's hand working (docs/acceptance.md, "S9 edge cases") ----------------------------------------
@@ -338,10 +338,10 @@ def test_r6_ratios_that_round_to_the_same_number_are_shown_with_more_decimals():
 
 def test_r7_v2_and_v6_say_above_below_or_equal():
     synthetic_case = results()
-    assert ("The share price you typed, USD 30.00, is above USD 16.10, which is 80% of the estimate (USD 20.13)."
+    assert ("The share price you typed, USD 30.00, is above USD 26.41, which is 80% of the estimate (USD 33.02)."
             in synthetic_case["V2"].explanation)
     assert ("The share price you typed, USD 30.00, is below the estimate with starting growth at the 30% cap "
-            "(USD 37.37)." in synthetic_case["V6"].explanation)
+            "(USD 62.32)." in synthetic_case["V6"].explanation)
     e3 = checks(estimate(20.0), price=16.0)["V2"]
     assert "is equal to USD 16.00, which is 80% of the estimate (USD 20.00)." in e3.explanation
     e4 = checks(estimate(20.0, 25.0), price=25.0)["V6"]
@@ -435,7 +435,7 @@ def test_igor_5_v1_v2_and_v6_carry_the_estimate_in_their_inputs():
 
 def synthetic_with(metric: str, years: tuple[int, ...], millions: float | None) -> CompanyData:
     """The synthetic company with one line item replaced in some years; None makes it `missing`, never zero."""
-    data = synthetic.company_data()
+    data = synthetic_company()
     items = {m: dict(by_year) for m, by_year in data.items.items()}
     for year in years:
         old = items[metric][date(year, 12, 31)]
@@ -447,7 +447,7 @@ def synthetic_with(metric: str, years: tuple[int, ...], millions: float | None) 
 
 
 @pytest.mark.parametrize("data, status", [
-    (lambda: synthetic_with("capital_expenditure", (2023, 2024, 2025), 10_000), "not_applicable"),  # no free cash flow
+    (lambda: latest("capital_expenditure", 10_000), "not_applicable"),  # no free cash flow in the twelve months
     (lambda: synthetic_with("revenue", (2021,), None), "insufficient_data"),                        # revenue FY-4 missing
 ])
 def test_igor_6_the_real_engines_status_and_reason_reach_v1_v2_and_v6(data, status):
