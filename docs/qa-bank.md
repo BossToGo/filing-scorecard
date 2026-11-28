@@ -70,10 +70,10 @@ by the final fairlife milestone payment of USD 6.2 bn, paid in March 2025, of wh
 cash flow (2025 10-K, MD&A, pp. 47, 53 and 55). Today's method starts from a three-year average and gives Coca-Cola an
 estimate of USD 31.80 at the 25 November price of USD 97.59. So the data layer now also reads the quarterly reports
 (10-Q) and gives the last twelve months: the last annual figure + this year's year to date − last year's year to date,
-both from the same 10-Q (pull request #72, not merged yet). Coca-Cola, twelve months to 2 October 2026: operating cash
-flow USD 16,227 m − capital expenditure USD 1,945 m = free cash flow USD 14,282 m. Amazon's 10-Q prints its own
-twelve-month totals, and they match the formula to the million; I checked the hand working with a calculator. These
-figures are kept apart, so no existing figure, check or warning changes, and a part that cannot be trusted (for
+both from the same 10-Q (pull request #72, merged on 27 November). Coca-Cola, twelve months to 2 October 2026:
+operating cash flow USD 16,227 m − capital expenditure USD 1,945 m = free cash flow USD 14,282 m. Amazon's 10-Q prints
+its own twelve-month totals, and they match the formula to the million; I checked the hand working with a calculator.
+These figures are kept apart, so no existing figure, check or warning changes, and a part that cannot be trusted (for
 example last year's figure restated) makes the figure missing, never zero. **Decided on 27 November (issue #71):**
 v0.2 starts the valuation from the last twelve months' free cash flow, sets long-run growth equal to the risk-free
 rate, and uses Damodaran's implied equity risk premium (4.41% on 1 November 2026) instead of the fixed 5%. Flo builds
