@@ -9,6 +9,73 @@ financial health, dividend, valuation). Every figure can be traced to its source
 every number comes from tested Python code. The scores are not a rating of the share. A figure that cannot be read or
 does not pass the checks is shown as "not assessed" with the reason, never as zero and never guessed.
 
+## Install (once)
+
+**You need:**
+
+- **Python 3.11 to 3.14** (3.14 or 3.11 recommended: the tests run on those two; newer versions are not tested). If
+  you don't have it, install it from https://www.python.org/downloads/ and open a new terminal afterwards. On a
+  Mac, the `python3` that comes with macOS is usually too old (3.9).
+- **Git:** on Windows, from https://git-scm.com/downloads. On a Mac, the first `git` command offers to install
+  Apple's command-line developer tools: accept, wait for the installation, and run the command again.
+
+The app uses its own environment in `app/.venv` and never changes your Anaconda or system Python.
+
+**Windows (PowerShell):**
+
+```powershell
+git clone https://github.com/BossToGo/filing-scorecard.git
+cd filing-scorecard\app
+py -0p                     # lists your Pythons; pick one from 3.11 to 3.14
+py -3.14 -m venv .venv     # replace 3.14 with the version you picked
+.venv\Scripts\python -m pip install -r requirements.txt
+copy .env.example .env
+```
+
+**Mac (Terminal):**
+
+```bash
+git clone https://github.com/BossToGo/filing-scorecard.git
+cd filing-scorecard/app
+python3 --version          # must be 3.11 to 3.14; if it is older, use python3.14 (or your version) below
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+cp .env.example .env
+```
+
+**Python too old, but you have Anaconda?** Use Anaconda's Python by its full path in the `venv` line, for example
+`/opt/anaconda3/bin/python -m venv .venv` (Mac) or `& "$env:USERPROFILE\anaconda3\python.exe" -m venv .venv`
+(Windows), then continue with the next line. It must also be 3.11 to 3.14.
+
+For live SEC data, open `app/.env` in an editor and put **your own** name and e-mail in `SEC_USER_AGENT` (the SEC
+requires it). Never commit `.env` and never paste it into a chat. Demo mode and the tests need nothing in it.
+Optional: a free FRED key (https://fredaccount.stlouisfed.org, "API Keys") in `FRED_API_KEY`, in the same file,
+gives today's five-year average of the 10-year Treasury yield; without it, the app uses the saved, dated rate.
+
+## Run
+
+From the `app` folder:
+
+**Windows (PowerShell):**
+
+```powershell
+.venv\Scripts\python -m streamlit run main.py
+```
+
+**Mac (Terminal):**
+
+```bash
+.venv/bin/python -m streamlit run main.py
+```
+
+The app opens in your browser at http://localhost:8501 (open that address yourself if it doesn't). Pick a company,
+type the current share price in USD, and press **Show scorecard**.
+
+- The first time, Streamlit may ask for an e-mail address in the terminal: leave it empty and press Enter.
+- If the port is busy, add `--server.port 8502` to the command and open http://localhost:8502.
+- To stop the app, press Ctrl+C in the terminal. To start it again later, open a terminal in `filing-scorecard/app`
+  and run the same command; there is no need to install again.
+
 ## What you see
 
 1. **Input bar:** one of the five demo companies (Coca-Cola KO, Apple AAPL, Nvidia NVDA, McDonald's MCD, Amazon
@@ -28,48 +95,6 @@ does not pass the checks is shown as "not assessed" with the reason, never as ze
 Without a share price, the valuation area and the dividend-yield check show "not assessed". Strengths and
 points to watch, and an Excel export, were planned but not built in this version (`docs/plan.md`, S12 and S13).
 They are in the business plan's next steps (`docs/business-plan/sections/E-next-steps.md`).
-
-## Install (once)
-
-You need Git and Python 3.11 to 3.14 (newer versions are not tested). The app uses its own environment in
-`app/.venv` and never changes your Anaconda or system Python.
-
-**Windows (PowerShell):**
-
-```powershell
-git clone https://github.com/BossToGo/filing-scorecard.git
-cd filing-scorecard\app
-py -0p                     # lists your Pythons; use one from 3.11 to 3.14 in the next line
-py -3.13 -m venv .venv
-.venv\Scripts\python -m pip install -r requirements.txt
-copy .env.example .env
-```
-
-**Mac (Terminal):**
-
-```bash
-git clone https://github.com/BossToGo/filing-scorecard.git
-cd filing-scorecard/app
-python3 --version          # must be 3.11 to 3.14
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
-cp .env.example .env
-```
-
-For live SEC data, open `app/.env` in an editor and put **your own** name and e-mail in `SEC_USER_AGENT` (the SEC
-requires it). Never commit `.env` and never paste it into a chat. Demo mode and the tests need nothing in it.
-If `python3` or `py` is too old, see `app/README.md` for using Anaconda's Python.
-
-## Run
-
-From the `app` folder:
-
-```bash
-.venv\Scripts\python -m streamlit run main.py      # Windows
-.venv/bin/python -m streamlit run main.py          # Mac
-```
-
-Open http://localhost:8501, pick a company, type a share price (e.g. 70.00), and press **Show scorecard**.
 
 ## Demo mode
 
@@ -119,8 +144,10 @@ All values are in `app/settings.yaml`, each with its reason. The method is in `S
 
 - **Not supported:** banks, insurers and real estate investment trusts (SEC industry codes 6000 to 6799), and
   companies that do not file 10-K reports in USD under US accounting rules. The app says "not supported" and why.
-- **Other tickers are outside the MVP.** They can be looked up and are marked "not fully checked". Known problems:
-  debt filed under unusual tags, and years restated after a spin-off.
+- **Other tickers are outside the MVP.** They can be looked up and are marked "not fully checked". The industry
+  averages cover only the five demo companies, so for any other company seven checks are "not assessed": P4, P5,
+  V3 and V5 (no industry average), and V1, V2 and V6 (no estimate, because there is no industry beta). Other known
+  problems: debt filed under unusual tags, and years restated after a spin-off.
 - **Changed fiscal year end:** a company that changed its fiscal year end keeps its older years (flagged
   `FY_CHANGE` on the sources page), so one year-on-year step can be longer than twelve months. The four-year
   revenue growth can then be slightly overstated. None of the five demo companies is affected.
