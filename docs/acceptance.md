@@ -176,6 +176,7 @@ arithmetic, in `app/tests/unit/test_twelve_months.py`. The real cases were check
 | Minority interest missing at the fiscal year end (reported the year before), nothing in the 10-Q | Eli Lilly (79.5 at 2024-12-31) | missing |
 | Minority interest reported at the fiscal year end (not 0), nothing in the 10-Q | Southern Company (2,851 at 2025-12-31; 10-Q to 2026-03-31) | the fiscal-year-end figure, dated and said (Igor, 27 November, second round), as for debt and shares |
 | The 10-K is the latest report and its year runs 53 weeks | Micron (2025-08-29 to 2026-09-03), Disney (2025-09-28 to 2026-10-03): 371 days | the fiscal year, its note saying "371 days" |
+| The synthetic company of Appendix A (annual data only, built by hand, not by the resolver) | – | its FY2025 figures, written out in `tests/fixtures/synthetic.py` with a note (Flo's request on #72, #71 item 6) |
 | The SEC's filing list names a 10-Q its company facts do not hold yet | Southern Company (10-Q filed 2026-11-05), NextEra (filed 2026-10-21): figures to 2026-03-31 | figures from the latest 10-Q in the company facts, every note naming the missing 10-Q |
 | No minority interest tagged, total equity above equity by more than 1% at the quarter end | Uber (28,575 against equity) | nil, with MINORITY_UNTAGGED in the note |
 | The 10-Q uses another tag than the 10-K's fiscal-year figure | ADP revenue, Marriott capital expenditure (5 figures of 400 in the 100 companies) | missing (the definitions may differ) |
