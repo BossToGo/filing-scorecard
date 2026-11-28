@@ -187,7 +187,7 @@ tested against McDonald's balance sheets. All entries are in [`AI-USAGE.md`](AI-
 **Team** (`docs/team.md`):
 
 - A, Igor Willms: repository, CI, SEC data layer, demo snapshot.
-- B, Greg: industry benchmarks, past-performance and financial-health checks.
+- B, Gregorio Bini: industry benchmarks, past-performance and financial-health checks.
 - C, Florian Spitzer: dividend and valuation checks, valuation engine.
 - D, Simon Armengaud: interface, theme, data-quality gates, app tests.
 - E, Emma Riggi: plain-language texts, README, business plan, slides, `AI-USAGE.md`.
