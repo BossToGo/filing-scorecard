@@ -1,6 +1,6 @@
 ## Next steps
 
-For our tool to become a real bank product, several steps are needed.
+For Filing Scorecard to become a real bank product, several steps are needed.
 
 **The product.** The demo covers five companies; a bank would need a verified list of the stocks its customers actually buy, checked again each year when new annual reports are filed. The tool should also assign each company to its industry group automatically: today this is done by hand for the five demo companies, so for any other company seven checks show "not assessed" (the four that compare with the industry, and the three that need the estimate). Two features planned but not built in the prototype could then be added: short texts on each company's strengths and points to watch, and an export of the figures to Excel.
 
