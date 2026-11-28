@@ -17,13 +17,26 @@ test and every member's work run on these files. **Never edit them by hand** (SP
   `data.sec.gov/api/xbrl/companyfacts/`), downloaded on 2026-11-18. Each `provenance.json` records the address,
   the retrieval time (UTC), the size and SHA-256 checksum of the raw download, and how it was trimmed. Request
   headers (`SEC_USER_AGENT`) are never stored.
-- **Trimmed, structure unchanged:** company facts keep only entries from Form 10-K and 10-K/A (SPEC §5.3.1);
+- **Trimmed, structure unchanged:** company facts keep only entries from Form 10-K, 10-K/A, 10-Q and 10-Q/A;
   cover-page (`dei`) facts keep every form. Submissions list only the 10-K and 10-K/A filings. The JSON layout is
-  the SEC's own, so the resolver reads saved and live data the same way.
+  the SEC's own, so the resolver reads saved and live data the same way. The fiscal years come from the 10-K entries
+  alone (SPEC §5.3.1); the 10-Q entries serve only the latest figures (`CompanyData.recent`, slice S2c).
+- **Re-trimmed on 2026-11-26 (slice S2c, issue #71 item 1):** until then the company facts kept the 10-K entries
+  only. They were trimmed again, without the network, from the very downloads of 2026-11-18 kept in
+  `app/.cache/sec/`: `.venv/bin/python scripts/fetch_demo_data.py --retrim-from-cache .cache/sec` (run from `app/`)
+  refuses a raw file whose size or SHA-256 checksum differs from its `provenance.json`, then rewrites only
+  `companyfacts.json` and the "trimmed" line of its record. The checksums, retrieval times and submissions files are
+  unchanged; every demo company's annual figures and warnings are identical with and without the 10-Q entries
+  (`app/tests/integration/test_twelve_months_demo.py`). The five files grew from about 12 MB to about 33 MB.
+- **Has a file changed since?** `test_the_saved_company_facts_have_not_changed_since_the_re_trim` pins a SHA-256 of
+  each file's content (its JSON with sorted keys, so line endings do not matter): a hand edit fails it. Anyone with
+  the downloads of 2026-11-18 can repeat the re-trim with the command above: the five `companyfacts.json` files then
+  show no change, and only the date in each `provenance.json` "trimmed" line moves. A run stopped halfway (a full
+  disk) leaves each file whole; running it again gives the same files.
 - **Made by:** `app/scripts/fetch_demo_data.py` (run from `app/`; needs `SEC_USER_AGENT` in `app/.env`). Raw
   downloads stay in `app/.cache/sec/` (git-ignored). Use is allowed for the demo "for now" (decision log,
   2026-11-18, SPEC §16.4).
-- **Checked by:** `app/tests/integration/test_demo_evidence.py` (network blocked).
+- **Checked by:** `app/tests/integration/test_demo_evidence.py` and `test_twelve_months_demo.py` (network blocked).
 
 ## What the real files show (2026-11-18)
 

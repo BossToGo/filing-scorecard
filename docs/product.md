@@ -66,12 +66,22 @@ Agreed visuals:
    with a short text on how to read it; each area's six marks stay in the score chart below, not repeated. No total
    and no area to read first (agreed by the whole group on #60, 26 November; panel without its own rows, Igor, 26
    November).
-2. **Check details**: tables, not charts. The overview's five-year chart (below) is the one chart so far (#47). Every figure with unit and fiscal year; missing figures shown as "n/a"
+2. **Check details**: tables, not charts. The charts are in the overview (items 4 and 5). Every figure with unit and fiscal year; missing figures shown as "n/a"
    with the reason, never as 0.
 3. The synthetic test company always carries a "SYNTHETIC DATA" mark.
 4. **Overview chart** (S10c, agreed on #47). Question: "is the business growing, and does the cash follow the profit?"
    Lines for revenue, net income and free cash flow (dashed) over the five fiscal years, USD bn; a Chart/Table switch
    shows the same figures as a table; a missing year is a gap, never 0. Colours never mean good or bad.
+5. **Overview charts** (S10d, Igor, 26 November: "the usual chart for each question", our own design and words).
+   The valuation first: the typed share price against the estimate (horizontal bars on one scale, zones at 80% and
+   100% of the estimate, the estimate at the growth cap dotted) and price to earnings and price to book against the
+   industry and the market (bars, the company in the accent). Then one section per area: where the revenue goes
+   (a flow from revenue to net income), the balance sheet (two block charts side by side, assets against liabilities
+   and equity, each block sized by its amount and labelled with its name, amount and share of total assets, largest
+   first; owned parts in tints of the accent, owed parts in greys; a legend lists every block), short-term assets against short- and long-term liabilities (bars), debt, equity and cash over
+   five years (lines), dividends against free cash flow (bars and a dashed line), the earnings payout (a ring) and
+   the dividend yield against the market (bars). Each chart has one sentence and its figures as a table; tints of
+   the theme's accent and text colour only; no background of its own (it follows the theme).
 
 Interface rules (§3): a unit on every input and figure; the key result at the top without scrolling; every error
 message says how to fix the problem.
@@ -118,7 +128,7 @@ F1 to F3 are never cut.
 |---|---|---|---|
 | Ticker → company number | SEC `company_tickers.json` | Downloaded once, cached | SEC fair access: declared User-Agent; we stay at or below 5 requests per second (SEC limit 10) (§4) |
 | Company name, industry code, fiscal year end, filings | SEC `submissions` API | Per company, cached with retrieval time | Same |
-| Financial statement figures | SEC `companyfacts` API (10-K and 10-K/A only) | Per company, cached with retrieval time | Same |
+| Financial statement figures | SEC `companyfacts` API (10-K and 10-K/A for the fiscal years; since S2c also 10-Q and 10-Q/A, only for the latest figures: twelve months to the latest quarter and the latest balance sheet, issue #71) | Per company, cached with retrieval time | Same |
 | Risk-free rate | FRED series `DGS10` | Average of the last five years of daily values, downloaded when needed and kept in memory for the day; a dated fallback in `settings.yaml` for demo mode, a missing key or no network, computed from the US Treasury's own public-domain file because FRED's terms forbid storing FRED data (SPEC §4) | FRED terms read on 2026-11-24 (S2b): personal, non-commercial use (a bank needs FRED's written consent); the FRED notice and the series citation in `app/README.md`, and on screen next to the rate (D, S10b; importable as `FRED_NOTICE` from `src.data.company`); details in `docs/architecture.md` |
 | Industry benchmarks and company → industry | Damodaran US datasets, January 2026 edition, extracted once to CSV (§4) | Fixed for the project | Allowed by the instructor (reported by Igor, 2026-11-18); attribution in the README; the full `indname.xls` is not committed |
 | Share price | Typed in by the user (USD) | At the moment of use | – |

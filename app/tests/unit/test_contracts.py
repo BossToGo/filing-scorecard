@@ -354,3 +354,56 @@ def test_an_override_changes_one_fact_and_keeps_everything_else():
     assert data.fact("cash", FY2025) is cash_2025  # the original is unchanged
     with pytest.raises(TypeError):
         changed.items["cash"][FY2025] = cash_2025
+
+
+# --- CompanyData.recent: the latest figures, per line item (slice S2c, issue #71 item 1) ---------------------------
+# Twelve-month flows to the latest quarterly report and balances at the latest balance-sheet date, added without
+# changing anything existing code reads: `items`, `fact()`, `latest()`, `fiscal_years()`, `warnings`.
+
+Q3_2026 = date(2026, 9, 30)
+
+
+def twelve_months(metric="revenue", value=1400.0):
+    return Fact(metric, value, "USD", date(2025, 10, 1), Q3_2026, "derived", None, None, None, None, None,
+                "fiscal year + year to date − last year's year to date")
+
+
+def test_recent_is_empty_by_default_and_positional_construction_still_works():
+    data = CompanyData("KO", "0000021344", "The Coca-Cola Company", None, None, None, None, None, {})
+    assert dict(data.recent) == {}
+    assert company({"revenue": {FY2025: reported()}}).recent == {}
+
+
+def test_recent_figures_are_found_by_line_item():
+    fact = twelve_months()
+    data = dataclasses.replace(company({"revenue": {FY2025: reported()}}), recent={"revenue": fact})
+    assert data.recent["revenue"] is fact
+    assert data.recent.get("net_income") is None
+    # Nothing existing changes: the fiscal years and the annual fact are still those of the 10-K.
+    assert data.fiscal_years("revenue") == [FY2025] and data.latest("revenue").period_end == FY2025
+
+
+def test_a_recent_figure_under_an_unknown_line_item_is_rejected():
+    with pytest.raises(ValueError, match="line item"):
+        dataclasses.replace(company({}), recent={"ttm_revenue": twelve_months(metric="ttm_revenue")})
+
+
+def test_a_recent_figure_stored_under_another_line_item_is_rejected():
+    with pytest.raises(ValueError, match="line item"):
+        dataclasses.replace(company({}), recent={"net_income": twelve_months(metric="revenue")})
+
+
+def test_a_recent_figure_must_be_a_fact():
+    with pytest.raises(TypeError, match="Fact"):
+        dataclasses.replace(company({}), recent={"revenue": 1400.0})
+
+
+def test_recent_figures_cannot_be_changed_in_place_and_survive_cache_copy_and_export():
+    data = dataclasses.replace(company({}), recent={"revenue": twelve_months()})
+    with pytest.raises(TypeError):
+        data.recent["revenue"] = missing()
+    for clone in (pickle.loads(pickle.dumps(data)), copy.deepcopy(data), data.with_fact(reported(metric="cash"))):
+        assert clone.recent == data.recent
+        with pytest.raises(TypeError):
+            clone.recent["net_income"] = missing(metric="net_income")
+    assert dataclasses.asdict(data)["recent"]["revenue"]["value"] == 1400.0
