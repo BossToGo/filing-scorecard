@@ -15,6 +15,8 @@ SETTINGS = APP / "settings.yaml"
 
 CHECKS = [f"{area}{n}" for area in "PHDV" for n in range(1, 7)]  # P1 ... D6 (tier 1), V1 ... V6 (SPEC §2, §7)
 NOTES = ["industry_note"]  # top-level texts, one or two sentences, no check id (key agreed with Simon on #56)
+FIGURES = ["capital_expenditure", "operating_cash_flow", "operating_income", "current_assets", "current_liabilities",
+           "total_liabilities", "equity", "interest_expense", "dividends_paid", "shares"]  # plain names (Simon, #65)
 CHECK_ID = re.compile(r"\b[PHDV][1-6]\b")
 ADVICE_WORDS = re.compile(  # information, not advice; SPEC §3 says "the estimate", never "fair value" (#32, #39);
     # overvalued to should: design spec §5 rule 1
@@ -79,6 +81,14 @@ def test_every_note_is_one_or_two_sentences_without_a_check_id():
             problems.append(f"{key}: names a check id ({CHECK_ID.search(note).group()})")
         if not 1 <= len(re.findall(r"[.!?](?:\s|$)", note.strip())) <= 2:
             problems.append(f"{key}: should be one or two sentences")
+    assert not problems, "\n".join(problems)
+
+
+def test_every_figure_has_a_plain_name():
+    figures = load(TEXTS).get("figures")
+    assert isinstance(figures, dict), "texts.yaml has no 'figures:' section"
+    problems = [f"figures.{code}: missing or empty" for code in FIGURES
+                if not isinstance(figures.get(code), str) or not figures[code].strip()]
     assert not problems, "\n".join(problems)
 
 

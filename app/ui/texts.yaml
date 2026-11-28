@@ -83,3 +83,17 @@ V6:
 
 # Shown under "Industry: [group] (Damodaran lookup)" and on the sources page (SPEC §9.1; key agreed with D on #56)
 industry_note: "Each company in Professor Damodaran's (NYU) list is classified into an industry group, and the industry average shown is his published figure for that group."
+
+# Plain names of company figures in the check tables, by line item (key and format agreed with Simon on #65;
+# shown once D's figure_name() reads this section)
+figures:
+  capital_expenditure: "Capital expenditure (spending on buildings and equipment)"
+  operating_cash_flow: "Operating cash flow"
+  operating_income: "Operating income"
+  current_assets: "Short-term assets (current assets)"
+  current_liabilities: "Short-term liabilities (current liabilities)"
+  total_liabilities: "Total liabilities"
+  equity: "Equity (shareholders' part)"
+  interest_expense: "Interest expense"
+  dividends_paid: "Total dividends paid"
+  shares: "Shares outstanding"
