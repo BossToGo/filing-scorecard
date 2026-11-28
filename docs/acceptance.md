@@ -318,6 +318,28 @@ missing-figure cases need no number: the rule itself ("insufficient data" naming
 relation, not a number: doubling the share count doubles P/E and P/B and halves the dividend yield (added after a
 planted bug that ignored the share count passed every other test).
 
+### S8b: the method of issue #71 (owner C)
+
+Agreed on issue #71 on 27 November 2026. Rules decided by Flo the same day; the cases below follow from the rules and
+use round test figures (proposed by Claude Code, to be confirmed by Flo). Tests in
+`app/tests/unit/test_valuation_latest.py`.
+
+| Id | Case | Rule | Expected | Test |
+|---|---|---|---|---|
+| S8b-1 | Twelve months: operating cash flow 300, capital expenditure 100 | Starting free cash flow = operating cash flow − capital expenditure of the last twelve months | 200; the annual figures change nothing | `test_the_starting_free_cash_flow_is_the_last_twelve_months` |
+| S8b-2 | A latest figure missing (cash flow, capital expenditure, debt, minority interest, shares) | No fallback to the annual figure | "insufficient data", naming it | `test_a_missing_latest_figure_is_insufficient_data_with_no_fallback_to_the_annual_one` |
+| S8b-3 | Risk-free rate 2%, 3.93%, 6% | Long-run growth = the risk-free rate | the same rate | `test_long_run_growth_is_the_risk_free_rate` |
+| S8b-4 | Premium | Damodaran's implied premium (home page, "Implied ERP on November 1, 2026"; Flo to check the link and number) | 0.0441, dated 1 November 2026 | `test_the_premium_is_damodarans_of_1_november_2026_with_its_source_recorded` |
+| S8b-5 | Free cash flow of the three years 40, 80, 180 (average 100); twelve months 100, 125 or 75 | One line only when **more than** 25% above or below the average | no line | `test_no_sentence_up_to_the_threshold` |
+| S8b-6 | The same; twelve months 126 or 74 | the same | one line, "26.0% above" or "below" | `test_one_sentence_beyond_the_threshold` |
+| S8b-7 | Three-year average zero or negative, twelve months positive | A line without a percentage | estimate and line | `test_an_average_of_zero_or_less_also_gets_the_sentence_without_a_percentage` |
+| S8b-8 | A figure of the three years missing or with a sign error | The estimate stays; the line says no comparison is possible | estimate and line | `test_without_the_three_years_the_estimate_stays_and_a_sentence_says_so` |
+| S8b-9 | Twelve months' free cash flow zero or negative | §8.6: the model does not fit | "not applicable" | `test_no_free_cash_flow_in_the_last_twelve_months_means_not_applicable` |
+
+**Values to be recalculated by Flo for S8b (rule 14.5), from his own Excel model:** CALC-W2, CALC-F1 to F4, CALC-V1,
+V2, V6, S8-e, S8-f and S9-W8. Until then the rows above in this file show the values of the old method. CALC-W1,
+V3 to V5, S8-a to S8-d and S8-g do not change.
+
 ## Edge cases and errors
 
 | Id | Situation | Expected behaviour | Status |

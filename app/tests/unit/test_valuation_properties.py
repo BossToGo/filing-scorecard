@@ -24,7 +24,8 @@ SHAPE = dict(half_life_years=V["growth_half_life_years"], forecast_years=V["fore
 betas = st.floats(min_value=0.01, max_value=5.0)
 amounts = st.floats(min_value=1e3, max_value=1e13)  # USD
 growths = st.floats(min_value=V["growth_floor"], max_value=V["growth_cap"])
-terminal = st.floats(min_value=-0.02, max_value=V["terminal_growth_cap"])
+# Long-run growth is the risk-free rate (issue #71, item 3): up to 10% covers any plausible one.
+terminal = st.floats(min_value=-0.02, max_value=0.10)
 
 
 @given(unlevered=betas, market_value=amounts)
