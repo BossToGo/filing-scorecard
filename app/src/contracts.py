@@ -20,6 +20,9 @@ Rules built in (each one has a test in `tests/unit/test_contracts.py`):
   in `form` (e.g. "SYNTHETIC"). `derived` records its formula; `assumption` says which setting or override.
 - In `CompanyData`, a fact is stored under its own line item and its own period end date. (That the period end,
   not the filing's `fy` label, decides the fiscal year, SPEC §5.3.2, is the resolver's job, tested in slice S2.)
+- `CompanyData.recent` (slice S2c, issue #71 item 1) holds the latest figures, one `Fact` per line item: twelve-month
+  flows to the latest quarterly report and balances at the latest balance-sheet date. A fact is stored under its
+  own line item. It is empty unless the resolver filled it, and it changes nothing that `items` holds.
 - A check with a missing input cannot pass or fail; a check that was not assessed has no value.
 """
 
@@ -199,9 +202,34 @@ def _freeze(items: Mapping[str, Mapping[date, Fact]]) -> _ReadOnlyDict:
     return _ReadOnlyDict(frozen)
 
 
+def _freeze_recent(recent: Mapping[str, Fact]) -> _ReadOnlyDict:
+    for metric, fact in recent.items():
+        if metric not in LINE_ITEMS:
+            raise ValueError(f"unknown line item {metric!r} in `recent`; use one of LINE_ITEMS in src/contracts.py")
+        if not isinstance(fact, Fact):
+            raise TypeError(f"recent[{metric!r}] must be a Fact, so the figure keeps its source")
+        if fact.metric != metric:
+            raise ValueError(f"a {fact.metric!r} fact is stored under the line item {metric!r} in `recent`")
+    return _ReadOnlyDict(recent)
+
+
 @dataclass(frozen=True)
 class CompanyData:
-    """Header fields plus, per line item, a mapping from fiscal-year end date to `Fact` (SPEC §11)."""
+    """Header fields plus, per line item, a mapping from fiscal-year end date to `Fact` (SPEC §11).
+
+    `recent` (slice S2c) maps a line item to its latest figure: revenue, net income, operating cash flow and capital
+    expenditure over the twelve months to the latest quarterly report (or the latest fiscal year when the 10-K is
+    the latest report); financial debt and minority interest at the latest balance-sheet date; shares from the cover
+    page of the latest report (src/data/twelve_months.py has the rules). Good to know before reading it:
+    - it is empty for a `CompanyData` not made by the resolver (test fixtures) and for a company with no annual
+      figures, so use `data.recent.get(...)`; the synthetic company of Appendix A has its FY2025 figures there;
+    - a twelve-month flow is `derived` (from a 10-Q) or `reported` (the 10-K's own year); `filed` is the date of
+      the report it is as of; its period need not be 365 days (Coca-Cola: 371) and the note then says so;
+    - a balance (debt, minority interest) or the share count may be the fiscal-year-end figure when the 10-Q has
+      none: its `period_end` and note say so; shares may be a diluted average, as in `items`;
+    - when the SEC's filing list names a later 10-Q than its company facts hold, every note says so;
+    - warnings about these figures (DEBT_CHECK, SIGN, MINORITY_UNTAGGED, a restatement) are in each fact's `note`,
+      never in `warnings`, which the gates read."""
 
     ticker: str
     cik: str  # SEC company number, 10 digits with leading zeros
@@ -213,12 +241,14 @@ class CompanyData:
     retrieved: datetime | None
     items: Mapping[str, Mapping[date, Fact]] = field(default_factory=dict)
     warnings: tuple[str, ...] = ()
+    recent: Mapping[str, Fact] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not re.fullmatch(r"\d{10}", self.cik):
             raise ValueError(f"the SEC company number must be 10 digits with leading zeros, got {self.cik!r}")
         object.__setattr__(self, "items", _freeze(self.items))
         object.__setattr__(self, "warnings", tuple(self.warnings))
+        object.__setattr__(self, "recent", _freeze_recent(self.recent))
 
     def fact(self, metric: str, fy_end: date) -> Fact | None:
         """The fact for one line item and fiscal-year end date, or None if the year is not there at all."""
