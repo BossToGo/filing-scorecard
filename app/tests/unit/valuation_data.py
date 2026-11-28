@@ -1,29 +1,20 @@
 """Test data of the valuation tests (slice S8b). Owner: C (Flo).
 
 The synthetic company has annual figures only, so its last twelve months and its latest balance sheet are FY2025
-(issue #71, item 6; SPEC Appendix A). They are put into `CompanyData.recent` here, explicitly: the engine itself
-never falls back to the annual figures.
+(issue #71, item 6; SPEC Appendix A). The shared fixture (member A) puts them into `CompanyData.recent`; the engine
+itself never falls back to the annual figures. A test that changes a latest figure uses `latest` below.
 """
 
 from __future__ import annotations
 
 import dataclasses
-from datetime import date
 
 from src.contracts import CompanyData
 from tests.fixtures import synthetic
 
-FY0 = date(2025, 12, 31)
 MILLION = 1_000_000.0
-FLOWS = ("revenue", "net_income", "operating_cash_flow", "capital_expenditure")
-BALANCES = ("financial_debt", "minority_interest")
-
-
-def synthetic_company() -> CompanyData:
-    data = synthetic.company_data()
-    recent = {metric: data.fact(metric, FY0) for metric in FLOWS + BALANCES}
-    recent["shares"] = data.latest("shares")
-    return dataclasses.replace(data, recent=recent)
+FY0 = synthetic.company_data().fiscal_years("revenue")[-1]
+synthetic_company = synthetic.company_data
 
 
 def latest(metric: str, millions: float | None, data: CompanyData | None = None) -> CompanyData:

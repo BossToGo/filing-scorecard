@@ -496,28 +496,30 @@ def test_starting_growth_equal_to_terminal_growth_stays_flat():
 
 
 def test_s8_f_a_risk_free_rate_of_2_percent():
-    # Flo's Excel model, case f (risk-free rate 2.0%), USD millions to 8 decimals.
+    # Flo's Excel model, case f (risk-free rate 2.0%), USD millions to 8 decimals; recalculated by Flo for the
+    # method of issue #71 (28 November 2026, docs/acceptance.md S8-f).
     v = value(risk_free=rate(0.02))
     assert v.terminal_growth.value == pytest.approx(0.02)
-    assert v.cost_of_equity.value == pytest.approx(0.0703325, abs=1e-12)
-    assert v.starting_free_cash_flow.value == pytest.approx(113.66120219 * MILLION, abs=0.01)
-    assert v.forecast.sum_of_discounted == pytest.approx(989.58369563 * MILLION, abs=0.01)
-    assert v.forecast.terminal_value == pytest.approx(3271.42402094 * MILLION, abs=0.01)
-    assert v.forecast.discounted_terminal_value == pytest.approx(1657.86709202 * MILLION, abs=0.01)
-    assert v.equity_value.value == pytest.approx(2647.45078766 * MILLION, abs=0.01)
-    assert v.fair_value.value == pytest.approx(26.47450788, abs=1e-8)
+    assert v.cost_of_equity.value == pytest.approx(0.064393265, abs=1e-12)
+    assert v.starting_free_cash_flow.value == pytest.approx(130 * MILLION, abs=0.01)
+    assert v.forecast.sum_of_discounted == pytest.approx(1165.18457915 * MILLION, abs=0.01)
+    assert v.forecast.terminal_value == pytest.approx(4242.28029927 * MILLION, abs=0.01)
+    assert v.forecast.discounted_terminal_value == pytest.approx(2272.88876280 * MILLION, abs=0.01)
+    assert v.equity_value.value == pytest.approx(3438.07334195 * MILLION, abs=0.01)
+    assert v.fair_value.value == pytest.approx(34.38073342, abs=1e-8)
     assert value().terminal_growth.value == pytest.approx(0.04)  # long-run growth = the risk-free rate
 
 
 def test_a_minority_interest_is_subtracted_from_the_present_value():
-    # Flo, case e: 2,012.95283165 − 100 = 1,912.95283165 (USD millions); ÷ 100 million shares = USD 19.12952832.
+    # Flo, case e (28 November 2026, his Excel model with minority interest 100): equity value USD 3,201.65417623
+    # million; ÷ 100 million shares = USD 32.01654176.
     v = value(latest("minority_interest", 100))
     assert v.status == "ok"
-    assert v.equity_value.value == pytest.approx(1912.95283165 * MILLION, abs=0.01)
-    assert v.fair_value.value == pytest.approx(19.12952832, abs=1e-8)
+    assert v.equity_value.value == pytest.approx(3201.65417623 * MILLION, abs=0.01)
+    assert v.fair_value.value == pytest.approx(32.01654176, abs=1e-8)
     assert v.equity_value.value == pytest.approx(v.forecast.present_value - 100 * MILLION)
     # Review of 24 November, M3: the V6 value subtracts the minority interest too: USD 100 million ÷ 100 million
-    # shares = USD 1.00 per share below the Appendix A value at the cap (37.37, Flo's sign-off).
+    # shares = USD 1.00 per share below the Appendix A value at the cap (62.32, Flo's recalculation of 28 November).
     e = synthetic.expected_valuation("fair_value_at_growth_cap")
     assert v.fair_value_at_growth_cap.value == pytest.approx(value().fair_value_at_growth_cap.value - 1.0)
     assert v.fair_value_at_growth_cap.value == pytest.approx(e["value"] - 1.0, abs=tol(e))
