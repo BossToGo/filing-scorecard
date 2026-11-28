@@ -228,6 +228,25 @@ def test_the_loader_adds_shares_and_current_debt_for_the_latest_year():
     assert data.fact("current_financial_debt", date(2025, 12, 31)).value == 50_000_000.0
 
 
+LATEST_FIGURES = ("revenue", "net_income", "operating_cash_flow", "capital_expenditure", "financial_debt",
+                  "minority_interest")
+
+
+def test_the_latest_figures_are_the_fy2025_figures_written_out():
+    # Issue #71 item 6 and Flo's request on PR #72 (27 November): the synthetic company has annual data only, so its
+    # `recent` holds its FY2025 figures explicitly; the valuation never falls back to the annual figures by itself.
+    # No new value: each is the FY2025 figure of Appendix A already in `items` (e.g. revenue 1,300 m).
+    data = synthetic.company_data()
+    fy2025 = date(2025, 12, 31)
+    assert set(data.recent) == {*LATEST_FIGURES, "shares"}
+    for metric in LATEST_FIGURES:
+        fact, annual = data.recent[metric], data.fact(metric, fy2025)
+        assert (fact.value, fact.period_start, fact.period_end) == (annual.value, annual.period_start, fy2025), metric
+        assert "FY2025" in fact.note and "SPEC Appendix A" in fact.note, metric
+    assert data.recent["revenue"].value == 1_300_000_000.0 and data.recent["minority_interest"].value == 0
+    assert data.recent["shares"].value == data.latest("shares").value == 100_000_000.0
+
+
 def test_every_synthetic_fact_says_where_it_comes_from():
     data = synthetic.company_data()
     for by_year in data.items.values():
