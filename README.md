@@ -3,7 +3,7 @@
 A one-page first look at a US company, built only from its annual reports filed with the SEC (Form 10-K). It is
 made for a retail bank to show its customers next to the order screen, when they are about to buy a US stock. You
 pick a company and type the share price, and you get 24 pass/fail checks in four areas (past performance,
-financial health, dividend, valuation). Every figure can be traced to its filing.
+financial health, dividend, valuation). Every figure can be traced to its source.
 
 **Information, not advice.** The app gives no recommendation. It uses no analyst forecasts, no live prices and no AI:
 every number comes from tested Python code. The scores are not a rating of the share. A figure that cannot be read or
@@ -14,7 +14,7 @@ does not pass the checks is shown as "not assessed" with the reason, never as ze
 1. **Input bar:** one of the five demo companies (Coca-Cola KO, Apple AAPL, Nvidia NVDA, McDonald's MCD, Amazon
    AMZN) or another ticker; the share price in USD, the only figure you type; the demo-mode switch.
 2. **Header:** company, industry, fiscal year end, date of the latest 10-K, retrieval date, and the warnings "not
-   fully checked" or "old annual report" when they apply.
+   fully checked" or "Latest annual report is old" when they apply.
 3. **Overview:** key figures for the latest fiscal year with the change on the year before, a radar of the four
    areas, and charts over five years with a table view.
 4. **Score chart:** six marks per area ("4 passed of 5 assessed, 1 not assessed"), with the failed checks listed
@@ -25,7 +25,7 @@ does not pass the checks is shown as "not assessed" with the reason, never as ze
 6. **Sources tab:** every figure with its SEC tag, form, accession number, filing date, retrieval time and kind
    (reported, derived, assumption, missing).
 
-Without a share price, the valuation area and the dividend-yield check show "insufficient data". Strengths and
+Without a share price, the valuation area and the dividend-yield check show "not assessed". Strengths and
 points to watch, and an Excel export, were planned but not built in this version (`docs/plan.md`, S12 and S13).
 They are in the business plan's next steps (`docs/business-plan/sections/E-next-steps.md`).
 
@@ -149,7 +149,7 @@ All values are in `app/settings.yaml`, each with its reason. The method is in `S
 
 ## AI use
 
-The team built the app with AI coding assistants (Claude Code, and Codex for member B). We wrote the specification
+The team built the app with AI coding assistants (Claude Code; Codex and Claude Code for member B). We wrote the specification
 first, planned each slice, wrote the tests first and had reviewer agents check the work. The app itself contains no
 AI. One mistake that was caught: the assistant's first debt rule counted a missing current portion of debt as zero
 (McDonald's FY2023: USD 37,501 m instead of 39,345 m). A reviewer agent found it, and the rule was rewritten and
