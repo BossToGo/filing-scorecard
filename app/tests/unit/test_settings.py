@@ -39,7 +39,7 @@ RATES = {  # every setting that is a rate or a share: a decimal strictly between
     "valuation": [
         "equity_risk_premium",
         "tax_rate",
-        "terminal_growth_cap",
+        "fcf_difference_warning",
         "well_below_fair_value",
         "growth_cap",
     ],

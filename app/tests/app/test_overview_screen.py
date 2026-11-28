@@ -277,7 +277,12 @@ def test_the_valuation_comes_first_with_the_price_against_the_estimate():
     assert seen.index("Share price against the estimate") < seen.index("Checks by area")  # on top (Igor's pitch)
     # the chart shows V1's own figures, so the chart and the check cannot disagree
     assert f"USD {v1.value:,.2f}" in seen and f"USD {v1.threshold:,.2f}" in seen
-    assert "above the estimate of" in seen and "80% of the estimate or less" in seen
+    # was `"above the estimate of" in seen`, true only for the old Coca-Cola estimate (USD 31.80); under the method of
+    # #71 the estimate is above the price, so the direction now comes from V1's own figures too (rule 14.6, agreed by
+    # Igor, 28 November)
+    direction = "above" if v1.value > v1.threshold else "below"
+    assert f"{direction} the estimate of USD {v1.threshold:,.2f}." in seen
+    assert "80% of the estimate or less" in seen
     keys = [chart.key for chart in at.get("plotly_chart")]
     assert {"chart_price", "chart_ratio_pe", "chart_ratio_pb"} <= set(keys)
     assert "Price to earnings 32.02× against 37.11× for the industry and 60.26× for the US market." in seen

@@ -221,6 +221,7 @@ Cut list if a release slips by more than a day (§2): strengths and points to wa
 | 2026-11-27 | S2c (Flo's request on #72) | `tests/fixtures/synthetic.py`: the synthetic company's `recent` holds its FY2025 figures (revenue, net income, operating cash flow, capital expenditure, financial debt, minority interest, shares), each the FY2025 fact of `items` with a note saying so, so C's valuation never falls back to annual figures by itself (#71 item 6). No new value; the `CompanyData.recent` docstring updated | Test first, seen failing; pytest: 1,597 passed | C: tests that change a FY2025 figure with `with_fact` must change the same figure in `recent` once the engine reads it (said in the note to Greg, Simon and Flo) |
 | 2026-11-27 | S8b (C) | Branch from `main` with #72 merged in locally (Flo's OK). Tests first (64 seen failing), then the engine and the `valuation` settings: twelve-month free cash flow, latest balance sheet, long-run growth = risk-free rate, premium 4.41% with its date and link, the comparison line (threshold 25%, Flo). `terminal_growth_cap` removed, `equity_risk_premium_date` and `fcf_difference_warning` added | pytest: the rule tests pass; the tests of Appendix A, S8-e, S8-f and S9-W8 still hold the old numbers and fail until Flo's new values | Flo's values; member A: `recent` and the new values in the shared fixture, `test_settings.py`, SPEC §5.3.1, §8 and Appendix A; member D: AC9 and labels |
 | 2026-11-28 | S8b (C, Flo's values) | Flo changed his Excel model (version 3) for the new method and saved it before any comparison; the app agrees with it on every line compared (working, 2% case, V1–V6; also with minority interest 100). His values are in `docs/acceptance.md`, S8-e, S8-f and S9-W8; a patch with member A's files is ready | unit tests on the branch: 1,270 passed, 16 failed (they read A's fixture and settings test). With A's patch in a copy: 1,637 passed, 6 failed (4 after the terminal value share was added) | valuation score (E), G7 and W8 (B), Coca-Cola screen test (A), AC9 (D), Flo's sign-off |
+| 2026-11-28 | S8b (A's part) | Flo's patch for A's files applied to #82 after review (synthetic fixture settings and expected values, settings and fixture tests, SPEC §5.3.1, §8, §15 and Appendix A); SPEC note 2.5; Flo's new sign-off recorded; the Coca-Cola chart test takes the direction from V1; `docs/product.md` F7 and the calculations table; decision line; Q14 corrected (rolled growth in the scratch table) | synthetic company recomputed outside the app: 33.02, 62.32, 26.41 as Flo's; full suite 1,640 passed, 3 failed (Emma's valuation score, CALC-S) | Emma's CALC-S; Greg's G7 and W8 rows of Appendix A; Simon's AC9 and labels |
 
 ## Known problems and open questions
 
@@ -319,6 +320,12 @@ fixed by a pull request to `SPEC.md`.
   (27 November): yes** (D, Simon, 14:24 UTC; C, Flo, yes to items 2–4, 16:04; E, Emma, her conditions met, 16:57; B,
   Greg, approved the `recent` shape). A's part is PR #72 (S2c); C changes the settings, SPEC §8 and Appendix A by
   Sunday 29 November, 12:00.
+  **Correction (Flo, 28 November, on #71):** the figures above came from a scratch script that also measured past
+  revenue growth over rolling twelve-month periods; the agreed method keeps past growth FY-4 to FY0 (SPEC §8.2). With
+  it, Coca-Cola is USD 89.91 at a 5% premium and **USD 102.05** at 4.41% (Flo's Excel model and the app agree; today's
+  method USD 31.80). The other companies' figures above were produced the same way and are not to be quoted; use the
+  app's figures once #82 is merged. #72 is merged (27 November); A's files for #82 (fixture, settings test, SPEC 2.5,
+  the Coca-Cola chart test) were added to #82 on 28 November.
 
 ### Audit of 21 November 2026: findings still open
 

@@ -101,7 +101,7 @@ v0.2 is released before the feature freeze.
 | F4 | Fully automatic: no figure is typed or corrected by the user; a figure that does not resolve or pass the checks is "not assessed" (§1) | 1 | The user can trust the page without checking it |
 | F5 | Offline demo mode on saved data for five companies | 1 | Reliable demo; no network needed |
 | F6 | Benchmarks for the industry groups of the five demo companies and for the whole US market; P4, P5, D2 switch on (§4, §9.1) | 2 | Company compared with its industry |
-| F7 | Valuation: 6 checks, equity-method DCF (operating cash flow − capex from the three-year margin, cost of equity) with growth limited to 30% and decaying over 10 years, "model does not fit" rules; V4 compares the P/E with the whole US market (§7, §8) | 2 | Is the price demanding? |
+| F7 | Valuation: 6 checks, equity-method DCF (operating cash flow − capex of the last twelve months from the 10-Qs, cost of equity with Damodaran's implied premium) with growth limited to 30% and decaying over 10 years towards the risk-free rate (#71), "model does not fit" rules; V4 compares the P/E with the whole US market (§7, §8) | 2 | Is the price demanding? |
 | F8 | Excel export, two sheets: scorecard; figures and sources | 2, only if v0.2 is released before the freeze | Take the result away |
 | F9 | Strengths and points to watch: plain-language statements from fixed rules (§9) | 3, only if v0.2 is released before the freeze | What the numbers mean, in words a retail customer understands |
 
@@ -138,7 +138,7 @@ F1 to F3 are never cut.
 |---|---|---|---|
 | The 24 checks P1–V6 | §7, one rule each, thresholds in `settings.yaml` | Ratios stored as decimals, shown as %; amounts stored in USD, shown in USD m | Resolved SEC figures (§5, §6), benchmarks, typed price |
 | Cost of equity | §8.1: risk-free + industry beta re-levered with the company's debt (limits 0.8–2.0) × 5.0% premium | % | FRED or setting, benchmarks, SEC figures, price |
-| Fair value per share | §8.2–8.3 (equity method): starting free cash flow = three-year free-cash-flow margin × latest revenue; 10-year forecast with starting growth = past revenue growth limited to −10%..+30%, its gap to terminal growth halving every 2 years; terminal value; − reported minority interests; ÷ shares. Not shown when the model does not fit (§8.6) | USD per share | SEC figures (operating cash flow, capex, revenue, minority interests, shares), cost of equity |
+| Fair value per share | §8.2–8.3 (equity method): starting free cash flow = operating cash flow − capex of the last twelve months (to the latest 10-Q; a sentence when it differs by more than 25% from the three-year average); 10-year forecast with starting growth = past revenue growth FY-4 to FY0 limited to −10%..+30%, its gap to terminal growth (the risk-free rate) halving every 2 years; cost of equity with Damodaran's implied premium (4.41%, 1 November 2026); terminal value; − minority interests on the latest balance sheet; ÷ latest shares (#71, #82). Not shown when the model does not fit (§8.6) | USD per share | SEC figures from the 10-K and the latest 10-Q (operating cash flow, capex, revenue, minority interests, shares), cost of equity |
 | Strengths and points to watch | §9: 15 statements (G1–G7, W1–W8) from the checks, threshold in `settings.yaml` | Statements with the company's numbers | Check results, SEC figures |
 | Area scores | Number of passes, always with the number assessed | "x passed of y assessed" | Check results |
 
